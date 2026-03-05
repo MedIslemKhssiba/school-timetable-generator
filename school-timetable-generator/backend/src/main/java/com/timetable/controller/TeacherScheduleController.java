@@ -37,23 +37,7 @@ public class TeacherScheduleController {
 
     @GetMapping("/schedule")
     public ResponseEntity<List<LessonDTO>> getMySchedule(Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Find teacher linked to this user
-        Teacher teacher = teacherRepository.findAll().stream()
-                .filter(t -> t.getUser() != null && t.getUser().getId().equals(user.getId()))
-                .findFirst()
-                .orElse(null);
-
-        if (teacher == null) {
-            // Also try by email
-            teacher = teacherRepository.findAll().stream()
-                    .filter(t -> t.getEmail() != null && t.getEmail().equals(user.getEmail()))
-                    .findFirst()
-                    .orElse(null);
-        }
-
+        Teacher teacher = getTeacherFromAuth(authentication);
         if (teacher == null) {
             return ResponseEntity.ok(List.of());
         }
@@ -64,15 +48,24 @@ public class TeacherScheduleController {
     }
 
     @GetMapping("/availabilities")
-    public ResponseEntity<List<TeacherAvailability>> getMyAvailabilities(Authentication authentication) {
+    public ResponseEntity<List<AvailabilityDTO>> getMyAvailabilities(Authentication authentication) {
         Teacher teacher = getTeacherFromAuth(authentication);
         if (teacher == null) return ResponseEntity.ok(List.of());
-        return ResponseEntity.ok(availabilityRepository.findByTeacherId(teacher.getId()));
+        List<TeacherAvailability> avails = availabilityRepository.findByTeacherId(teacher.getId());
+        List<AvailabilityDTO> dtos = avails.stream().map(a -> {
+            AvailabilityDTO dto = new AvailabilityDTO();
+            dto.setId(a.getId());
+            dto.setTeacherId(teacher.getId());
+            dto.setTimeslotId(a.getTimeslot() != null ? a.getTimeslot().getId() : null);
+            dto.setAvailable(a.isAvailable());
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/availabilities")
     @Transactional
-    public ResponseEntity<List<TeacherAvailability>> updateMyAvailabilities(
+    public ResponseEntity<List<AvailabilityDTO>> updateMyAvailabilities(
             Authentication authentication,
             @RequestBody List<AvailabilityDTO> dtos) {
         Teacher teacher = getTeacherFromAuth(authentication);
@@ -80,7 +73,7 @@ public class TeacherScheduleController {
 
         availabilityRepository.deleteByTeacherId(teacher.getId());
 
-        List<TeacherAvailability> saved = new ArrayList<>();
+        List<AvailabilityDTO> result = new ArrayList<>();
         for (AvailabilityDTO dto : dtos) {
             Timeslot timeslot = timeslotRepository.findById(dto.getTimeslotId())
                     .orElseThrow(() -> new RuntimeException("Timeslot not found"));
@@ -89,20 +82,23 @@ public class TeacherScheduleController {
                     .timeslot(timeslot)
                     .available(dto.isAvailable())
                     .build();
-            saved.add(availabilityRepository.save(ta));
+            TeacherAvailability saved = availabilityRepository.save(ta);
+            AvailabilityDTO rDto = new AvailabilityDTO();
+            rDto.setId(saved.getId());
+            rDto.setTeacherId(teacher.getId());
+            rDto.setTimeslotId(timeslot.getId());
+            rDto.setAvailable(saved.isAvailable());
+            result.add(rDto);
         }
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(result);
     }
 
     private Teacher getTeacherFromAuth(Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Teacher teacher = teacherRepository.findAll().stream()
-                .filter(t -> (t.getUser() != null && t.getUser().getId().equals(user.getId()))
-                        || (t.getEmail() != null && t.getEmail().equals(user.getEmail())))
-                .findFirst()
+        return teacherRepository.findByUserId(user.getId())
+                .or(() -> teacherRepository.findByEmail(user.getEmail()))
                 .orElse(null);
-        return teacher;
     }
 
     private LessonDTO toLessonDTO(Lesson lesson) {

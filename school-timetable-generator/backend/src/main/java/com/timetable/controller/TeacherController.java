@@ -29,17 +29,17 @@ public class TeacherController {
     private final TimeslotRepository timeslotRepository;
 
     @GetMapping("/school/{schoolId}")
-    public ResponseEntity<List<Teacher>> getTeachers(@PathVariable Long schoolId) {
+    public ResponseEntity<List<TeacherDTO>> getTeachers(@PathVariable Long schoolId) {
         return ResponseEntity.ok(teacherService.getTeachersBySchool(schoolId));
     }
 
     @PostMapping
-    public ResponseEntity<Teacher> createTeacher(@RequestBody TeacherDTO dto) {
+    public ResponseEntity<TeacherDTO> createTeacher(@RequestBody TeacherDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(teacherService.createTeacher(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Teacher> updateTeacher(@PathVariable Long id, @RequestBody TeacherDTO dto) {
+    public ResponseEntity<TeacherDTO> updateTeacher(@PathVariable Long id, @RequestBody TeacherDTO dto) {
         return ResponseEntity.ok(teacherService.updateTeacher(id, dto));
     }
 
@@ -52,20 +52,29 @@ public class TeacherController {
     // --- Availability ---
 
     @GetMapping("/{teacherId}/availabilities")
-    public ResponseEntity<List<TeacherAvailability>> getAvailabilities(@PathVariable Long teacherId) {
-        return ResponseEntity.ok(availabilityRepository.findByTeacherId(teacherId));
+    public ResponseEntity<List<AvailabilityDTO>> getAvailabilities(@PathVariable Long teacherId) {
+        List<TeacherAvailability> avails = availabilityRepository.findByTeacherId(teacherId);
+        List<AvailabilityDTO> dtos = avails.stream().map(a -> {
+            AvailabilityDTO dto = new AvailabilityDTO();
+            dto.setId(a.getId());
+            dto.setTeacherId(teacherId);
+            dto.setTimeslotId(a.getTimeslot() != null ? a.getTimeslot().getId() : null);
+            dto.setAvailable(a.isAvailable());
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/{teacherId}/availabilities")
     @Transactional
-    public ResponseEntity<List<TeacherAvailability>> updateAvailabilities(
+    public ResponseEntity<List<AvailabilityDTO>> updateAvailabilities(
             @PathVariable Long teacherId,
             @RequestBody List<AvailabilityDTO> dtos) {
 
         Teacher teacher = teacherService.getTeacherById(teacherId);
         availabilityRepository.deleteByTeacherId(teacherId);
 
-        List<TeacherAvailability> saved = new ArrayList<>();
+        List<AvailabilityDTO> result = new ArrayList<>();
         for (AvailabilityDTO dto : dtos) {
             Timeslot timeslot = timeslotRepository.findById(dto.getTimeslotId())
                     .orElseThrow(() -> new RuntimeException("Timeslot not found"));
@@ -74,8 +83,14 @@ public class TeacherController {
                     .timeslot(timeslot)
                     .available(dto.isAvailable())
                     .build();
-            saved.add(availabilityRepository.save(ta));
+            TeacherAvailability saved = availabilityRepository.save(ta);
+            AvailabilityDTO rDto = new AvailabilityDTO();
+            rDto.setId(saved.getId());
+            rDto.setTeacherId(teacherId);
+            rDto.setTimeslotId(timeslot.getId());
+            rDto.setAvailable(saved.isAvailable());
+            result.add(rDto);
         }
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(result);
     }
 }

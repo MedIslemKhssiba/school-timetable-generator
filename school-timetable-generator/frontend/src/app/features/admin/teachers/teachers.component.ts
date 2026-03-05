@@ -1,13 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatCardModule } from '@angular/material/card';
-import { MatSelectModule } from '@angular/material/select';
+import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Teacher, Subject } from '../../../core/models';
@@ -15,90 +9,92 @@ import { Teacher, Subject } from '../../../core/models';
 @Component({
   selector: 'app-teachers',
   standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule,
-    MatTableModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule, MatCardModule, MatSelectModule
-  ],
+  imports: [CommonModule, ReactiveFormsModule, CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule],
   template: `
-    <h2>Teachers</h2>
+    <div class="page-header">
+      <h2>Teachers</h2>
+    </div>
 
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>{{ editing ? 'Edit Teacher' : 'Add Teacher' }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
-          <mat-form-field appearance="outline">
-            <mat-label>First Name</mat-label>
-            <input matInput formControlName="firstName" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Last Name</mat-label>
-            <input matInput formControlName="lastName" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Email</mat-label>
-            <input matInput formControlName="email" type="email" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Max Hours/Week</mat-label>
-            <input matInput formControlName="maxHoursPerWeek" type="number" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Subjects</mat-label>
-            <mat-select formControlName="subjectIds" multiple>
+    <c-card class="mb-4">
+      <c-card-header><strong>{{ editing ? 'Edit Teacher' : 'Add New Teacher' }}</strong></c-card-header>
+      <c-card-body>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="row g-3">
+          <c-col md="4">
+            <label cLabel for="firstName">First Name</label>
+            <input cFormControl id="firstName" formControlName="firstName" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="lastName">Last Name</label>
+            <input cFormControl id="lastName" formControlName="lastName" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="email">Email</label>
+            <input cFormControl id="email" formControlName="email" type="email" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="maxHours">Max Hours/Week</label>
+            <input cFormControl id="maxHours" formControlName="maxHoursPerWeek" type="number" />
+          </c-col>
+          <c-col md="8">
+            <label cLabel for="subjects">Subjects</label>
+            <select cFormControl id="subjects" formControlName="subjectIds" multiple>
               @for (s of subjects; track s.id) {
-                <mat-option [value]="s.id">{{ s.name }}</mat-option>
+                <option [ngValue]="s.id">{{ s.name }}</option>
               }
-            </mat-select>
-          </mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
-            {{ editing ? 'Update' : 'Create' }}
-          </button>
-          @if (editing) {
-            <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
-          }
+            </select>
+          </c-col>
+          <c-col xs="12">
+            <button cButton color="primary" type="submit" [disabled]="form.invalid" class="me-2">
+              {{ editing ? 'Update' : 'Create' }}
+            </button>
+            @if (editing) {
+              <button cButton color="secondary" variant="outline" type="button" (click)="cancelEdit()">Cancel</button>
+            }
+          </c-col>
         </form>
-      </mat-card-content>
-    </mat-card>
+      </c-card-body>
+    </c-card>
 
-    <table mat-table [dataSource]="teachers" class="full-width" style="margin-top:16px">
-      <ng-container matColumnDef="firstName">
-        <th mat-header-cell *matHeaderCellDef>First Name</th>
-        <td mat-cell *matCellDef="let t">{{ t.firstName }}</td>
-      </ng-container>
-      <ng-container matColumnDef="lastName">
-        <th mat-header-cell *matHeaderCellDef>Last Name</th>
-        <td mat-cell *matCellDef="let t">{{ t.lastName }}</td>
-      </ng-container>
-      <ng-container matColumnDef="email">
-        <th mat-header-cell *matHeaderCellDef>Email</th>
-        <td mat-cell *matCellDef="let t">{{ t.email }}</td>
-      </ng-container>
-      <ng-container matColumnDef="maxHoursPerWeek">
-        <th mat-header-cell *matHeaderCellDef>Max Hours</th>
-        <td mat-cell *matCellDef="let t">{{ t.maxHoursPerWeek }}</td>
-      </ng-container>
-      <ng-container matColumnDef="subjects">
-        <th mat-header-cell *matHeaderCellDef>Subjects</th>
-        <td mat-cell *matCellDef="let t">{{ getSubjectNames(t) }}</td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>Actions</th>
-        <td mat-cell *matCellDef="let t">
-          <button mat-icon-button color="primary" (click)="edit(t)"><mat-icon>edit</mat-icon></button>
-          <button mat-icon-button color="warn" (click)="delete(t.id)"><mat-icon>delete</mat-icon></button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
-  `,
-  styles: [`
-    .form-card { margin-bottom: 16px; }
-    form { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-  `]
+    <c-card>
+      <c-card-header class="d-flex align-items-center justify-content-between">
+        <strong>All Teachers</strong>
+        <c-badge color="primary">{{ teachers.length }} total</c-badge>
+      </c-card-header>
+      <c-card-body class="p-0">
+        <table cTable striped hover>
+          <thead>
+            <tr>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th>Email</th>
+              <th>Max Hours</th>
+              <th>Subjects</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of teachers; track t.id) {
+              <tr>
+                <td>{{ t.firstName }}</td>
+                <td>{{ t.lastName }}</td>
+                <td class="text-body-secondary">{{ t.email }}</td>
+                <td><c-badge color="light" textColor="dark">{{ t.maxHoursPerWeek }}h</c-badge></td>
+                <td class="text-body-secondary small">{{ getSubjectNames(t) }}</td>
+                <td>
+                  <button cButton color="info" variant="ghost" size="sm" (click)="edit(t)" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  </button>
+                  <button cButton color="danger" variant="ghost" size="sm" (click)="delete(t.id)" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  `
 })
 export class TeachersComponent implements OnInit {
   teachers: Teacher[] = [];
@@ -106,7 +102,6 @@ export class TeachersComponent implements OnInit {
   form: FormGroup;
   editing = false;
   editId: number | null = null;
-  displayedColumns = ['firstName', 'lastName', 'email', 'maxHoursPerWeek', 'subjects', 'actions'];
   private schoolId = 1;
 
   constructor(private adminService: AdminService, private fb: FormBuilder, private authService: AuthService) {
@@ -140,7 +135,7 @@ export class TeachersComponent implements OnInit {
   edit(t: Teacher): void {
     this.editing = true;
     this.editId = t.id;
-    this.form.patchValue({ ...t, subjectIds: t.subjectIds || [] });
+    this.form.patchValue({ ...t, subjectIds: t.subjectIds?.length ? t.subjectIds : (t.subjects?.map(s => s.id) || []) });
   }
 
   cancelEdit(): void {

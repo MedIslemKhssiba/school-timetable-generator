@@ -2,7 +2,9 @@ package com.timetable.controller;
 
 import com.timetable.dto.LessonDTO;
 import com.timetable.model.Lesson;
+import com.timetable.model.Timeslot;
 import com.timetable.repository.LessonRepository;
+import com.timetable.repository.TimeslotRepository;
 import com.timetable.service.ImportExportService;
 import com.timetable.service.TimetableService;
 import com.timetable.solver.TimetableSolution;
@@ -26,6 +28,12 @@ public class TimetableController {
     private final TimetableService timetableService;
     private final ImportExportService importExportService;
     private final LessonRepository lessonRepository;
+    private final TimeslotRepository timeslotRepository;
+
+    @GetMapping("/timeslots")
+    public ResponseEntity<List<Timeslot>> getTimeslots() {
+        return ResponseEntity.ok(timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc());
+    }
 
     @PostMapping("/solve/{schoolId}")
     public ResponseEntity<String> solve(@PathVariable Long schoolId) {
@@ -47,8 +55,10 @@ public class TimetableController {
     }
 
     @PostMapping("/save/{schoolId}")
-    public ResponseEntity<List<Lesson>> saveSolution(@PathVariable Long schoolId) {
-        return ResponseEntity.ok(timetableService.saveSolution(schoolId));
+    public ResponseEntity<List<LessonDTO>> saveSolution(@PathVariable Long schoolId) {
+        List<Lesson> lessons = timetableService.saveSolution(schoolId);
+        List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/lessons/{schoolId}")

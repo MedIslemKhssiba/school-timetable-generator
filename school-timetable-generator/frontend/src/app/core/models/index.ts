@@ -55,7 +55,6 @@ export interface ClassGroup {
   name: string;
   level: string;
   studentCount: number;
-  school?: School;
 }
 
 export interface Subject {
@@ -64,7 +63,6 @@ export interface Subject {
   color: string;
   hoursPerWeek: number;
   sessionDuration: number;
-  school?: School;
 }
 
 export interface Room {
@@ -72,7 +70,6 @@ export interface Room {
   name: string;
   capacity: number;
   type: string;
-  school?: School;
 }
 
 export interface Lesson {

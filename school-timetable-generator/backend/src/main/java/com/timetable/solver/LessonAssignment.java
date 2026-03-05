@@ -10,7 +10,6 @@ import org.optaplanner.core.api.domain.variable.PlanningVariable;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class LessonAssignment {
 
-    @PlanningId
     private Long id;
 
     private Subject subject;
@@ -24,11 +23,32 @@ public class LessonAssignment {
     @PlanningVariable(valueRangeProviderRefs = "roomRange")
     private Room room;
 
+    @PlanningId
+    public Long getId() {
+        return id;
+    }
+
     public Long getTeacherId() {
         return teacher != null ? teacher.getId() : null;
     }
 
     public Long getClassGroupId() {
         return classGroup != null ? classGroup.getId() : null;
+    }
+
+    public int getTeacherMaxHours() {
+        return teacher != null ? teacher.getMaxHoursPerWeek() : 20;
+    }
+
+    public int getClassGroupStudentCount() {
+        return classGroup != null ? classGroup.getStudentCount() : 0;
+    }
+
+    public int getRoomCapacity() {
+        return room != null ? room.getCapacity() : Integer.MAX_VALUE;
+    }
+
+    public Long getSubjectId() {
+        return subject != null ? subject.getId() : null;
     }
 }

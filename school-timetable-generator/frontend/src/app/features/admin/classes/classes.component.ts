@@ -1,12 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatCardModule } from '@angular/material/card';
+import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ClassGroup } from '../../../core/models';
@@ -14,43 +9,81 @@ import { ClassGroup } from '../../../core/models';
 @Component({
   selector: 'app-classes',
   standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule,
-    MatTableModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule, MatCardModule
-  ],
+  imports: [CommonModule, ReactiveFormsModule, CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule],
   template: `
-    <h2>Classes</h2>
-    <mat-card class="form-card">
-      <mat-card-content>
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
-          <mat-form-field appearance="outline"><mat-label>Name</mat-label><input matInput formControlName="name" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Level</mat-label><input matInput formControlName="level" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Students</mat-label><input matInput formControlName="studentCount" type="number" /></mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">{{ editing ? 'Update' : 'Create' }}</button>
-          @if (editing) { <button mat-button type="button" (click)="cancel()">Cancel</button> }
+    <div class="page-header">
+      <h2>Classes</h2>
+    </div>
+
+    <c-card class="mb-4">
+      <c-card-header><strong>{{ editing ? 'Edit Class' : 'Add New Class' }}</strong></c-card-header>
+      <c-card-body>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="row g-3">
+          <c-col md="4">
+            <label cLabel for="name">Name</label>
+            <input cFormControl id="name" formControlName="name" placeholder="e.g. 3A" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="level">Level</label>
+            <input cFormControl id="level" formControlName="level" placeholder="e.g. 3rd Year" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="studentCount">Students</label>
+            <input cFormControl id="studentCount" formControlName="studentCount" type="number" />
+          </c-col>
+          <c-col xs="12">
+            <button cButton color="primary" type="submit" [disabled]="form.invalid" class="me-2">
+              {{ editing ? 'Update' : 'Create' }}
+            </button>
+            @if (editing) {
+              <button cButton color="secondary" variant="outline" type="button" (click)="cancel()">Cancel</button>
+            }
+          </c-col>
         </form>
-      </mat-card-content>
-    </mat-card>
-    <table mat-table [dataSource]="items" class="full-width" style="margin-top:16px">
-      <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Name</th><td mat-cell *matCellDef="let c">{{c.name}}</td></ng-container>
-      <ng-container matColumnDef="level"><th mat-header-cell *matHeaderCellDef>Level</th><td mat-cell *matCellDef="let c">{{c.level}}</td></ng-container>
-      <ng-container matColumnDef="studentCount"><th mat-header-cell *matHeaderCellDef>Students</th><td mat-cell *matCellDef="let c">{{c.studentCount}}</td></ng-container>
-      <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef>Actions</th><td mat-cell *matCellDef="let c">
-        <button mat-icon-button color="primary" (click)="edit(c)"><mat-icon>edit</mat-icon></button>
-        <button mat-icon-button color="warn" (click)="delete(c.id)"><mat-icon>delete</mat-icon></button>
-      </td></ng-container>
-      <tr mat-header-row *matHeaderRowDef="cols"></tr>
-      <tr mat-row *matRowDef="let row; columns: cols;"></tr>
-    </table>
-  `,
-  styles: [`.form-card{margin-bottom:16px} form{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}`]
+      </c-card-body>
+    </c-card>
+
+    <c-card>
+      <c-card-header class="d-flex align-items-center justify-content-between">
+        <strong>All Classes</strong>
+        <c-badge color="primary">{{ items.length }} total</c-badge>
+      </c-card-header>
+      <c-card-body class="p-0">
+        <table cTable striped hover>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Level</th>
+              <th>Students</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of items; track c.id) {
+              <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.level }}</td>
+                <td><c-badge color="light" textColor="dark">{{ c.studentCount }}</c-badge></td>
+                <td>
+                  <button cButton color="info" variant="ghost" size="sm" (click)="edit(c)" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  </button>
+                  <button cButton color="danger" variant="ghost" size="sm" (click)="delete(c.id)" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  `
 })
 export class ClassesComponent implements OnInit {
   items: ClassGroup[] = [];
   form: FormGroup;
   editing = false; editId: number | null = null;
-  cols = ['name', 'level', 'studentCount', 'actions'];
   private schoolId = 1;
 
   constructor(private svc: AdminService, private fb: FormBuilder, private authService: AuthService) {
@@ -61,7 +94,7 @@ export class ClassesComponent implements OnInit {
   load() { this.svc.getClasses(this.schoolId).subscribe(d => this.items = d); }
   onSubmit() {
     if (this.form.invalid) return;
-    const data = { ...this.form.value, school: { id: this.schoolId } };
+    const data = { ...this.form.value, schoolId: this.schoolId };
     if (this.editing && this.editId) { this.svc.updateClass(this.editId, data).subscribe(() => { this.load(); this.cancel(); }); }
     else { this.svc.createClass(data).subscribe(() => { this.load(); this.form.reset({ studentCount: 30 }); }); }
   }

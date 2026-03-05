@@ -1,12 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatCardModule } from '@angular/material/card';
+import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Room } from '../../../core/models';
@@ -14,43 +9,81 @@ import { Room } from '../../../core/models';
 @Component({
   selector: 'app-rooms',
   standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule,
-    MatTableModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule, MatCardModule
-  ],
+  imports: [CommonModule, ReactiveFormsModule, CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule],
   template: `
-    <h2>Rooms</h2>
-    <mat-card class="form-card">
-      <mat-card-content>
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
-          <mat-form-field appearance="outline"><mat-label>Name</mat-label><input matInput formControlName="name" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Capacity</mat-label><input matInput formControlName="capacity" type="number" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Type</mat-label><input matInput formControlName="type" /></mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">{{ editing ? 'Update' : 'Create' }}</button>
-          @if (editing) { <button mat-button type="button" (click)="cancel()">Cancel</button> }
+    <div class="page-header">
+      <h2>Rooms</h2>
+    </div>
+
+    <c-card class="mb-4">
+      <c-card-header><strong>{{ editing ? 'Edit Room' : 'Add New Room' }}</strong></c-card-header>
+      <c-card-body>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="row g-3">
+          <c-col md="4">
+            <label cLabel for="name">Name</label>
+            <input cFormControl id="name" formControlName="name" placeholder="e.g. Room 101" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="capacity">Capacity</label>
+            <input cFormControl id="capacity" formControlName="capacity" type="number" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="type">Type</label>
+            <input cFormControl id="type" formControlName="type" placeholder="e.g. Lecture Hall" />
+          </c-col>
+          <c-col xs="12">
+            <button cButton color="primary" type="submit" [disabled]="form.invalid" class="me-2">
+              {{ editing ? 'Update' : 'Create' }}
+            </button>
+            @if (editing) {
+              <button cButton color="secondary" variant="outline" type="button" (click)="cancel()">Cancel</button>
+            }
+          </c-col>
         </form>
-      </mat-card-content>
-    </mat-card>
-    <table mat-table [dataSource]="items" class="full-width" style="margin-top:16px">
-      <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Name</th><td mat-cell *matCellDef="let r">{{r.name}}</td></ng-container>
-      <ng-container matColumnDef="capacity"><th mat-header-cell *matHeaderCellDef>Capacity</th><td mat-cell *matCellDef="let r">{{r.capacity}}</td></ng-container>
-      <ng-container matColumnDef="type"><th mat-header-cell *matHeaderCellDef>Type</th><td mat-cell *matCellDef="let r">{{r.type}}</td></ng-container>
-      <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef>Actions</th><td mat-cell *matCellDef="let r">
-        <button mat-icon-button color="primary" (click)="edit(r)"><mat-icon>edit</mat-icon></button>
-        <button mat-icon-button color="warn" (click)="delete(r.id)"><mat-icon>delete</mat-icon></button>
-      </td></ng-container>
-      <tr mat-header-row *matHeaderRowDef="cols"></tr>
-      <tr mat-row *matRowDef="let row; columns: cols;"></tr>
-    </table>
-  `,
-  styles: [`.form-card{margin-bottom:16px} form{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}`]
+      </c-card-body>
+    </c-card>
+
+    <c-card>
+      <c-card-header class="d-flex align-items-center justify-content-between">
+        <strong>All Rooms</strong>
+        <c-badge color="primary">{{ items.length }} total</c-badge>
+      </c-card-header>
+      <c-card-body class="p-0">
+        <table cTable striped hover>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Capacity</th>
+              <th>Type</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of items; track r.id) {
+              <tr>
+                <td>{{ r.name }}</td>
+                <td><c-badge color="light" textColor="dark">{{ r.capacity }}</c-badge></td>
+                <td><c-badge color="info" variant="outline">{{ r.type || 'General' }}</c-badge></td>
+                <td>
+                  <button cButton color="info" variant="ghost" size="sm" (click)="edit(r)" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  </button>
+                  <button cButton color="danger" variant="ghost" size="sm" (click)="delete(r.id)" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  `
 })
 export class RoomsComponent implements OnInit {
   items: Room[] = [];
   form: FormGroup;
   editing = false; editId: number | null = null;
-  cols = ['name', 'capacity', 'type', 'actions'];
   private schoolId = 1;
 
   constructor(private svc: AdminService, private fb: FormBuilder, private authService: AuthService) {
@@ -61,7 +94,7 @@ export class RoomsComponent implements OnInit {
   load() { this.svc.getRooms(this.schoolId).subscribe(d => this.items = d); }
   onSubmit() {
     if (this.form.invalid) return;
-    const data = { ...this.form.value, school: { id: this.schoolId } };
+    const data = { ...this.form.value, schoolId: this.schoolId };
     if (this.editing && this.editId) { this.svc.updateRoom(this.editId, data).subscribe(() => { this.load(); this.cancel(); }); }
     else { this.svc.createRoom(data).subscribe(() => { this.load(); this.form.reset({ capacity: 30 }); }); }
   }

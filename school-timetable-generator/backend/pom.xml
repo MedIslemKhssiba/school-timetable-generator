@@ -58,6 +58,11 @@
             <artifactId>optaplanner-spring-boot-starter</artifactId>
             <version>9.44.0.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-ecj</artifactId>
+            <version>9.44.0.Final</version>
+        </dependency>
 
         <!-- JWT -->
         <dependency>

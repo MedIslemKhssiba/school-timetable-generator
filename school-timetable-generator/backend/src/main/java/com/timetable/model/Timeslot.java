@@ -6,7 +6,9 @@ import lombok.*;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "timeslots")
+@Table(name = "timeslots", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"day_of_week", "start_time", "end_time"})
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Timeslot {
 
@@ -15,14 +17,15 @@ public class Timeslot {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "day_of_week", nullable = false)
     private DayOfWeek dayOfWeek;
 
-    @Column(nullable = false)
+    @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
-    @Column(nullable = false)
+    @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
+    @Column(name = "order_in_day")
     private Integer orderInDay;
 }

@@ -35,12 +35,13 @@ public class Teacher {
     @JsonIgnore
     private User user;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "teacher_subjects",
             joinColumns = @JoinColumn(name = "teacher_id"),
             inverseJoinColumns = @JoinColumn(name = "subject_id")
     )
+    @JsonIgnore
     @Builder.Default
     private List<Subject> subjects = new ArrayList<>();
 

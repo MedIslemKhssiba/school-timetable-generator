@@ -6,6 +6,7 @@ import org.optaplanner.core.api.score.stream.Constraint;
 import org.optaplanner.core.api.score.stream.ConstraintFactory;
 import org.optaplanner.core.api.score.stream.ConstraintProvider;
 import org.optaplanner.core.api.score.stream.Joiners;
+import org.optaplanner.core.api.score.stream.ConstraintCollectors;
 
 public class TimetableConstraintProvider implements ConstraintProvider {
 
@@ -18,9 +19,11 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 classGroupConflict(constraintFactory),
                 teacherAvailability(constraintFactory),
                 teacherMaxHours(constraintFactory),
+                roomCapacity(constraintFactory),
                 // Soft constraints
                 teacherRoomStability(constraintFactory),
-                teacherTimeEfficiency(constraintFactory)
+                teacherTimeEfficiency(constraintFactory),
+                subjectVarietyPerDay(constraintFactory)
         };
     }
 
@@ -54,32 +57,6 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Class group conflict");
     }
 
-    // Prefer assigning a teacher to the same room throughout the day
-    Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEachUniquePair(LessonAssignment.class,
-                        Joiners.equal(LessonAssignment::getTeacherId))
-                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
-                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
-                        && l1.getRoom() != null && l2.getRoom() != null
-                        && !l1.getRoom().getId().equals(l2.getRoom().getId()))
-                .penalize(HardSoftScore.ONE_SOFT)
-                .asConstraint("Teacher room stability");
-    }
-
-    // Prefer consecutive lessons for the same teacher on the same day
-    Constraint teacherTimeEfficiency(ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEachUniquePair(LessonAssignment.class,
-                        Joiners.equal(LessonAssignment::getTeacherId))
-                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
-                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
-                        && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
-                        && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) > 2)
-                .penalize(HardSoftScore.ONE_SOFT)
-                .asConstraint("Teacher time efficiency");
-    }
-
     // Teacher must be available at the assigned timeslot
     Constraint teacherAvailability(ConstraintFactory constraintFactory) {
         return constraintFactory
@@ -93,14 +70,70 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Teacher availability");
     }
 
-    // Teacher max hours per week
+    // Teacher max hours per week (uses actual teacher value)
     Constraint teacherMaxHours(ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEach(LessonAssignment.class)
                 .filter(la -> la.getTimeslot() != null && la.getTeacher() != null)
-                .groupBy(LessonAssignment::getTeacherId, org.optaplanner.core.api.score.stream.ConstraintCollectors.count())
-                .filter((teacherId, count) -> count > 20) // default max, ideally from teacher entity
-                .penalize(HardSoftScore.ONE_HARD, (teacherId, count) -> count - 20)
+                .groupBy(LessonAssignment::getTeacherId,
+                        ConstraintCollectors.toList())
+                .filter((teacherId, assignments) -> {
+                    int maxHours = assignments.get(0).getTeacherMaxHours();
+                    return assignments.size() > maxHours;
+                })
+                .penalize(HardSoftScore.ONE_HARD, (teacherId, assignments) ->
+                        assignments.size() - assignments.get(0).getTeacherMaxHours())
                 .asConstraint("Teacher max hours");
+    }
+
+    // Room must have enough capacity for the class
+    Constraint roomCapacity(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEach(LessonAssignment.class)
+                .filter(la -> la.getRoom() != null && la.getClassGroup() != null
+                        && la.getClassGroupStudentCount() > la.getRoomCapacity())
+                .penalize(HardSoftScore.ONE_HARD,
+                        la -> la.getClassGroupStudentCount() - la.getRoomCapacity())
+                .asConstraint("Room capacity");
+    }
+
+    // Prefer assigning a teacher to the same room throughout the day
+    Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEachUniquePair(LessonAssignment.class,
+                        Joiners.equal(LessonAssignment::getTeacherId))
+                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
+                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
+                        && l1.getRoom() != null && l2.getRoom() != null
+                        && !l1.getRoom().getId().equals(l2.getRoom().getId()))
+                .penalize(HardSoftScore.ONE_SOFT)
+                .asConstraint("Teacher room stability");
+    }
+
+    // Prefer consecutive lessons for the same teacher on the same day (minimize gaps)
+    Constraint teacherTimeEfficiency(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEachUniquePair(LessonAssignment.class,
+                        Joiners.equal(LessonAssignment::getTeacherId))
+                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
+                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
+                        && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
+                        && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) > 2)
+                .penalize(HardSoftScore.ONE_SOFT)
+                .asConstraint("Teacher time efficiency");
+    }
+
+    // Penalize having the same subject twice in a row for the same class on the same day
+    Constraint subjectVarietyPerDay(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEachUniquePair(LessonAssignment.class,
+                        Joiners.equal(LessonAssignment::getClassGroupId),
+                        Joiners.equal(LessonAssignment::getSubjectId))
+                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
+                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
+                        && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
+                        && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) == 1)
+                .penalize(HardSoftScore.ONE_SOFT, (l1, l2) -> 2)
+                .asConstraint("Subject variety per day");
     }
 }

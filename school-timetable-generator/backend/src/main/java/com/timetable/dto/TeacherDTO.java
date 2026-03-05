@@ -13,4 +13,12 @@ public class TeacherDTO {
     private Long schoolId;
     private List<Long> subjectIds;
     private int maxHoursPerWeek;
+    private List<SubjectInfo> subjects;
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class SubjectInfo {
+        private Long id;
+        private String name;
+        private String color;
+    }
 }

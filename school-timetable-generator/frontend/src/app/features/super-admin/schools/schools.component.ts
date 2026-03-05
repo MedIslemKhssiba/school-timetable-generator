@@ -1,104 +1,113 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatCardModule } from '@angular/material/card';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule, AlertComponent } from '@coreui/angular';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { School } from '../../../core/models';
 
 @Component({
   selector: 'app-schools',
   standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule,
-    MatTableModule, MatButtonModule, MatIconModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatCardModule, MatSnackBarModule, MatTooltipModule
-  ],
+  imports: [CommonModule, ReactiveFormsModule, CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule, AlertComponent],
   template: `
-    <h2>Schools</h2>
+    <div class="page-header">
+      <h2>Schools</h2>
+    </div>
 
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>{{ editing ? 'Edit School' : 'Add School' }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="schoolForm" (ngSubmit)="onSubmit()">
-          <mat-form-field appearance="outline">
-            <mat-label>Name</mat-label>
-            <input matInput formControlName="name" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Address</mat-label>
-            <input matInput formControlName="address" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Phone</mat-label>
-            <input matInput formControlName="phone" />
-          </mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="schoolForm.invalid">
-            {{ editing ? 'Update' : 'Create' }}
-          </button>
-          @if (editing) {
-            <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
-          }
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>{{ editing ? 'Edit School' : 'Add New School' }}</strong>
+      </c-card-header>
+      <c-card-body>
+        <form [formGroup]="schoolForm" (ngSubmit)="onSubmit()" class="row g-3">
+          <c-col md="4">
+            <label cLabel for="name">Name</label>
+            <input cFormControl id="name" formControlName="name" placeholder="School name" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="address">Address</label>
+            <input cFormControl id="address" formControlName="address" placeholder="Address" />
+          </c-col>
+          <c-col md="4">
+            <label cLabel for="phone">Phone</label>
+            <input cFormControl id="phone" formControlName="phone" placeholder="Phone" />
+          </c-col>
+          <c-col xs="12">
+            <button cButton color="primary" type="submit" [disabled]="schoolForm.invalid" class="me-2">
+              {{ editing ? 'Update' : 'Create' }}
+            </button>
+            @if (editing) {
+              <button cButton color="secondary" variant="outline" type="button" (click)="cancelEdit()">Cancel</button>
+            }
+          </c-col>
         </form>
-      </mat-card-content>
-    </mat-card>
+      </c-card-body>
+    </c-card>
 
-    <table mat-table [dataSource]="schools" class="full-width" style="margin-top:16px">
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Name</th>
-        <td mat-cell *matCellDef="let s">{{ s.name }}</td>
-      </ng-container>
-      <ng-container matColumnDef="address">
-        <th mat-header-cell *matHeaderCellDef>Address</th>
-        <td mat-cell *matCellDef="let s">{{ s.address }}</td>
-      </ng-container>
-      <ng-container matColumnDef="phone">
-        <th mat-header-cell *matHeaderCellDef>Phone</th>
-        <td mat-cell *matCellDef="let s">{{ s.phone }}</td>
-      </ng-container>
-      <ng-container matColumnDef="active">
-        <th mat-header-cell *matHeaderCellDef>Status</th>
-        <td mat-cell *matCellDef="let s">
-          <span [style.color]="s.active ? '#4caf50' : '#f44336'">{{ s.active ? 'Active' : 'Inactive' }}</span>
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>Actions</th>
-        <td mat-cell *matCellDef="let s">
-          <button mat-icon-button color="primary" (click)="edit(s)"><mat-icon>edit</mat-icon></button>
-          <button mat-icon-button [color]="s.active ? 'warn' : 'primary'" (click)="toggleActive(s)"
-            [matTooltip]="s.active ? 'Deactivate' : 'Activate'">
-            <mat-icon>{{ s.active ? 'block' : 'check_circle' }}</mat-icon>
-          </button>
-          <button mat-icon-button color="warn" (click)="delete(s.id)"><mat-icon>delete</mat-icon></button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
-  `,
-  styles: [`
-    .form-card { margin-bottom: 16px; }
-    form { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-  `]
+    @if (successMsg) {
+      <c-alert color="success" [dismissible]="true" (visibleChange)="successMsg = ''">{{ successMsg }}</c-alert>
+    }
+
+    <c-card>
+      <c-card-header class="d-flex align-items-center justify-content-between">
+        <strong>All Schools</strong>
+        <c-badge color="primary">{{ schools.length }} total</c-badge>
+      </c-card-header>
+      <c-card-body class="p-0">
+        <table cTable striped hover>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Address</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of schools; track s.id) {
+              <tr>
+                <td><strong>{{ s.name }}</strong></td>
+                <td>{{ s.address || '-' }}</td>
+                <td>{{ s.phone || '-' }}</td>
+                <td>
+                  <c-badge [color]="s.active ? 'success' : 'danger'">
+                    {{ s.active ? 'Active' : 'Inactive' }}
+                  </c-badge>
+                </td>
+                <td>
+                  <button cButton color="info" variant="ghost" size="sm" (click)="edit(s)" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  </button>
+                  <button cButton [color]="s.active ? 'warning' : 'success'" variant="ghost" size="sm" (click)="toggleActive(s)" [title]="s.active ? 'Deactivate' : 'Activate'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      @if (s.active) {
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.902 7.902 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.902 7.902 0 0 1 20 12c0 4.42-3.58 8-8 8z"/>
+                      } @else {
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      }
+                    </svg>
+                  </button>
+                  <button cButton color="danger" variant="ghost" size="sm" (click)="delete(s.id)" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  `
 })
 export class SchoolsComponent implements OnInit {
   schools: School[] = [];
   schoolForm: FormGroup;
   editing = false;
   editId: number | null = null;
-  displayedColumns = ['name', 'address', 'phone', 'active', 'actions'];
+  successMsg = '';
 
-  constructor(private superAdminService: SuperAdminService, private fb: FormBuilder, private snackBar: MatSnackBar) {
+  constructor(private superAdminService: SuperAdminService, private fb: FormBuilder) {
     this.schoolForm = this.fb.group({
       name: ['', Validators.required],
       address: [''],
@@ -152,7 +161,7 @@ export class SchoolsComponent implements OnInit {
       const idx = this.schools.findIndex(s => s.id === school.id);
       if (idx >= 0) this.schools[idx] = updated;
       this.schools = [...this.schools];
-      this.snackBar.open(`School ${updated.active ? 'activated' : 'deactivated'}`, 'OK', { duration: 3000 });
+      this.successMsg = `School ${updated.active ? 'activated' : 'deactivated'}`;
     });
   }
 }

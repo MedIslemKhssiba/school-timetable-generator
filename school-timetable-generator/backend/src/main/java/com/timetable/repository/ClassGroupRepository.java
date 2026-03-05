@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ClassGroupRepository extends JpaRepository<ClassGroup, Long> {
     List<ClassGroup> findBySchoolId(Long schoolId);
+    long countBySchoolId(Long schoolId);
 }

@@ -34,8 +34,7 @@ public class SuperAdminController {
     public ResponseEntity<Map<String, Object>> getDashboard() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalSchools", schoolService.getAllSchools().size());
-        stats.put("totalAdmins", userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.ROLE_ADMIN).count());
+        stats.put("totalAdmins", userRepository.countByRole(Role.ROLE_ADMIN));
         stats.put("totalUsers", userRepository.count());
         return ResponseEntity.ok(stats);
     }
@@ -46,10 +45,7 @@ public class SuperAdminController {
 
     @GetMapping("/admins")
     public ResponseEntity<List<User>> getAllAdmins() {
-        List<User> admins = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.ROLE_ADMIN)
-                .toList();
-        return ResponseEntity.ok(admins);
+        return ResponseEntity.ok(userRepository.findByRole(Role.ROLE_ADMIN));
     }
 
     @PostMapping("/admins")
