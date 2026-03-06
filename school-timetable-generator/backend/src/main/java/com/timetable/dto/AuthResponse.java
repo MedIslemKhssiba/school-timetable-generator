@@ -10,4 +10,5 @@ public class AuthResponse {
     private String firstName;
     private String lastName;
     private Long schoolId;
+    private long expiresIn;
 }

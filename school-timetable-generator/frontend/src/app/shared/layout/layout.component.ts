@@ -58,7 +58,7 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
 
         <span class="ms-auto"></span>
 
-        <div cDropdown class="header-user">
+        <c-dropdown class="header-user">
           <a cDropdownToggle class="user-toggle">
             <div class="user-avatar-sm">{{ userInitials }}</div>
             <div class="d-none d-md-flex flex-column lh-sm">
@@ -72,7 +72,7 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
             <div class="dropdown-divider"></div>
             <a cDropdownItem (click)="logout()" class="cursor-pointer">Sign Out</a>
           </div>
-        </div>
+        </c-dropdown>
       </header>
 
       <div class="app-body">
@@ -190,11 +190,10 @@ export class LayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
-      if (user) {
-        this.userName = `${user.firstName} ${user.lastName}`;
-        this.userInitials = `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
-        this.setNavLinks(user.role);
-      }
+      if (!user) return;
+      this.userName = `${user.firstName} ${user.lastName}`;
+      this.userInitials = `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
+      this.setNavLinks(user.role);
     });
   }
 

@@ -11,6 +11,7 @@ import com.timetable.repository.UserRepository;
 import com.timetable.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,27 +28,24 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
 
     public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
 
-        String token = tokenProvider.generateToken(authentication);
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            String token = tokenProvider.generateToken(authentication);
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        return AuthResponse.builder()
-                .token(token)
-                .email(user.getEmail())
-                .role(user.getRole().name())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .schoolId(user.getSchool() != null ? user.getSchool().getId() : null)
-                .build();
+            return buildAuthResponse(token, user);
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
     }
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new IllegalStateException("Email already exists");
         }
 
         User user = User.builder()
@@ -60,7 +58,7 @@ public class AuthService {
 
         if (request.getSchoolId() != null) {
             School school = schoolRepository.findById(request.getSchoolId())
-                    .orElseThrow(() -> new RuntimeException("School not found"));
+                    .orElseThrow(() -> new IllegalArgumentException("School not found"));
             user.setSchool(school);
         }
 
@@ -71,6 +69,10 @@ public class AuthService {
         );
         String token = tokenProvider.generateToken(authentication);
 
+        return buildAuthResponse(token, user);
+    }
+
+    private AuthResponse buildAuthResponse(String token, User user) {
         return AuthResponse.builder()
                 .token(token)
                 .email(user.getEmail())
@@ -78,6 +80,7 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .schoolId(user.getSchool() != null ? user.getSchool().getId() : null)
+                .expiresIn(tokenProvider.getExpirationMs())
                 .build();
     }
 }

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   CardModule, FormModule, GridModule, ButtonModule, AlertComponent, SpinnerComponent
@@ -227,15 +228,24 @@ export class LoginComponent {
     this.authService.login(this.loginForm.value).subscribe({
       next: (res) => {
         this.loading = false;
-        const role = res.role;
-        if (role === 'ROLE_SUPER_ADMIN') this.router.navigate(['/super-admin']);
-        else if (role === 'ROLE_ADMIN') this.router.navigate(['/admin']);
-        else this.router.navigate(['/teacher']);
+        this.redirectByRole(res.role);
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.loading = false;
-        this.errorMessage = 'Invalid email or password';
+        if (err.status === 401) {
+          this.errorMessage = err.error?.message || 'Invalid email or password';
+        } else if (err.status === 0) {
+          this.errorMessage = 'Unable to connect to server. Please try again later.';
+        } else {
+          this.errorMessage = 'An unexpected error occurred. Please try again.';
+        }
       }
     });
+  }
+
+  private redirectByRole(role: string | null): void {
+    if (role === 'ROLE_SUPER_ADMIN') this.router.navigate(['/super-admin']);
+    else if (role === 'ROLE_ADMIN') this.router.navigate(['/admin']);
+    else this.router.navigate(['/teacher']);
   }
 }

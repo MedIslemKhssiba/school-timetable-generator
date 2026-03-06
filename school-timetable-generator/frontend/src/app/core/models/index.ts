@@ -14,6 +14,17 @@ export interface AuthResponse {
   firstName: string;
   lastName: string;
   schoolId?: number;
+  expiresIn: number;
+}
+
+export interface AuthSession {
+  token: string;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  schoolId?: number;
+  expiresAt: number;
 }
 
 export interface LoginRequest {

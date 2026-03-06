@@ -9,6 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+      <div style="text-align:center;color:white;">
+        <div style="width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;margin:0 auto 16px;animation:spin 1s linear infinite;"></div>
+        <div style="font-family:system-ui,sans-serif;font-size:1.1rem;font-weight:500;">Loading EduSchedule...</div>
+      </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </app-root>
 </body>
 </html>
