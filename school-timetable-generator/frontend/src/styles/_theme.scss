@@ -1,0 +1,370 @@
+// ═══════════════════════════════════════════════════════════
+// EcoCode Global Theme — CoreUI Overrides & Design System
+// ═══════════════════════════════════════════════════════════
+@use 'variables' as *;
+
+// ── CSS Custom Properties ──
+:root {
+  --cui-primary: #{$primary};
+  --cui-primary-rgb: 21, 101, 192;
+  --cui-secondary: #{$secondary};
+  --cui-success: #{$success};
+  --cui-info: #{$info};
+  --cui-warning: #{$warning};
+  --cui-danger: #{$danger};
+  --cui-body-bg: #{$bg-body};
+  --cui-body-color: #{$text-primary};
+  --cui-border-color: #{$border-color};
+  --cui-card-border-color: #{$border-color};
+}
+
+// ══════════════════════════════════════════════════════
+// CARDS
+// ══════════════════════════════════════════════════════
+.card, c-card {
+  border-radius: $radius-md !important;
+  border: 1px solid $border-color !important;
+  box-shadow: $shadow-card !important;
+  background: $white !important;
+  overflow: hidden;
+  transition: box-shadow $transition-base, transform $transition-base;
+}
+
+.card-header, c-card-header {
+  background: $white !important;
+  border-bottom: 1px solid $gray-200 !important;
+  padding: $spacing-md $spacing-lg !important;
+  font-weight: 600;
+  font-size: $font-size-base;
+  color: $text-primary;
+  strong { font-weight: 700; }
+}
+
+.card-body, c-card-body {
+  padding: $spacing-lg !important;
+}
+
+// ══════════════════════════════════════════════════════
+// BUTTONS
+// ══════════════════════════════════════════════════════
+.btn, [cButton] {
+  border-radius: $radius !important;
+  font-weight: 600 !important;
+  font-size: $font-size-base !important;
+  padding: 0.5rem 1.25rem !important;
+  transition: all $transition-base !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  letter-spacing: 0.01em !important;
+  border: none !important;
+  cursor: pointer !important;
+  svg { flex-shrink: 0; }
+  &:focus { box-shadow: 0 0 0 3px rgba($primary, 0.2) !important; }
+}
+
+.btn-primary, [cButton][color="primary"] {
+  background: $primary-gradient !important;
+  color: $white !important;
+  box-shadow: 0 2px 8px rgba($primary, 0.25) !important;
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba($primary, 0.35) !important;
+  }
+  &:active:not(:disabled) { transform: translateY(0); }
+}
+
+.btn-success, [cButton][color="success"] {
+  background: linear-gradient(135deg, $success, darken($success, 5%)) !important;
+  color: $white !important;
+  box-shadow: 0 2px 8px rgba($success, 0.25) !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba($success, 0.35) !important; }
+}
+
+.btn-danger, [cButton][color="danger"]:not([variant="ghost"]):not([variant="outline"]) {
+  background: linear-gradient(135deg, $danger, darken($danger, 5%)) !important;
+  color: $white !important;
+  box-shadow: 0 2px 8px rgba($danger, 0.2) !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba($danger, 0.3) !important; }
+}
+
+.btn-warning, [cButton][color="warning"] {
+  background: linear-gradient(135deg, $warning, darken($warning, 8%)) !important;
+  color: $white !important;
+  box-shadow: 0 2px 8px rgba($warning, 0.2) !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+}
+
+.btn-info, [cButton][color="info"]:not([variant="ghost"]):not([variant="outline"]) {
+  background: linear-gradient(135deg, $info, $accent-light) !important;
+  color: $white !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba($info, 0.3) !important; }
+}
+
+.btn-secondary, [cButton][color="secondary"] {
+  background: $gray-200 !important;
+  color: $text-primary !important;
+  border: 1px solid $gray-300 !important;
+  &:hover:not(:disabled) { background: $gray-300 !important; }
+}
+
+.btn-light, [cButton][color="light"] {
+  background: $white !important;
+  color: $text-secondary !important;
+  border: 1px solid $gray-300 !important;
+  box-shadow: $shadow-xs !important;
+  &:hover:not(:disabled) { background: $gray-100 !important; color: $text-primary !important; }
+}
+
+[cButton][variant="outline"] {
+  background: transparent !important;
+  border: 1.5px solid currentColor !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+}
+
+[cButton][color="info"][variant="outline"] {
+  color: $info !important; border-color: $info !important;
+  &:hover { background: $info-light !important; }
+}
+
+[cButton][color="secondary"][variant="outline"] {
+  color: $secondary !important; border-color: $gray-400 !important;
+  &:hover { background: $gray-100 !important; }
+}
+
+[cButton][variant="ghost"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0.35rem 0.6rem !important;
+  border-radius: $radius-sm !important;
+  &:hover { transform: none !important; }
+}
+
+[cButton][color="info"][variant="ghost"]    { color: $info !important;    &:hover { background: $info-light !important; } }
+[cButton][color="danger"][variant="ghost"]  { color: $danger !important;  &:hover { background: $danger-light !important; } }
+[cButton][color="warning"][variant="ghost"] { color: $warning !important; &:hover { background: $warning-light !important; } }
+[cButton][color="success"][variant="ghost"] { color: $success !important; &:hover { background: $success-light !important; } }
+
+.btn:disabled, [cButton]:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+// ══════════════════════════════════════════════════════
+// FORMS
+// ══════════════════════════════════════════════════════
+.form-control, [cFormControl], input[cFormControl], select[cFormControl], textarea[cFormControl] {
+  border-radius: $radius !important;
+  border: 1.5px solid $border-input !important;
+  padding: 0.6rem 0.9rem !important;
+  font-size: $font-size-base !important;
+  color: $text-primary !important;
+  background: $white !important;
+  transition: border-color $transition-fast, box-shadow $transition-fast !important;
+  &::placeholder { color: $text-muted !important; }
+  &:focus { border-color: $primary-light !important; box-shadow: 0 0 0 3px rgba($primary, 0.1) !important; outline: none !important; }
+  &:hover:not(:focus):not(:disabled) { border-color: $gray-400 !important; }
+}
+
+.form-label, [cLabel], label[cLabel] {
+  font-weight: 600 !important;
+  font-size: $font-size-sm !important;
+  color: $text-primary !important;
+  margin-bottom: 0.35rem !important;
+  letter-spacing: 0.01em;
+}
+
+.input-group {
+  .input-group-text {
+    border-radius: $radius 0 0 $radius !important;
+    border: 1.5px solid $border-input !important;
+    border-right: none !important;
+    background: $gray-50 !important;
+    color: $text-muted;
+    padding: 0.6rem 0.75rem !important;
+  }
+  .form-control, [cFormControl] {
+    border-left: none !important;
+    border-radius: 0 $radius $radius 0 !important;
+  }
+  .input-group-text:last-child {
+    border-radius: 0 $radius $radius 0 !important;
+    border-left: none !important;
+    border-right: 1.5px solid $border-input !important;
+  }
+}
+
+select[multiple][cFormControl] {
+  min-height: 80px;
+  padding: $spacing-sm !important;
+  option { padding: 6px 10px; border-radius: $radius-xs; margin-bottom: 2px; &:checked { background: $primary-lighter; color: $primary-dark; } }
+}
+
+// ══════════════════════════════════════════════════════
+// TABLES
+// ══════════════════════════════════════════════════════
+.table, table[cTable] {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: $font-size-base;
+
+  thead th {
+    background: $gray-50 !important;
+    color: $text-secondary !important;
+    font-weight: 700 !important;
+    font-size: $font-size-xs !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    padding: 0.85rem 1rem !important;
+    border-bottom: 2px solid $gray-200 !important;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background $transition-fast;
+    &:hover { background: $primary-lighter !important; }
+    td {
+      padding: 0.85rem 1rem !important;
+      border-bottom: 1px solid $gray-200 !important;
+      vertical-align: middle !important;
+      color: $text-primary;
+    }
+    &:last-child td { border-bottom: none !important; }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// BADGES
+// ══════════════════════════════════════════════════════
+.badge, c-badge {
+  font-weight: 600 !important;
+  font-size: $font-size-xs !important;
+  padding: 0.3em 0.75em !important;
+  border-radius: $radius-full !important;
+  letter-spacing: 0.02em;
+}
+
+// ══════════════════════════════════════════════════════
+// ALERTS
+// ══════════════════════════════════════════════════════
+.alert, c-alert {
+  border-radius: $radius-md !important;
+  font-size: $font-size-base;
+  font-weight: 500;
+  border: none !important;
+  box-shadow: $shadow-sm;
+  padding: 0.85rem 1.25rem !important;
+}
+
+// ══════════════════════════════════════════════════════
+// DROPDOWN MENUS
+// ══════════════════════════════════════════════════════
+.dropdown-menu {
+  border-radius: $radius-md !important;
+  border: 1px solid $gray-200 !important;
+  box-shadow: $shadow-md !important;
+  padding: $spacing-sm !important;
+  min-width: 200px;
+  animation: dropFade 150ms ease;
+
+  .dropdown-item {
+    border-radius: $radius-sm !important;
+    padding: 0.5rem 0.85rem !important;
+    font-size: $font-size-base !important;
+    color: $text-primary;
+    transition: background $transition-fast;
+    margin-bottom: 1px;
+    &:hover { background: $primary-lighter !important; color: $primary-dark !important; }
+    &:active { background: $primary !important; color: $white !important; }
+  }
+
+  .dropdown-header {
+    font-size: $font-size-xs !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $text-muted !important;
+    padding: 0.5rem 0.85rem !important;
+  }
+
+  .dropdown-divider { border-color: $gray-200; margin: $spacing-xs 0; }
+}
+
+@keyframes dropFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════
+.progress, c-progress {
+  border-radius: $radius-full !important;
+  background: $gray-200 !important;
+  height: 6px !important;
+  overflow: hidden;
+  .progress-bar, c-progress-bar {
+    background: $primary-gradient !important;
+    border-radius: $radius-full !important;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════════════
+.modal-backdrop {
+  background: rgba(16, 42, 67, 0.5) !important;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  border-radius: $radius-lg !important;
+  border: none !important;
+  box-shadow: $shadow-modal !important;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: $spacing-lg $spacing-lg $spacing-md !important;
+  border-bottom: 1px solid $gray-200 !important;
+  .modal-title { font-weight: 700; font-size: $font-size-lg; }
+  .btn-close { opacity: 0.4; &:hover { opacity: 1; } }
+}
+
+.modal-body {
+  padding: $spacing-lg !important;
+}
+
+.modal-footer {
+  padding: $spacing-md $spacing-lg !important;
+  border-top: 1px solid $gray-200 !important;
+  gap: 8px;
+}
+
+// ══════════════════════════════════════════════════════
+// STAT ICON (dashboard cards)
+// ══════════════════════════════════════════════════════
+.stat-icon {
+  width: 54px; height: 54px;
+  border-radius: $radius-md;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform $transition-base;
+  svg { width: 26px; height: 26px; fill: $white; }
+}
+
+.stat-icon.bg-primary, .bg-primary.stat-icon { background: $primary-gradient !important; }
+.stat-icon.bg-info, .bg-info.stat-icon       { background: linear-gradient(135deg, $info, $accent-light) !important; }
+.stat-icon.bg-warning, .bg-warning.stat-icon  { background: linear-gradient(135deg, $warning, lighten($warning, 10%)) !important; }
+.stat-icon.bg-success, .bg-success.stat-icon  { background: linear-gradient(135deg, $success, lighten($success, 12%)) !important; }
+.stat-icon.bg-danger, .bg-danger.stat-icon    { background: linear-gradient(135deg, $danger, lighten($danger, 12%)) !important; }
+
+// ══════════════════════════════════════════════════════
+// RESPONSIVE
+// ══════════════════════════════════════════════════════
+@media (max-width: $breakpoint-md) {
+  table[cTable] { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

@@ -16,15 +16,13 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
     <div class="app-sidebar" [class.collapsed]="sidebarCollapsed" [class.mobile-open]="sidebarMobileOpen">
       <div class="sidebar-brand">
         <a class="brand-link" routerLink="./">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="white">
-            <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
-          </svg>
-          <span class="brand-text">EduSchedule</span>
+          <img src="https://i.postimg.cc/9QHRyzcn/Logo-ecocode.png" alt="EcoCode" class="brand-logo" />
+          <span class="brand-text">EcoCode</span>
         </a>
       </div>
 
       <nav class="sidebar-nav">
-        <div class="nav-section-title">Navigation</div>
+        <div class="nav-section-title">MAIN MENU</div>
         @for (link of navLinks; track link.path) {
           <a class="nav-entry" [routerLink]="link.path" routerLinkActive="active">
             <span class="nav-icon" [innerHTML]="link.icon"></span>
@@ -32,6 +30,7 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
           </a>
         }
         <div class="nav-divider"></div>
+        <div class="nav-section-title">ACCOUNT</div>
         <a class="nav-entry" routerLink="/profile" routerLinkActive="active">
           <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
           <span class="nav-label">My Profile</span>
@@ -41,6 +40,16 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
           <span class="nav-label">Sign Out</span>
         </a>
       </nav>
+
+      <div class="sidebar-footer">
+        <div class="footer-user">
+          <div class="footer-avatar">{{ userInitials }}</div>
+          <div class="footer-info">
+            <span class="footer-name">{{ userName }}</span>
+            <span class="footer-role">{{ roleLabel }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     @if (sidebarMobileOpen) {
@@ -49,12 +58,16 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
 
     <div class="app-main" [class.sidebar-collapsed]="sidebarCollapsed">
       <header class="app-header">
-        <button class="menu-toggle d-lg-none" (click)="sidebarMobileOpen = !sidebarMobileOpen">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="#636f83"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        <button class="menu-toggle d-lg-none" (click)="sidebarMobileOpen = !sidebarMobileOpen" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
         </button>
-        <button class="menu-toggle d-none d-lg-flex" (click)="sidebarCollapsed = !sidebarCollapsed">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="#636f83"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        <button class="menu-toggle d-none d-lg-flex" (click)="sidebarCollapsed = !sidebarCollapsed" aria-label="Collapse sidebar">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
         </button>
+
+        <div class="header-breadcrumb d-none d-md-flex">
+          <span class="breadcrumb-app">EcoCode</span>
+        </div>
 
         <span class="ms-auto"></span>
 
@@ -62,15 +75,22 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
           <a cDropdownToggle class="user-toggle">
             <div class="user-avatar-sm">{{ userInitials }}</div>
             <div class="d-none d-md-flex flex-column lh-sm">
-              <span class="fw-semibold small">{{ userName }}</span>
-              <span class="text-body-secondary" style="font-size: 0.75rem;">{{ roleLabel }}</span>
+              <span class="user-name">{{ userName }}</span>
+              <span class="user-role">{{ roleLabel }}</span>
             </div>
+            <svg class="dropdown-chevron d-none d-md-block" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
           </a>
-          <div cDropdownMenu class="dropdown-menu-end pt-0">
-            <div class="dropdown-header bg-body-secondary text-body-secondary fw-semibold rounded-top mb-2 px-3 py-2">Account</div>
-            <a cDropdownItem routerLink="/profile">Profile</a>
+          <div cDropdownMenu class="dropdown-menu-end">
+            <div class="dropdown-header">Account</div>
+            <a cDropdownItem routerLink="/profile">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="me-2"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              Profile
+            </a>
             <div class="dropdown-divider"></div>
-            <a cDropdownItem (click)="logout()" class="cursor-pointer">Sign Out</a>
+            <a cDropdownItem (click)="logout()" class="cursor-pointer text-danger">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="me-2"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              Sign Out
+            </a>
           </div>
         </c-dropdown>
       </header>
@@ -83,86 +103,152 @@ import { ContainerComponent, DropdownModule } from '@coreui/angular';
     </div>
   `,
   styles: [`
-    :host { display: flex; min-height: 100vh; background: #f4f6f9; }
+    :host { display: flex; min-height: 100vh; background: #F0F4F8; }
 
+    /* ── SIDEBAR ── */
     .app-sidebar {
-      width: 256px; min-height: 100vh; background: #3c4b64; color: white;
-      display: flex; flex-direction: column; transition: width 0.2s ease;
-      position: fixed; top: 0; left: 0; z-index: 1030; height: 100vh; overflow-y: auto;
+      width: 260px; min-height: 100vh;
+      background: linear-gradient(180deg, #102A43 0%, #0B1F33 100%);
+      color: white;
+      display: flex; flex-direction: column;
+      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: fixed; top: 0; left: 0; z-index: 1030; height: 100vh;
+      overflow-y: auto; overflow-x: hidden;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
     }
-    .app-sidebar.collapsed { width: 64px; }
+    .app-sidebar.collapsed { width: 68px; }
     .app-sidebar.collapsed .brand-text,
     .app-sidebar.collapsed .nav-label,
-    .app-sidebar.collapsed .nav-section-title { display: none; }
+    .app-sidebar.collapsed .nav-section-title,
+    .app-sidebar.collapsed .sidebar-footer .footer-info { display: none; }
+    .app-sidebar.collapsed .sidebar-brand { justify-content: center; padding: 1rem 0.5rem; }
+    .app-sidebar.collapsed .nav-entry { justify-content: center; padding: 0.65rem; }
+    .app-sidebar.collapsed .sidebar-footer { padding: 0.75rem; justify-content: center; }
 
     .sidebar-brand {
-      display: flex; align-items: center; justify-content: center;
-      padding: 1rem; min-height: 64px; background: rgba(0,0,0,0.15);
+      display: flex; align-items: center; justify-content: flex-start;
+      padding: 1.25rem 1.5rem; min-height: 64px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .brand-link {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 12px;
       text-decoration: none; color: white;
     }
-    .brand-text { font-size: 1.15rem; font-weight: 700; }
-
-    .sidebar-nav { flex: 1; padding: 0.5rem 0.75rem; }
-    .nav-section-title {
-      padding: 0.75rem 1rem 0.4rem; font-size: 0.7rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.4);
+    .brand-logo {
+      width: 38px; height: 38px; border-radius: 10px;
+      object-fit: contain; flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(21, 101, 192, 0.35);
     }
-    .nav-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 0.75rem 0; }
+    .brand-text { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+
+    .sidebar-nav { flex: 1; padding: 0.75rem; }
+    .nav-section-title {
+      padding: 1rem 1rem 0.4rem; font-size: 0.65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3);
+    }
+    .nav-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0.75rem 0; }
 
     .nav-entry {
-      display: flex; align-items: center; gap: 12px; padding: 0.6rem 1rem;
-      border-radius: 8px; color: rgba(255,255,255,0.7); text-decoration: none;
-      font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease;
-      margin-bottom: 2px;
+      display: flex; align-items: center; gap: 12px; padding: 0.65rem 1rem;
+      border-radius: 10px; color: rgba(255,255,255,0.6); text-decoration: none;
+      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-bottom: 3px; position: relative;
     }
-    .nav-entry:hover { color: white; background: rgba(255,255,255,0.08); }
-    .nav-entry.active { color: white; background: rgba(99,102,241,0.5); font-weight: 600; }
-    .nav-entry.logout-entry { color: rgba(255,255,255,0.5); }
-    .nav-entry.logout-entry:hover { color: #fca5a5; background: rgba(239,68,68,0.15); }
+    .nav-entry:hover { color: white; background: rgba(255,255,255,0.07); }
+    .nav-entry.active {
+      color: white;
+      background: linear-gradient(135deg, rgba(21,101,192,0.6), rgba(66,165,245,0.4));
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(21,101,192,0.3);
+    }
+    .nav-entry.active::before {
+      content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+      width: 4px; height: 20px; background: #42A5F5; border-radius: 0 3px 3px 0;
+    }
+    .nav-entry.logout-entry { color: rgba(255,255,255,0.4); }
+    .nav-entry.logout-entry:hover { color: #ef9a9a; background: rgba(198,40,40,0.15); }
 
     .nav-icon { display: flex; flex-shrink: 0; }
     .nav-icon :deep(svg) { fill: currentColor; }
 
-    .sidebar-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1029;
+    /* ── SIDEBAR FOOTER ── */
+    .sidebar-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .footer-user {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .footer-avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #1565C0, #42A5F5);
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+    }
+    .footer-info { display: flex; flex-direction: column; overflow: hidden; }
+    .footer-name {
+      font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.9);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .footer-role {
+      font-size: 0.7rem; color: rgba(255,255,255,0.4);
     }
 
+    .sidebar-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1029;
+      backdrop-filter: blur(2px);
+    }
+
+    /* ── MAIN AREA ── */
     .app-main {
       flex: 1; min-width: 0; display: flex; flex-direction: column;
-      margin-left: 256px; transition: margin-left 0.2s ease;
+      margin-left: 260px; transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .app-main.sidebar-collapsed { margin-left: 64px; }
+    .app-main.sidebar-collapsed { margin-left: 68px; }
 
     .app-header {
-      height: 64px; background: white; border-bottom: 1px solid #e9ecef;
-      display: flex; align-items: center; padding: 0 1rem; gap: 0.5rem;
+      height: 64px; background: white;
+      border-bottom: 1px solid #E2E8F0;
+      display: flex; align-items: center; padding: 0 1.25rem; gap: 0.75rem;
       position: sticky; top: 0; z-index: 1020;
+      box-shadow: 0 1px 3px rgba(16, 42, 67, 0.04);
     }
 
     .menu-toggle {
-      cursor: pointer; padding: 0.25rem 0.5rem; border: none; background: transparent;
-      border-radius: 4px; display: flex; align-items: center;
+      cursor: pointer; padding: 0.4rem; border: none; background: transparent;
+      border-radius: 8px; display: flex; align-items: center;
+      color: #636E80; transition: all 0.15s;
     }
-    .menu-toggle:hover { background: #f0f2f5; }
+    .menu-toggle:hover { background: #F0F4F8; color: #1565C0; }
 
+    .header-breadcrumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.8rem; color: #8892A4;
+    }
+    .breadcrumb-app { font-weight: 600; color: #636E80; }
+
+    /* ── HEADER USER ── */
     .header-user { position: relative; }
     .user-toggle {
       cursor: pointer; text-decoration: none; color: inherit;
-      display: flex; align-items: center; gap: 8px;
-      padding: 4px 8px; border-radius: 8px; transition: background 0.15s;
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 10px; border-radius: 10px; transition: background 0.15s;
     }
-    .user-toggle:hover { background: #f0f2f5; }
-    .user-toggle::after { display: none; }
+    .user-toggle:hover { background: #F0F4F8; }
+    .user-toggle::after { display: none !important; }
 
     .user-avatar-sm {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;
-      display: flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, #1565C0, #42A5F5);
+      color: white; display: flex; align-items: center; justify-content: center;
       font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(21,101,192,0.2);
     }
+
+    .user-name { font-weight: 600; font-size: 0.85rem; color: #1A2236; }
+    .user-role { font-size: 0.72rem; color: #8892A4; }
+    .dropdown-chevron { color: #B0B8C9; margin-left: -2px; }
 
     .app-body { flex: 1; }
     .cursor-pointer { cursor: pointer; }

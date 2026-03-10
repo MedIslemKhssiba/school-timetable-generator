@@ -1,4 +1,5 @@
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\config\CorsConfig.java
+C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\config\DataInitializer.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\config\SecurityConfig.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\controller\AdminController.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\controller\AuthController.java
@@ -12,12 +13,16 @@ C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\controller
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\AuthResponse.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\AvailabilityDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\ChangePasswordRequest.java
+C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\ClassGroupDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\LessonDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\LoginRequest.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\ProfileDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\RegisterRequest.java
+C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\RoomDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\SchoolDTO.java
+C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\SubjectDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\TeacherDTO.java
+C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\exception\GlobalExceptionHandler.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\exception\ResourceNotFoundException.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\model\ClassGroup.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\model\DayOfWeek.java
@@ -39,6 +44,7 @@ C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\repository
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\repository\TeacherRepository.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\repository\TimeslotRepository.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\repository\UserRepository.java
+C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\security\JwtAccessDeniedHandler.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\security\JwtAuthenticationEntryPoint.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\security\JwtAuthenticationFilter.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\security\JwtTokenProvider.java

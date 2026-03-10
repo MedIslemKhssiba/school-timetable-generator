@@ -23,10 +23,8 @@ import {
       </div>
       <div class="login-wrapper">
         <div class="login-brand">
-          <svg viewBox="0 0 24 24" width="48" height="48" fill="white">
-            <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
-          </svg>
-          <h1>EduSchedule</h1>
+          <img src="https://i.postimg.cc/9QHRyzcn/Logo-ecocode.png" alt="EcoCode" class="brand-logo" />
+          <h1>EcoCode</h1>
           <p>Smart Timetable Generator</p>
         </div>
 
@@ -112,7 +110,7 @@ import {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, #0D47A1 0%, #1565C0 40%, #1E88E5 70%, #42A5F5 100%);
       position: relative;
       overflow: hidden;
       padding: 24px;
@@ -127,21 +125,22 @@ import {
     .bg-shape {
       position: absolute;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
     }
 
     .bg-shape-1 {
-      width: 500px;
-      height: 500px;
-      top: -150px;
-      right: -100px;
+      width: 600px;
+      height: 600px;
+      top: -200px;
+      right: -150px;
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .bg-shape-2 {
-      width: 400px;
-      height: 400px;
-      bottom: -120px;
-      left: -80px;
+      width: 450px;
+      height: 450px;
+      bottom: -150px;
+      left: -100px;
+      background: rgba(255, 255, 255, 0.04);
     }
 
     .login-wrapper {
@@ -156,50 +155,72 @@ import {
       margin-bottom: 2rem;
       color: white;
 
+      .brand-logo {
+        width: 80px; height: 80px;
+        border-radius: 18px;
+        margin-bottom: 16px;
+        filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2));
+        object-fit: contain;
+      }
+
       h1 {
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 12px 0 6px;
+        font-size: 2.25rem;
+        font-weight: 800;
+        margin: 0 0 6px;
         letter-spacing: -0.03em;
       }
 
       p {
-        opacity: 0.8;
+        opacity: 0.75;
         margin: 0;
         font-size: 0.95rem;
+        font-weight: 400;
       }
     }
 
     .login-card {
-      border-radius: 16px !important;
+      border-radius: 20px !important;
       overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+      border: none !important;
     }
 
     .login-btn {
-      font-size: 1rem;
-      border-radius: 10px !important;
+      font-size: 1rem !important;
+      border-radius: 12px !important;
+      padding: 0.7rem 1.5rem !important;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      background: linear-gradient(135deg, #1565C0, #1E88E5) !important;
       border: none !important;
-      transition: transform 0.15s, box-shadow 0.15s;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em;
 
       &:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(21, 101, 192, 0.4) !important;
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
       }
     }
 
     .input-group-text {
-      background: #f8f9fa;
-      border-color: #d8dbe0;
+      background: #F5F7FA;
+      border-color: #CBD5E1;
     }
 
     .cursor-pointer { cursor: pointer; }
 
+    input::-ms-reveal,
+    input::-webkit-credentials-auto-fill-button { display: none !important; }
+
     @media (max-width: 480px) {
-      .login-brand h1 { font-size: 1.5rem; }
+      .login-brand h1 { font-size: 1.75rem; }
+      .login-card { border-radius: 16px !important; }
     }
   `]
 })

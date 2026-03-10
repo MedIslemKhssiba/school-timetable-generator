@@ -4,64 +4,161 @@ import { RouterLink } from '@angular/router';
 import { CardModule, GridModule, ButtonDirective } from '@coreui/angular';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 
 @Component({
   selector: 'app-super-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, CardModule, GridModule, ButtonDirective],
+  imports: [CommonModule, RouterLink, CardModule, GridModule, ButtonDirective, SkeletonComponent],
   template: `
-    <div class="page-header">
-      <h2>Dashboard</h2>
+    <div class="page-header mb-4">
+      <div>
+        <h2 class="page-title">Dashboard</h2>
+        <p class="page-subtitle">Platform overview and quick actions</p>
+      </div>
     </div>
 
-    <c-row class="mb-4">
-      <c-col sm="6" lg="4" *ngFor="let stat of statCards">
-        <c-card class="mb-3 border-top-3" [ngClass]="'border-top-' + stat.color">
-          <c-card-body class="d-flex align-items-center gap-3">
-            <div class="stat-icon" [ngClass]="'bg-' + stat.color">
+    @if (loading) {
+      <ui-skeleton type="cards" [count]="3" />
+    } @else {
+      <div class="stats-grid mb-4">
+        @for (stat of statCards; track stat.key) {
+          <div class="stat-card" [routerLink]="stat.route">
+            <div class="stat-icon-wrapper" [class]="'stat-icon-' + stat.color">
               <span [innerHTML]="stat.svg"></span>
             </div>
-            <div>
-              <div class="fs-4 fw-bold">{{ stats[stat.key] ?? 0 }}</div>
-              <div class="text-body-secondary small text-uppercase fw-semibold">{{ stat.label }}</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats[stat.key] ?? 0 }}</div>
+              <div class="stat-label">{{ stat.label }}</div>
             </div>
-          </c-card-body>
-        </c-card>
-      </c-col>
-    </c-row>
+            <div class="stat-arrow">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+            </div>
+          </div>
+        }
+      </div>
 
-    <c-card>
-      <c-card-body>
-        <h5 class="fw-bold mb-2">Welcome back, {{ userName }}!</h5>
-        <p class="text-body-secondary mb-3" style="max-width:520px">
-          You have full control over the platform. Manage schools, assign administrators, and monitor the entire system.
-        </p>
-        <div class="d-flex gap-2 flex-wrap">
-          <button cButton color="primary" routerLink="../schools">+ Add School</button>
-          <button cButton color="info" variant="outline" routerLink="../admins">+ Add Admin</button>
-        </div>
-      </c-card-body>
-    </c-card>
+      <c-row>
+        <c-col lg="8">
+          <c-card class="welcome-card mb-4">
+            <c-card-body>
+              <div class="d-flex align-items-start gap-3 flex-wrap">
+                <div class="welcome-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="white"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                </div>
+                <div class="flex-grow-1">
+                  <h5 class="fw-bold mb-1">Welcome back, {{ userName }}!</h5>
+                  <p class="text-body-secondary mb-3" style="max-width:520px">
+                    You have full control over the platform. Manage schools, assign administrators, and monitor the entire system.
+                  </p>
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button cButton color="primary" routerLink="../schools">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                      Add School
+                    </button>
+                    <button cButton color="info" variant="outline" routerLink="../admins">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                      Add Admin
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </c-card-body>
+          </c-card>
+        </c-col>
+        <c-col lg="4">
+          <c-card class="quick-card mb-4">
+            <c-card-header><strong>Quick Actions</strong></c-card-header>
+            <c-card-body class="p-0">
+              <a class="quick-link" routerLink="../schools">
+                <div class="quick-icon qi-primary">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="quick-title">Manage Schools</div>
+                  <div class="quick-desc">Add, edit, or deactivate schools</div>
+                </div>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#B0B8C9"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+              </a>
+              <a class="quick-link" routerLink="../admins">
+                <div class="quick-icon qi-info">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="quick-title">Manage Admins</div>
+                  <div class="quick-desc">Assign admins to schools</div>
+                </div>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#B0B8C9"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+              </a>
+            </c-card-body>
+          </c-card>
+        </c-col>
+      </c-row>
+    }
   `,
   styles: [`
-    .stat-icon {
-      width: 52px; height: 52px; border-radius: 10px;
+    .page-title { font-size: 1.5rem; font-weight: 800; color: #1A2236; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8892A4; margin: 4px 0 0; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .stat-card {
+      background: white; border-radius: 14px; padding: 20px 24px;
+      display: flex; align-items: center; gap: 16px;
+      border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(16,42,67,0.06);
+      cursor: pointer; transition: all 200ms; text-decoration: none; color: inherit;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(16,42,67,0.12); }
+
+    .stat-icon-wrapper {
+      width: 54px; height: 54px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      :deep(svg) { width: 26px; height: 26px; fill: white; }
+    }
+    .stat-icon-primary { background: linear-gradient(135deg, #1565C0, #42A5F5); }
+    .stat-icon-info    { background: linear-gradient(135deg, #0277BD, #4FC3F7); }
+    .stat-icon-warning { background: linear-gradient(135deg, #F57F17, #FFB300); }
+
+    .stat-content { flex: 1; }
+    .stat-value { font-size: 1.75rem; font-weight: 800; color: #1A2236; line-height: 1; }
+    .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #8892A4; margin-top: 4px; }
+    .stat-arrow { color: #B0B8C9; }
+
+    .welcome-card { border-left: 4px solid #1565C0 !important; }
+    .welcome-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: linear-gradient(135deg, #1565C0, #42A5F5);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: 0 4px 12px rgba(21,101,192,0.2);
+    }
+
+    .quick-link {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 20px; text-decoration: none; color: inherit;
+      border-bottom: 1px solid #EDF0F5; transition: background 150ms;
+      cursor: pointer;
+      &:hover { background: #F8FAFC; }
+      &:last-child { border-bottom: none; }
+    }
+    .quick-icon {
+      width: 40px; height: 40px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .stat-icon :deep(svg) { width: 26px; height: 26px; fill: white; }
-    .bg-primary { background: var(--cui-primary); }
-    .bg-info { background: var(--cui-info); }
-    .bg-warning { background: var(--cui-warning); }
+    .qi-primary { background: #E3F2FD; color: #1565C0; }
+    .qi-info    { background: #E1F5FE; color: #0277BD; }
+    .quick-title { font-weight: 600; font-size: 0.875rem; color: #1A2236; }
+    .quick-desc  { font-size: 0.75rem; color: #8892A4; }
   `]
 })
 export class SuperAdminDashboardComponent implements OnInit {
   stats: Record<string, number> = {};
   userName = '';
+  loading = true;
 
   statCards = [
-    { key: 'totalSchools', label: 'Schools', color: 'primary', svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>' },
-    { key: 'totalAdmins', label: 'Administrators', color: 'info', svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>' },
-    { key: 'totalUsers', label: 'Total Users', color: 'warning', svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>' }
+    { key: 'totalSchools', label: 'Schools', color: 'primary', route: '../schools', svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>' },
+    { key: 'totalAdmins', label: 'Administrators', color: 'info', route: '../admins', svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>' },
+    { key: 'totalUsers', label: 'Total Users', color: 'warning', route: '../admins', svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>' }
   ];
 
   constructor(private superAdminService: SuperAdminService, private authService: AuthService) {
@@ -71,6 +168,9 @@ export class SuperAdminDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.superAdminService.getDashboard().subscribe(s => this.stats = s);
+    this.superAdminService.getDashboard().subscribe({
+      next: s => { this.stats = s; this.loading = false; },
+      error: () => this.loading = false
+    });
   }
 }

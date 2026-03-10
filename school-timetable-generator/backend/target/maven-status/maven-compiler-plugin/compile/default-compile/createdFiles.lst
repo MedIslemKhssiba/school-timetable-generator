@@ -21,7 +21,6 @@ com\timetable\model\ClassGroup.class
 com\timetable\dto\LoginRequest.class
 com\timetable\model\Role.class
 com\timetable\service\TimetableService.class
-com\timetable\config\CorsConfig.class
 com\timetable\service\SchoolService.class
 com\timetable\repository\SchoolRepository.class
 com\timetable\exception\ResourceNotFoundException.class

@@ -1,46 +1,46 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { CardModule, GridModule, ButtonDirective, FormModule, AlertComponent } from '@coreui/angular';
+import { CardModule, GridModule, ButtonDirective, FormModule } from '@coreui/angular';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CardModule, GridModule, ButtonDirective, FormModule, AlertComponent],
+  imports: [CommonModule, ReactiveFormsModule, CardModule, GridModule, ButtonDirective, FormModule],
   template: `
-    <div class="page-header">
-      <h2>My Profile</h2>
+    <div class="page-header mb-4">
+      <div>
+        <h2 class="page-title">My Profile</h2>
+        <p class="page-subtitle">Manage your account information</p>
+      </div>
     </div>
-
-    @if (msg) {
-      <c-alert color="success" [dismissible]="true" (visibleChange)="msg=''">{{ msg }}</c-alert>
-    }
-    @if (errMsg) {
-      <c-alert color="danger" [dismissible]="true" (visibleChange)="errMsg=''">{{ errMsg }}</c-alert>
-    }
 
     <c-row>
       <c-col lg="6" class="mb-4">
-        <c-card class="h-100">
-          <c-card-header><strong>Profile Information</strong></c-card-header>
+        <c-card class="h-100 profile-card">
+          <c-card-header class="d-flex align-items-center gap-2">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#1565C0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <strong>Profile Information</strong>
+          </c-card-header>
           <c-card-body>
             <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
               <div class="mb-3">
-                <label cLabel for="firstName">First Name</label>
+                <label cLabel for="firstName" class="form-label-custom">First Name</label>
                 <input cFormControl id="firstName" formControlName="firstName" />
               </div>
               <div class="mb-3">
-                <label cLabel for="lastName">Last Name</label>
+                <label cLabel for="lastName" class="form-label-custom">Last Name</label>
                 <input cFormControl id="lastName" formControlName="lastName" />
               </div>
               <div class="mb-3">
-                <label cLabel for="email">Email</label>
-                <input cFormControl id="email" formControlName="email" type="email" readonly />
+                <label cLabel for="email" class="form-label-custom">Email</label>
+                <input cFormControl id="email" formControlName="email" type="email" readonly class="readonly-field" />
               </div>
-              <button cButton color="primary" type="submit" [disabled]="profileForm.invalid || profileForm.pristine">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="me-1"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
-                Save Changes
+              <button cButton color="primary" type="submit" [disabled]="profileForm.invalid || profileForm.pristine || savingProfile">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                {{ savingProfile ? 'Saving...' : 'Save Changes' }}
               </button>
             </form>
           </c-card-body>
@@ -48,42 +48,56 @@ import { AuthService } from '../../core/services/auth.service';
       </c-col>
 
       <c-col lg="6" class="mb-4">
-        <c-card class="h-100">
-          <c-card-header class="bg-warning bg-opacity-10"><strong>Change Password</strong></c-card-header>
+        <c-card class="h-100 password-card">
+          <c-card-header class="d-flex align-items-center gap-2">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#F57F17"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            <strong>Change Password</strong>
+          </c-card-header>
           <c-card-body>
             <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
               <div class="mb-3">
-                <label cLabel for="currentPassword">Current Password</label>
+                <label cLabel for="currentPassword" class="form-label-custom">Current Password</label>
                 <input cFormControl id="currentPassword" formControlName="currentPassword" type="password" />
               </div>
               <div class="mb-3">
-                <label cLabel for="newPassword">New Password</label>
+                <label cLabel for="newPassword" class="form-label-custom">New Password</label>
                 <input cFormControl id="newPassword" formControlName="newPassword" type="password" />
               </div>
               <div class="mb-3">
-                <label cLabel for="confirmPassword">Confirm New Password</label>
+                <label cLabel for="confirmPassword" class="form-label-custom">Confirm New Password</label>
                 <input cFormControl id="confirmPassword" formControlName="confirmPassword" type="password" />
               </div>
               @if (passwordForm.hasError('mismatch')) {
                 <p class="text-danger small mb-3">Passwords do not match</p>
               }
-              <button cButton color="warning" type="submit" [disabled]="passwordForm.invalid">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="me-1"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                Change Password
+              <button cButton color="warning" type="submit" [disabled]="passwordForm.invalid || savingPassword">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                {{ savingPassword ? 'Changing...' : 'Change Password' }}
               </button>
             </form>
           </c-card-body>
         </c-card>
       </c-col>
     </c-row>
-  `
+  `,
+  styles: [`
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .page-title { font-size: 1.5rem; font-weight: 800; color: #1A2236; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8892A4; margin: 4px 0 0; }
+
+    .profile-card { border-left: 4px solid #1565C0 !important; }
+    .password-card { border-left: 4px solid #F57F17 !important; }
+    .form-label-custom { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: #8892A4; }
+    .readonly-field { background: #F8FAFC !important; cursor: not-allowed; }
+  `]
 })
 export class ProfileComponent implements OnInit {
   profileForm: FormGroup;
   passwordForm: FormGroup;
-  msg = ''; errMsg = '';
+  savingProfile = false;
+  savingPassword = false;
 
-  constructor(private authService: AuthService, private fb: FormBuilder) {
+  constructor(private authService: AuthService, private fb: FormBuilder, private notify: NotificationService) {
     this.profileForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
@@ -108,24 +122,28 @@ export class ProfileComponent implements OnInit {
 
   updateProfile(): void {
     if (this.profileForm.invalid) return;
+    this.savingProfile = true;
     this.authService.updateProfile(this.profileForm.value).subscribe({
       next: () => {
-        this.msg = 'Profile updated successfully';
+        this.notify.success('Profile updated successfully');
         this.profileForm.markAsPristine();
+        this.savingProfile = false;
       },
-      error: () => this.errMsg = 'Failed to update profile'
+      error: () => { this.notify.error('Failed to update profile'); this.savingProfile = false; }
     });
   }
 
   changePassword(): void {
     if (this.passwordForm.invalid) return;
+    this.savingPassword = true;
     const { currentPassword, newPassword } = this.passwordForm.value;
     this.authService.changePassword({ currentPassword, newPassword }).subscribe({
       next: () => {
-        this.msg = 'Password changed successfully';
+        this.notify.success('Password changed successfully');
         this.passwordForm.reset();
+        this.savingPassword = false;
       },
-      error: () => this.errMsg = 'Failed to change password'
+      error: () => { this.notify.error('Failed to change password'); this.savingPassword = false; }
     });
   }
 

@@ -1,0 +1,33 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/timetable_db}
+    username: ${SPRING_DATASOURCE_USERNAME:timetable_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:timetable_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: ${JWT_SECRET:myDefaultSecretKeyForDevelopmentOnlyChangeInProduction2024!}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+optaplanner:
+  solver:
+    termination:
+      spent-limit: 5m
+
+logging:
+  level:
+    com.timetable: INFO
+    org.optaplanner: INFO
