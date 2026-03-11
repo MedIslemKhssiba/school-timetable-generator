@@ -10,6 +10,7 @@ public class TeacherDTO {
     private String firstName;
     private String lastName;
     private String email;
+    private String password;
     private Long schoolId;
     private List<Long> subjectIds;
     private int maxHoursPerWeek;

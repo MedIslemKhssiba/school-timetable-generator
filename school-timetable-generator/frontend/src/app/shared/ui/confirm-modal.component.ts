@@ -12,15 +12,9 @@ import { CommonModule } from '@angular/common';
         <div class="modal-box" [class]="'modal-' + type">
           <div class="modal-icon">
             @switch (type) {
-              @case ('danger') {
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-              }
-              @case ('warning') {
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-              }
-              @default {
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-              }
+              @case ('danger') { &#9888; }
+              @case ('warning') { &#9888; }
+              @default { &#10003; }
             }
           </div>
           <h3 class="modal-title">{{ title }}</h3>
@@ -35,7 +29,7 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(16,42,67,0.5);
+      position: fixed; inset: 0; background: rgba(15,23,42,0.5);
       z-index: 1050; backdrop-filter: blur(4px);
       animation: fadeIn 150ms ease;
     }
@@ -45,7 +39,7 @@ import { CommonModule } from '@angular/common';
     }
     .modal-box {
       background: white; border-radius: 16px; padding: 32px; max-width: 400px; width: 100%;
-      text-align: center; box-shadow: 0 25px 50px -12px rgba(16,42,67,0.25);
+      text-align: center; box-shadow: 0 25px 50px -12px rgba(15,23,42,0.25);
       animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1);
     }
     .modal-icon {
@@ -53,13 +47,13 @@ import { CommonModule } from '@angular/common';
       display: flex; align-items: center; justify-content: center;
       svg { width: 28px; height: 28px; }
     }
-    .modal-danger .modal-icon { background: #FFEBEE; color: #C62828; }
-    .modal-warning .modal-icon { background: #FFF8E1; color: #F57F17; }
-    .modal-success .modal-icon { background: #E8F5E9; color: #2E7D32; }
-    .modal-info .modal-icon { background: #E1F5FE; color: #0277BD; }
+    .modal-danger .modal-icon { background: #FEF2F2; color: #EF4444; }
+    .modal-warning .modal-icon { background: #FFFBEB; color: #F59E0B; }
+    .modal-success .modal-icon { background: #F0FDF4; color: #22C55E; }
+    .modal-info .modal-icon { background: #F0F9FF; color: #0EA5E9; }
 
-    .modal-title { font-size: 1.125rem; font-weight: 700; color: #1A2236; margin: 0 0 8px; }
-    .modal-message { font-size: 0.875rem; color: #636E80; margin: 0 0 24px; line-height: 1.5; }
+    .modal-title { font-size: 1.125rem; font-weight: 700; color: #0F172A; margin: 0 0 8px; }
+    .modal-message { font-size: 0.875rem; color: #475569; margin: 0 0 24px; line-height: 1.5; }
 
     .modal-actions { display: flex; gap: 12px; justify-content: center; }
     .modal-actions button {
@@ -67,15 +61,15 @@ import { CommonModule } from '@angular/common';
       cursor: pointer; transition: all 200ms; border: none;
     }
     .btn-cancel {
-      background: #EDF0F5; color: #4A5468;
-      &:hover { background: #DDE2EA; }
+      background: #E2E8F0; color: #334155;
+      &:hover { background: #CBD5E1; }
     }
-    .btn-confirm.btn-danger { background: linear-gradient(135deg, #C62828, #E53935); color: white; }
-    .btn-confirm.btn-danger:hover { box-shadow: 0 4px 16px rgba(198,40,40,0.3); transform: translateY(-1px); }
-    .btn-confirm.btn-warning { background: linear-gradient(135deg, #F57F17, #FF8F00); color: white; }
-    .btn-confirm.btn-success { background: linear-gradient(135deg, #2E7D32, #43A047); color: white; }
-    .btn-confirm.btn-info { background: linear-gradient(135deg, #1565C0, #42A5F5); color: white; }
-    .btn-confirm.btn-info:hover { box-shadow: 0 4px 16px rgba(21,101,192,0.3); transform: translateY(-1px); }
+    .btn-confirm.btn-danger { background: linear-gradient(135deg, #EF4444, #F87171); color: white; }
+    .btn-confirm.btn-danger:hover { box-shadow: 0 4px 16px rgba(239,68,68,0.3); transform: translateY(-1px); }
+    .btn-confirm.btn-warning { background: linear-gradient(135deg, #F59E0B, #FBBF24); color: white; }
+    .btn-confirm.btn-success { background: linear-gradient(135deg, #22C55E, #4ADE80); color: white; }
+    .btn-confirm.btn-info { background: linear-gradient(135deg, #2563EB, #60A5FA); color: white; }
+    .btn-confirm.btn-info:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.3); transform: translateY(-1px); }
 
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }

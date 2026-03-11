@@ -8,6 +8,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { NotificationService } from '../../../core/services/notification.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-schools',
@@ -16,27 +17,23 @@ import { NotificationService } from '../../../core/services/notification.service
   template: `
     <div class="page-header mb-4">
       <div>
-        <h2 class="page-title">Schools</h2>
-        <p class="page-subtitle">Manage all schools on the platform</p>
+        <h2 class="page-title">{{ t('schools') }}</h2>
+        <p class="page-subtitle">{{ t('manage_all_schools') }}</p>
       </div>
-      <button cButton color="primary" (click)="openModal()">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        Add School
-      </button>
+      <button cButton color="primary" (click)="openModal()">+ {{ t('add_school') }}</button>
     </div>
 
     <c-card>
       <c-card-header class="toolbar">
         <div class="search-box">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="#8892A4"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           <input type="text" [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Search schools..." class="search-input" />
         </div>
         <div class="toolbar-info">
           <span class="count-badge">{{ filtered.length }} school{{ filtered.length !== 1 ? 's' : '' }}</span>
           <select class="filter-select" [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()">
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{{ t('all_status') }}</option>
+            <option value="active">{{ t('active') }}</option>
+            <option value="inactive">{{ t('inactive') }}</option>
           </select>
         </div>
       </c-card-header>
@@ -54,11 +51,11 @@ import { NotificationService } from '../../../core/services/notification.service
             <table cTable hover>
               <thead>
                 <tr>
-                  <th>School</th>
-                  <th>Address</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                  <th class="text-end">Actions</th>
+                  <th>{{ t('school') }}</th>
+                  <th>{{ t('address') }}</th>
+                  <th>{{ t('phone') }}</th>
+                  <th>{{ t('status') }}</th>
+                  <th class="text-end">{{ t('actions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -72,24 +69,17 @@ import { NotificationService } from '../../../core/services/notification.service
                     <td>
                       <span class="status-badge" [class]="s.active ? 'status-active' : 'status-inactive'">
                         <span class="status-dot"></span>
-                        {{ s.active ? 'Active' : 'Inactive' }}
+                        {{ s.active ? t('active') : t('inactive') }}
                       </span>
                     </td>
                     <td class="text-end">
                       <div class="action-btns">
-                        <button cButton color="info" variant="ghost" size="sm" (click)="edit(s)" title="Edit">
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        <button cButton color="primary" variant="ghost" size="sm" (click)="viewStats(s)">Stats</button>
+                        <button cButton color="info" variant="ghost" size="sm" (click)="edit(s)">{{ t('edit') }}</button>
+                        <button cButton [color]="s.active ? 'warning' : 'success'" variant="ghost" size="sm" (click)="toggleActive(s)">
+                          {{ s.active ? t('deactivate') : t('activate') }}
                         </button>
-                        <button cButton [color]="s.active ? 'warning' : 'success'" variant="ghost" size="sm" (click)="toggleActive(s)" [title]="s.active ? 'Deactivate' : 'Activate'">
-                          @if (s.active) {
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.902 7.902 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.902 7.902 0 0 1 20 12c0 4.42-3.58 8-8 8z"/></svg>
-                          } @else {
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                          }
-                        </button>
-                        <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(s)" title="Delete">
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
-                        </button>
+                        <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(s)">{{ t('delete') }}</button>
                       </div>
                     </td>
                   </tr>
@@ -102,15 +92,11 @@ import { NotificationService } from '../../../core/services/notification.service
             <div class="pagination-bar">
               <span class="pagination-info">Showing {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filtered.length) }} of {{ filtered.length }}</span>
               <div class="pagination-btns">
-                <button class="pg-btn" (click)="page = page - 1" [disabled]="page === 1">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                </button>
+                <button class="pg-btn" (click)="page = page - 1" [disabled]="page === 1">&lt;</button>
                 @for (p of pageNumbers; track p) {
                   <button class="pg-btn" [class.active]="p === page" (click)="page = p">{{ p }}</button>
                 }
-                <button class="pg-btn" (click)="page = page + 1" [disabled]="page === totalPages">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
-                </button>
+                <button class="pg-btn" (click)="page = page + 1" [disabled]="page === totalPages">&gt;</button>
               </div>
             </div>
           }
@@ -125,29 +111,27 @@ import { NotificationService } from '../../../core/services/notification.service
         <div class="modal-box">
           <div class="modal-header-custom">
             <h3>{{ editing ? 'Edit School' : 'Add New School' }}</h3>
-            <button class="modal-close" (click)="closeModal()">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </button>
+            <button class="modal-close" (click)="closeModal()">&times;</button>
           </div>
           <form [formGroup]="schoolForm" (ngSubmit)="onSubmit()">
             <div class="modal-body-custom">
               <div class="form-field">
-                <label cLabel>School Name *</label>
+                <label cLabel>{{ t('school_name') }} *</label>
                 <input cFormControl formControlName="name" placeholder="Enter school name" />
               </div>
               <div class="form-field">
-                <label cLabel>Address</label>
+                <label cLabel>{{ t('address') }}</label>
                 <input cFormControl formControlName="address" placeholder="Enter address" />
               </div>
               <div class="form-field">
-                <label cLabel>Phone</label>
+                <label cLabel>{{ t('phone') }}</label>
                 <input cFormControl formControlName="phone" placeholder="Enter phone number" />
               </div>
             </div>
             <div class="modal-footer-custom">
-              <button cButton color="secondary" type="button" (click)="closeModal()">Cancel</button>
+              <button cButton color="secondary" type="button" (click)="closeModal()">{{ t('cancel') }}</button>
               <button cButton color="primary" type="submit" [disabled]="schoolForm.invalid || saving">
-                @if (saving) { Saving... } @else { {{ editing ? 'Update' : 'Create' }} }
+                @if (saving) { {{ t('saving') }} } @else { {{ editing ? t('update') : t('create') }} }
               </button>
             </div>
           </form>
@@ -163,11 +147,40 @@ import { NotificationService } from '../../../core/services/notification.service
       type="danger"
       (confirmed)="onDeleteConfirmed()"
       (cancelled)="deleteModalVisible = false" />
+
+    <!-- Stats Modal -->
+    @if (statsModalVisible) {
+      <div class="modal-backdrop" (click)="statsModalVisible = false"></div>
+      <div class="modal-wrapper">
+        <div class="modal-box" style="max-width: 560px">
+          <div class="modal-header-custom">
+            <h3>{{ t('statistics') }} — {{ statsSchoolName }}</h3>
+            <button class="modal-close" (click)="statsModalVisible = false">&times;</button>
+          </div>
+          <div class="modal-body-custom">
+            @if (statsLoading) {
+              <div class="text-center py-4">Loading statistics...</div>
+            } @else {
+              <div class="stats-mini-grid">
+                @for (item of statsItems; track item.key) {
+                  <div class="stats-mini-card">
+                    <div class="smc-icon" [style.background]="item.bg" [style.color]="item.color">
+                    </div>
+                    <div class="smc-value">{{ schoolStats[item.key] ?? 0 }}</div>
+                    <div class="smc-label">{{ item.label }}</div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #1A2236; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #8892A4; margin: 4px 0 0; }
+    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
 
     .toolbar {
       display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
@@ -177,32 +190,32 @@ import { NotificationService } from '../../../core/services/notification.service
       display: flex; align-items: center; gap: 8px; padding: 8px 14px;
       border: 1.5px solid #CBD5E1; border-radius: 10px; background: #F8FAFC;
       transition: border-color 150ms; min-width: 260px;
-      &:focus-within { border-color: #42A5F5; background: white; }
+      &:focus-within { border-color: #60A5FA; background: white; }
     }
     .search-input {
-      border: none; outline: none; background: transparent; font-size: 0.875rem; color: #1A2236; width: 100%;
-      &::placeholder { color: #8892A4; }
+      border: none; outline: none; background: transparent; font-size: 0.875rem; color: #0F172A; width: 100%;
+      &::placeholder { color: #94A3B8; }
     }
     .toolbar-info { display: flex; align-items: center; gap: 12px; }
     .count-badge {
-      font-size: 0.8rem; font-weight: 600; color: #636E80;
-      background: #EDF0F5; padding: 4px 12px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 600; color: #475569;
+      background: #E2E8F0; padding: 4px 12px; border-radius: 20px;
     }
     .filter-select {
       padding: 6px 12px; border-radius: 8px; border: 1.5px solid #CBD5E1;
-      font-size: 0.8125rem; color: #4A5468; background: white; cursor: pointer;
-      &:focus { border-color: #42A5F5; outline: none; }
+      font-size: 0.8125rem; color: #334155; background: white; cursor: pointer;
+      &:focus { border-color: #60A5FA; outline: none; }
     }
 
     .table-responsive-wrapper { overflow-x: auto; }
-    .cell-primary { font-weight: 600; color: #1A2236; }
+    .cell-primary { font-weight: 600; color: #0F172A; }
 
     .status-badge {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
     }
-    .status-active { background: #E8F5E9; color: #2E7D32; }
-    .status-inactive { background: #FFEBEE; color: #C62828; }
+    .status-active { background: #F0FDF4; color: #22C55E; }
+    .status-inactive { background: #FEF2F2; color: #EF4444; }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
     .action-btns { display: flex; gap: 2px; justify-content: flex-end; }
@@ -210,47 +223,60 @@ import { NotificationService } from '../../../core/services/notification.service
     /* Pagination */
     .pagination-bar {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px; border-top: 1px solid #EDF0F5;
+      padding: 12px 20px; border-top: 1px solid #E2E8F0;
     }
-    .pagination-info { font-size: 0.8rem; color: #636E80; }
+    .pagination-info { font-size: 0.8rem; color: #475569; }
     .pagination-btns { display: flex; gap: 4px; }
     .pg-btn {
       width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E2E8F0;
-      background: white; color: #4A5468; font-size: 0.8rem; font-weight: 600;
+      background: white; color: #334155; font-size: 0.8rem; font-weight: 600;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: all 150ms;
-      &:hover:not(:disabled) { background: #F0F4F8; }
-      &.active { background: #1565C0; color: white; border-color: #1565C0; }
+      &:hover:not(:disabled) { background: #F1F5F9; }
+      &.active { background: #2563EB; color: white; border-color: #2563EB; }
       &:disabled { opacity: 0.4; cursor: not-allowed; }
     }
 
     /* Modal */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(16,42,67,0.5); z-index: 1050; backdrop-filter: blur(4px); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 1050; backdrop-filter: blur(4px); }
     .modal-wrapper {
       position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 24px;
     }
     .modal-box {
       background: white; border-radius: 16px; width: 100%; max-width: 500px;
-      box-shadow: 0 25px 50px rgba(16,42,67,0.25);
+      box-shadow: 0 25px 50px rgba(15,23,42,0.25);
       animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1);
     }
     .modal-header-custom {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 20px 24px; border-bottom: 1px solid #EDF0F5;
-      h3 { margin: 0; font-size: 1.125rem; font-weight: 700; color: #1A2236; }
+      padding: 20px 24px; border-bottom: 1px solid #E2E8F0;
+      h3 { margin: 0; font-size: 1.125rem; font-weight: 700; color: #0F172A; }
     }
     .modal-close {
-      background: none; border: none; cursor: pointer; color: #8892A4; padding: 4px; border-radius: 6px;
-      &:hover { background: #F0F4F8; color: #1A2236; }
+      background: none; border: none; cursor: pointer; color: #94A3B8; padding: 4px; border-radius: 6px;
+      &:hover { background: #F1F5F9; color: #0F172A; }
     }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .form-field { display: flex; flex-direction: column; }
     .modal-footer-custom {
-      padding: 16px 24px; border-top: 1px solid #EDF0F5;
+      padding: 16px 24px; border-top: 1px solid #E2E8F0;
       display: flex; justify-content: flex-end; gap: 10px;
     }
 
     @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+    .stats-mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .stats-mini-card {
+      background: #F8FAFC; border-radius: 12px; padding: 20px; text-align: center;
+      border: 1px solid #E2E8F0;
+    }
+    .smc-icon {
+      width: 44px; height: 44px; border-radius: 12px; margin: 0 auto 12px;
+      display: flex; align-items: center; justify-content: center;
+      :deep(svg) { width: 22px; height: 22px; fill: currentColor; }
+    }
+    .smc-value { font-size: 1.5rem; font-weight: 800; color: #0F172A; }
+    .smc-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94A3B8; margin-top: 4px; }
   `]
 })
 export class SchoolsComponent implements OnInit {
@@ -270,10 +296,23 @@ export class SchoolsComponent implements OnInit {
   pageSize = 10;
   Math = Math;
 
+  // Stats modal
+  statsModalVisible = false;
+  statsLoading = false;
+  statsSchoolName = '';
+  schoolStats: Record<string, number> = {};
+  statsItems = [
+    { key: 'teachers', label: 'Teachers', bg: '#EFF6FF', color: '#2563EB' },
+    { key: 'classes', label: 'Classes', bg: '#F0FDF4', color: '#22C55E' },
+    { key: 'subjects', label: 'Subjects', bg: '#FFFBEB', color: '#F59E0B' },
+    { key: 'rooms', label: 'Rooms', bg: '#F0F9FF', color: '#0EA5E9' }
+  ];
+
   constructor(
     private superAdminService: SuperAdminService,
     private fb: FormBuilder,
-    private notif: NotificationService
+    private notif: NotificationService,
+    private ts: TranslationService
   ) {
     this.schoolForm = this.fb.group({
       name: ['', Validators.required],
@@ -285,6 +324,8 @@ export class SchoolsComponent implements OnInit {
   ngOnInit(): void {
     this.loadSchools();
   }
+
+  t(key: string): string { return this.ts.t(key); }
 
   get totalPages(): number { return Math.ceil(this.filtered.length / this.pageSize); }
   get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
@@ -379,6 +420,16 @@ export class SchoolsComponent implements OnInit {
         this.notif.success('School deleted successfully');
       },
       error: () => { this.deleteModalVisible = false; this.notif.error('Failed to delete school'); }
+    });
+  }
+
+  viewStats(school: School): void {
+    this.statsSchoolName = school.name;
+    this.statsModalVisible = true;
+    this.statsLoading = true;
+    this.superAdminService.getSchoolStatistics(school.id).subscribe({
+      next: stats => { this.schoolStats = stats; this.statsLoading = false; },
+      error: () => { this.schoolStats = {}; this.statsLoading = false; }
     });
   }
 

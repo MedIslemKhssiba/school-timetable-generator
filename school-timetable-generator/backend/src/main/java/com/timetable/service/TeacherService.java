@@ -5,10 +5,14 @@ import com.timetable.exception.ResourceNotFoundException;
 import com.timetable.model.School;
 import com.timetable.model.Subject;
 import com.timetable.model.Teacher;
+import com.timetable.model.User;
+import com.timetable.model.Role;
 import com.timetable.repository.SchoolRepository;
 import com.timetable.repository.SubjectRepository;
 import com.timetable.repository.TeacherRepository;
+import com.timetable.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +27,8 @@ public class TeacherService {
     private final TeacherRepository teacherRepository;
     private final SchoolRepository schoolRepository;
     private final SubjectRepository subjectRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public List<TeacherDTO> getTeachersBySchool(Long schoolId) {
@@ -40,11 +46,22 @@ public class TeacherService {
         School school = schoolRepository.findById(dto.getSchoolId())
                 .orElseThrow(() -> new ResourceNotFoundException("School not found"));
 
+        User user = User.builder()
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .role(Role.ROLE_TEACHER)
+                .school(school)
+                .build();
+        user = userRepository.save(user);
+
         Teacher teacher = Teacher.builder()
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
                 .email(dto.getEmail())
                 .school(school)
+                .user(user)
                 .maxHoursPerWeek(dto.getMaxHoursPerWeek())
                 .build();
 
@@ -72,8 +89,13 @@ public class TeacherService {
         return toDTO(teacherRepository.save(teacher));
     }
 
+    @Transactional
     public void deleteTeacher(Long id) {
-        teacherRepository.deleteById(id);
+        Teacher teacher = getTeacherById(id);
+        teacherRepository.delete(teacher);
+        if (teacher.getUser() != null) {
+            userRepository.delete(teacher.getUser());
+        }
     }
 
     private TeacherDTO toDTO(Teacher teacher) {

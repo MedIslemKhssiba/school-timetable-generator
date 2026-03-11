@@ -6,7 +6,7 @@
 // ── CSS Custom Properties ──
 :root {
   --cui-primary: #{$primary};
-  --cui-primary-rgb: 21, 101, 192;
+  --cui-primary-rgb: 37, 99, 235;
   --cui-secondary: #{$secondary};
   --cui-success: #{$success};
   --cui-info: #{$info};
@@ -316,7 +316,7 @@ select[multiple][cFormControl] {
 // MODAL
 // ══════════════════════════════════════════════════════
 .modal-backdrop {
-  background: rgba(16, 42, 67, 0.5) !important;
+  background: rgba(15, 23, 42, 0.5) !important;
   backdrop-filter: blur(4px);
 }
 

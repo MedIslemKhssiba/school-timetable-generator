@@ -52,4 +52,14 @@ export class SuperAdminService {
   toggleSchoolActive(id: number): Observable<School> {
     return this.http.patch<School>(`${this.apiUrl}/schools/${id}/toggle-active`, null);
   }
+
+  // School statistics
+  getSchoolStatistics(schoolId: number): Observable<Record<string, number>> {
+    return this.http.get<Record<string, number>>(`${this.apiUrl}/schools/${schoolId}/statistics`);
+  }
+
+  // Change user password
+  changeUserPassword(userId: number, newPassword: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/users/${userId}/password`, { newPassword }, { responseType: 'text' });
+  }
 }

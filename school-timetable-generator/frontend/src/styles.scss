@@ -171,3 +171,108 @@ a {
     margin-bottom: 20px;
   }
 }
+
+// ═══════════════════════════════════════
+// RTL Support (Arabic)
+// ═══════════════════════════════════════
+[dir="rtl"] {
+  // Page header accent bar
+  .page-header h2 {
+    padding-left: 0;
+    padding-right: 16px;
+
+    &::before {
+      left: auto;
+      right: 0;
+    }
+  }
+
+  // General text alignment
+  body {
+    text-align: right;
+  }
+
+  // Flip margins (me-* → ms-*)
+  .me-1 { margin-right: 0 !important; margin-left: 0.25rem !important; }
+  .me-2 { margin-right: 0 !important; margin-left: 0.5rem !important; }
+  .me-3 { margin-right: 0 !important; margin-left: 1rem !important; }
+  .ms-auto { margin-left: 0 !important; margin-right: auto !important; }
+  .ms-2 { margin-left: 0 !important; margin-right: 0.5rem !important; }
+
+  // Text end/start
+  .text-end { text-align: left !important; }
+  .text-start { text-align: right !important; }
+
+  // Border-left accents → border-right
+  .lesson-slot,
+  .grid-lesson {
+    border-left: none !important;
+    border-right: 3px solid #2563EB;
+    &[style*="border-left-color"] {
+      border-right-color: inherit;
+    }
+  }
+
+  .info-card,
+  .welcome-card {
+    border-left: none !important;
+    border-right: 4px solid #2563EB !important;
+  }
+
+  .solving-card {
+    border-left: none !important;
+    border-right: 4px solid #2563EB !important;
+  }
+
+  .stat-card {
+    border-left: none;
+    border-right: 4px solid transparent;
+    &.stat-primary { border-right-color: #2563EB; }
+    &.stat-info { border-right-color: #0EA5E9; }
+    &.stat-success { border-right-color: #22C55E; }
+  }
+
+  .slot-row {
+    border-left: none !important;
+    border-right: 3px solid #E2E8F0;
+    &.available {
+      border-right-color: #22C55E;
+    }
+  }
+
+  // Flex direction for search boxes
+  .search-box {
+    direction: rtl;
+  }
+
+  // Table header alignment
+  table th, table td {
+    text-align: right;
+    &.text-end { text-align: left !important; }
+  }
+
+  // Modal footer
+  .modal-footer {
+    flex-direction: row-reverse;
+  }
+
+  // Form labels
+  .form-label {
+    text-align: right;
+    display: block;
+  }
+
+  // Select & input
+  select, input, textarea {
+    text-align: right;
+  }
+
+  // Hover slide effect
+  .lesson-slot:hover {
+    transform: translateX(-4px) !important;
+  }
+
+  .quick-link:hover {
+    transform: none;
+  }
+}

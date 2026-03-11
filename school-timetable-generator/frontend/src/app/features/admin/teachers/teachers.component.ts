@@ -5,6 +5,7 @@ import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, Badge
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { Teacher, Subject } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
@@ -17,13 +18,10 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
   template: `
     <div class="page-header mb-4">
       <div>
-        <h2 class="page-title">Teachers</h2>
-        <p class="page-subtitle">Manage teaching staff and subject assignments</p>
+        <h2 class="page-title">{{ t('teachers') }}</h2>
+        <p class="page-subtitle">{{ t('manage_teachers') }}</p>
       </div>
-      <button cButton color="primary" (click)="openModal()">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        Add Teacher
-      </button>
+      <button cButton color="primary" (click)="openModal()">+ {{ t('add_teacher') }}</button>
     </div>
 
     @if (loading) {
@@ -33,7 +31,6 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
         <c-card-body class="pb-0">
           <div class="toolbar">
             <div class="search-box">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="#8892A4"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
               <input type="text" placeholder="Search teachers..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" />
             </div>
             <c-badge color="primary" class="count-badge">{{ filtered.length }} teacher{{ filtered.length !== 1 ? 's' : '' }}</c-badge>
@@ -53,39 +50,35 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
             <table cTable hover>
               <thead>
                 <tr>
-                  <th>Teacher</th>
-                  <th>Email</th>
-                  <th>Max Hours</th>
-                  <th>Subjects</th>
-                  <th class="text-end">Actions</th>
+                  <th>{{ t('teacher') }}</th>
+                  <th>{{ t('email') }}</th>
+                  <th>{{ t('max_hours') }}</th>
+                  <th>{{ t('subjects') }}</th>
+                  <th class="text-end">{{ t('actions') }}</th>
                 </tr>
               </thead>
               <tbody>
-                @for (t of paged; track t.id) {
+                @for (teacher of paged; track teacher.id) {
                   <tr>
                     <td>
                       <div class="d-flex align-items-center gap-3">
-                        <div class="avatar">{{ t.firstName?.charAt(0) }}{{ t.lastName?.charAt(0) }}</div>
-                        <div><div class="fw-semibold">{{ t.firstName }} {{ t.lastName }}</div></div>
+                        <div class="avatar">{{ teacher.firstName?.charAt(0) }}{{ teacher.lastName?.charAt(0) }}</div>
+                        <div><div class="fw-semibold">{{ teacher.firstName }} {{ teacher.lastName }}</div></div>
                       </div>
                     </td>
-                    <td class="text-body-secondary">{{ t.email }}</td>
-                    <td><c-badge color="light" textColor="dark">{{ t.maxHoursPerWeek }}h</c-badge></td>
+                    <td class="text-body-secondary">{{ teacher.email }}</td>
+                    <td><c-badge color="light" textColor="dark">{{ teacher.maxHoursPerWeek }}h</c-badge></td>
                     <td>
                       <div class="subject-tags">
-                        @for (s of t.subjects || []; track s.id) {
-                          <span class="subject-tag" [style.border-color]="s.color || '#1565C0'" [style.color]="s.color || '#1565C0'">{{ s.name }}</span>
+                        @for (s of teacher.subjects || []; track s.id) {
+                          <span class="subject-tag" [style.border-color]="s.color || '#2563EB'" [style.color]="s.color || '#2563EB'">{{ s.name }}</span>
                         }
-                        @if (!t.subjects?.length) { <span class="text-body-secondary">-</span> }
+                        @if (!teacher.subjects?.length) { <span class="text-body-secondary">-</span> }
                       </div>
                     </td>
                     <td class="text-end">
-                      <button cButton color="info" variant="ghost" size="sm" (click)="edit(t)" title="Edit">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                      </button>
-                      <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(t)" title="Delete">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
-                      </button>
+                      <button cButton color="info" variant="ghost" size="sm" (click)="edit(teacher)">{{ t('edit') }}</button>
+                      <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(teacher)">{{ t('delete') }}</button>
                     </td>
                   </tr>
                 }
@@ -118,28 +111,34 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
             <div class="modal-body">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label">First Name *</label>
+                <label class="form-label">{{ t('first_name') }} *</label>
                   <input class="form-control" formControlName="firstName" />
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Last Name *</label>
+                <label class="form-label">{{ t('last_name') }} *</label>
                   <input class="form-control" formControlName="lastName" />
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Email *</label>
+                <label class="form-label">{{ t('email') }} *</label>
                   <input class="form-control" formControlName="email" type="email" />
                 </div>
+                @if (!editing) {
+                  <div class="col-md-6">
+                    <label class="form-label">{{ t('password') }} *</label>
+                    <input class="form-control" formControlName="password" type="password" placeholder="Min 6 characters" />
+                  </div>
+                }
                 <div class="col-md-6">
-                  <label class="form-label">Max Hours/Week</label>
+                  <label class="form-label">{{ t('max_hours') }}</label>
                   <input class="form-control" formControlName="maxHoursPerWeek" type="number" />
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Subjects</label>
+                  <label class="form-label">{{ t('subjects') }}</label>
                   <div class="subject-select-grid">
                     @for (s of subjects; track s.id) {
                       <label class="subject-check" [class.checked]="isSubjectSelected(s.id)">
                         <input type="checkbox" [checked]="isSubjectSelected(s.id)" (change)="toggleSubject(s.id)" />
-                        <span class="subject-dot" [style.background]="s.color || '#1565C0'"></span>
+                        <span class="subject-dot" [style.background]="s.color || '#2563EB'"></span>
                         {{ s.name }}
                       </label>
                     }
@@ -148,8 +147,8 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-light" (click)="closeModal()">Cancel</button>
-              <button type="submit" class="btn btn-primary" [disabled]="form.invalid">{{ editing ? 'Update' : 'Create' }}</button>
+              <button type="button" class="btn btn-light" (click)="closeModal()">{{ t('cancel') }}</button>
+              <button type="submit" class="btn btn-primary" [disabled]="form.invalid">{{ editing ? t('update') : t('create') }}</button>
             </div>
           </form>
         </div>
@@ -167,19 +166,19 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #1A2236; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #8892A4; margin: 4px 0 0; }
+    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
     .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 16px; }
     .search-box {
       display: flex; align-items: center; gap: 8px;
-      background: #F4F6F9; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px;
+      background: #F1F5F9; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px;
       input { border: none; background: none; outline: none; width: 100%; font-size: 0.875rem; }
     }
     .count-badge { font-size: 0.8rem; padding: 6px 12px; }
     .avatar {
       width: 38px; height: 38px; border-radius: 10px; font-weight: 700; font-size: 0.8rem;
       display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #E3F2FD, #BBDEFB); color: #1565C0;
+      background: linear-gradient(135deg, #EFF6FF, #BFDBFE); color: #2563EB;
     }
     .subject-tags { display: flex; flex-wrap: wrap; gap: 4px; }
     .subject-tag {
@@ -192,7 +191,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .modal-panel { background: white; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: scaleIn 200ms ease-out; }
     .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #E2E8F0; }
     .modal-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
-    .modal-close { background: none; border: none; font-size: 1.5rem; color: #8892A4; cursor: pointer; line-height: 1; }
+    .modal-close { background: none; border: none; font-size: 1.5rem; color: #94A3B8; cursor: pointer; line-height: 1; }
     .modal-body { padding: 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -203,7 +202,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       border: 1.5px solid #E2E8F0; border-radius: 8px; cursor: pointer; transition: all 150ms;
       font-size: 0.85rem; font-weight: 500;
       input { display: none; }
-      &.checked { border-color: #1565C0; background: #E3F2FD; }
+      &.checked { border-color: #2563EB; background: #EFF6FF; }
     }
     .subject-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
@@ -211,8 +210,8 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .page-btn {
       width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E2E8F0;
       background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-      &.active { background: #1565C0; color: white; border-color: #1565C0; }
-      &:hover:not(.active) { background: #F4F6F9; }
+      &.active { background: #2563EB; color: white; border-color: #2563EB; }
+      &:hover:not(.active) { background: #F1F5F9; }
     }
   `]
 })
@@ -240,13 +239,15 @@ export class TeachersComponent implements OnInit {
     private adminService: AdminService,
     private fb: FormBuilder,
     private authService: AuthService,
-    private notify: NotificationService
+    private notify: NotificationService,
+    private ts: TranslationService
   ) {
     this.schoolId = this.authService.getSchoolId() || 1;
     this.form = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
       maxHoursPerWeek: [20],
       subjectIds: [[] as number[]],
       schoolId: [this.schoolId]
@@ -257,6 +258,8 @@ export class TeachersComponent implements OnInit {
     this.load();
     this.adminService.getSubjects(this.schoolId).subscribe(s => this.subjects = s);
   }
+
+  t(key: string): string { return this.ts.t(key); }
 
   load(): void {
     this.adminService.getTeachers(this.schoolId).subscribe({
@@ -278,6 +281,8 @@ export class TeachersComponent implements OnInit {
     this.editing = false;
     this.editId = null;
     this.form.reset({ schoolId: this.schoolId, maxHoursPerWeek: 20, subjectIds: [] });
+    this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
+    this.form.get('password')?.updateValueAndValidity();
     this.showModal = true;
   }
 
@@ -288,6 +293,8 @@ export class TeachersComponent implements OnInit {
     this.editId = t.id;
     const ids = t.subjectIds?.length ? t.subjectIds : (t.subjects?.map(s => s.id) || []);
     this.form.patchValue({ ...t, subjectIds: ids });
+    this.form.get('password')?.clearValidators();
+    this.form.get('password')?.updateValueAndValidity();
     this.showModal = true;
   }
 

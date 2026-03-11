@@ -1,64 +1,64 @@
 // ═══════════════════════════════════════════════════════════
 // EcoCode Design System — Variables & Tokens
-// Professional Blue Educational Theme
+// Modern Blue SaaS Educational Theme
 // ═══════════════════════════════════════════════════════════
 
 // ── Primary Blue Palette ──
-$primary:         #1565C0;
-$primary-light:   #42A5F5;
-$primary-lighter: #E3F2FD;
-$primary-dark:    #0D47A1;
-$primary-gradient: linear-gradient(135deg, #1565C0 0%, #1E88E5 50%, #42A5F5 100%);
-$primary-gradient-subtle: linear-gradient(135deg, rgba(21,101,192,0.08), rgba(66,165,245,0.05));
+$primary:         #2563EB;
+$primary-light:   #60A5FA;
+$primary-lighter: #EFF6FF;
+$primary-dark:    #1E40AF;
+$primary-gradient: linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #60A5FA 100%);
+$primary-gradient-subtle: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(96,165,250,0.05));
 
 // ── Secondary / Accent ──
-$secondary:       #546E7A;
-$secondary-light: #90A4AE;
-$accent:          #0288D1;
-$accent-light:    #4FC3F7;
+$secondary:       #64748B;
+$secondary-light: #94A3B8;
+$accent:          #0EA5E9;
+$accent-light:    #38BDF8;
 
 // ── Semantic Colors ──
-$success:         #2E7D32;
-$success-light:   #E8F5E9;
-$success-bg:      #C8E6C9;
+$success:         #22C55E;
+$success-light:   #F0FDF4;
+$success-bg:      #BBF7D0;
 
-$warning:         #F57F17;
-$warning-light:   #FFF8E1;
-$warning-bg:      #FFF9C4;
+$warning:         #F59E0B;
+$warning-light:   #FFFBEB;
+$warning-bg:      #FEF3C7;
 
-$danger:          #C62828;
-$danger-light:    #FFEBEE;
-$danger-bg:       #FFCDD2;
+$danger:          #EF4444;
+$danger-light:    #FEF2F2;
+$danger-bg:       #FECACA;
 
-$info:            #0277BD;
-$info-light:      #E1F5FE;
-$info-bg:         #B3E5FC;
+$info:            #0EA5E9;
+$info-light:      #F0F9FF;
+$info-bg:         #BAE6FD;
 
 // ── Neutrals ──
 $white:           #FFFFFF;
-$gray-50:         #FAFBFC;
-$gray-100:        #F5F7FA;
-$gray-200:        #EDF0F5;
-$gray-300:        #DDE2EA;
-$gray-400:        #B0B8C9;
-$gray-500:        #8892A4;
-$gray-600:        #636E80;
-$gray-700:        #4A5468;
-$gray-800:        #2D3648;
-$gray-900:        #1A2236;
+$gray-50:         #F8FAFC;
+$gray-100:        #F1F5F9;
+$gray-200:        #E2E8F0;
+$gray-300:        #CBD5E1;
+$gray-400:        #94A3B8;
+$gray-500:        #64748B;
+$gray-600:        #475569;
+$gray-700:        #334155;
+$gray-800:        #1E293B;
+$gray-900:        #0F172A;
 
 // ── Backgrounds ──
-$bg-body:         #F0F4F8;
+$bg-body:         #F8FAFC;
 $bg-surface:      #FFFFFF;
-$bg-sidebar:      #102A43;
-$bg-sidebar-dark: #0B1F33;
+$bg-sidebar:      #0F172A;
+$bg-sidebar-dark: #020617;
 $bg-header:       #FFFFFF;
 $bg-hover:        #F8FAFC;
 
 // ── Text ──
-$text-primary:    #1A2236;
-$text-secondary:  #636E80;
-$text-muted:      #8892A4;
+$text-primary:    #0F172A;
+$text-secondary:  #475569;
+$text-muted:      #94A3B8;
 $text-on-primary: #FFFFFF;
 $text-on-sidebar: rgba(255, 255, 255, 0.85);
 
@@ -68,14 +68,14 @@ $border-light:    #F1F5F9;
 $border-input:    #CBD5E1;
 
 // ── Shadows ──
-$shadow-xs:   0 1px 2px rgba(16, 42, 67, 0.04);
-$shadow-sm:   0 1px 3px rgba(16, 42, 67, 0.06), 0 1px 2px rgba(16, 42, 67, 0.04);
-$shadow:      0 4px 6px -1px rgba(16, 42, 67, 0.08), 0 2px 4px -2px rgba(16, 42, 67, 0.04);
-$shadow-md:   0 10px 20px -5px rgba(16, 42, 67, 0.1), 0 4px 6px -4px rgba(16, 42, 67, 0.04);
-$shadow-lg:   0 20px 40px -10px rgba(16, 42, 67, 0.12), 0 8px 16px -8px rgba(16, 42, 67, 0.06);
-$shadow-card: 0 2px 8px rgba(16, 42, 67, 0.06);
-$shadow-card-hover: 0 8px 24px rgba(16, 42, 67, 0.12);
-$shadow-modal: 0 25px 50px -12px rgba(16, 42, 67, 0.25);
+$shadow-xs:   0 1px 2px rgba(15, 23, 42, 0.04);
+$shadow-sm:   0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+$shadow:      0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+$shadow-md:   0 10px 20px -5px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+$shadow-lg:   0 20px 40px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -8px rgba(15, 23, 42, 0.06);
+$shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+$shadow-card-hover: 0 10px 25px rgba(15, 23, 42, 0.1);
+$shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
 
 // ── Border Radius ──
 $radius-xs:   4px;

@@ -5,6 +5,7 @@ import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, Badge
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { ClassGroup } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
@@ -17,13 +18,10 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
   template: `
     <div class="page-header mb-4">
       <div>
-        <h2 class="page-title">Classes</h2>
-        <p class="page-subtitle">Manage class groups and student counts</p>
+        <h2 class="page-title">{{ t('classes') }}</h2>
+        <p class="page-subtitle">{{ t('manage_classes') }}</p>
       </div>
-      <button cButton color="primary" (click)="openModal()">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        Add Class
-      </button>
+      <button cButton color="primary" (click)="openModal()">+ {{ t('add_class') }}</button>
     </div>
 
     @if (loading) {
@@ -33,8 +31,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
         <c-card-body class="pb-0">
           <div class="toolbar">
             <div class="search-box">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="#8892A4"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-              <input type="text" placeholder="Search classes..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" />
+              <input type="text" [placeholder]="t('search_classes')" [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" />
             </div>
             <c-badge color="primary" class="count-badge">{{ filtered.length }} class{{ filtered.length !== 1 ? 'es' : '' }}</c-badge>
           </div>
@@ -53,37 +50,23 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
             <table cTable hover>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Level</th>
-                  <th>Students</th>
-                  <th class="text-end">Actions</th>
+                  <th>{{ t('name') }}</th>
+                  <th>{{ t('level') }}</th>
+                  <th>{{ t('students') }}</th>
+                  <th class="text-end">{{ t('actions') }}</th>
                 </tr>
               </thead>
               <tbody>
                 @for (c of paged; track c.id) {
                   <tr>
                     <td>
-                      <div class="d-flex align-items-center gap-3">
-                        <div class="class-icon">
-                          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
-                        </div>
-                        <span class="fw-semibold">{{ c.name }}</span>
-                      </div>
+                      <span class="fw-semibold">{{ c.name }}</span>
                     </td>
-                    <td><c-badge color="info" variant="outline">{{ c.level || '-' }}</c-badge></td>
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="#8892A4"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                        <span>{{ c.studentCount }}</span>
-                      </div>
-                    </td>
+                    <td><c-badge color="info" variant="outline">{{ c.level ? t('level_n') + ' ' + c.level : '-' }}</c-badge></td>
+                    <td>{{ c.studentCount }}</td>
                     <td class="text-end">
-                      <button cButton color="info" variant="ghost" size="sm" (click)="edit(c)" title="Edit">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                      </button>
-                      <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(c)" title="Delete">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></svg>
-                      </button>
+                      <button cButton color="info" variant="ghost" size="sm" (click)="edit(c)">{{ t('edit') }}</button>
+                      <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(c)">{{ t('delete') }}</button>
                     </td>
                   </tr>
                 }
@@ -109,27 +92,35 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       <div class="modal-container">
         <div class="modal-panel">
           <div class="modal-header">
-            <h5 class="modal-title">{{ editing ? 'Edit Class' : 'Add Class' }}</h5>
+            <h5 class="modal-title">{{ editing ? t('edit') + ' ' + t('classes') : t('add_class') }}</h5>
             <button class="modal-close" (click)="closeModal()">&times;</button>
           </div>
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="modal-body">
               <div class="mb-3">
-                <label class="form-label">Name *</label>
+                <label class="form-label">{{ t('name') }} *</label>
                 <input class="form-control" formControlName="name" placeholder="e.g. 3A" />
               </div>
               <div class="mb-3">
-                <label class="form-label">Level</label>
-                <input class="form-control" formControlName="level" placeholder="e.g. 3rd Year" />
+                <label class="form-label">{{ t('level') }} *</label>
+                <select class="form-control" formControlName="level">
+                  <option value="">{{ t('select_level') }}</option>
+                  <option value="1">{{ t('level_n') }} 1</option>
+                  <option value="2">{{ t('level_n') }} 2</option>
+                  <option value="3">{{ t('level_n') }} 3</option>
+                  <option value="4">{{ t('level_n') }} 4</option>
+                  <option value="5">{{ t('level_n') }} 5</option>
+                  <option value="6">{{ t('level_n') }} 6</option>
+                </select>
               </div>
               <div class="mb-3">
-                <label class="form-label">Number of Students</label>
+                <label class="form-label">{{ t('number_of_students') }}</label>
                 <input class="form-control" formControlName="studentCount" type="number" />
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-light" (click)="closeModal()">Cancel</button>
-              <button type="submit" class="btn btn-primary" [disabled]="form.invalid">{{ editing ? 'Update' : 'Create' }}</button>
+              <button type="button" class="btn btn-light" (click)="closeModal()">{{ t('cancel') }}</button>
+              <button type="submit" class="btn btn-primary" [disabled]="form.invalid">{{ editing ? t('update') : t('create') }}</button>
             </div>
           </form>
         </div>
@@ -138,8 +129,8 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
 
     <ui-confirm-modal
       [visible]="showDelete"
-      title="Delete Class"
-      [message]="'Delete class ' + (deleteTarget?.name || '') + '? This cannot be undone.'"
+      [title]="t('delete_class')"
+      [message]="t('delete') + ' ' + (deleteTarget?.name || '') + '? ' + t('this_cannot_be_undone')"
       confirmText="Delete"
       type="danger"
       (confirmed)="doDelete()"
@@ -147,19 +138,19 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #1A2236; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #8892A4; margin: 4px 0 0; }
+    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
     .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 16px; }
     .search-box {
       display: flex; align-items: center; gap: 8px;
-      background: #F4F6F9; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px;
+      background: #F1F5F9; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px;
       input { border: none; background: none; outline: none; width: 100%; font-size: 0.875rem; }
     }
     .count-badge { font-size: 0.8rem; padding: 6px 12px; }
     .class-icon {
       width: 38px; height: 38px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      background: #E1F5FE; color: #0277BD;
+      background: #F0F9FF; color: #0EA5E9;
     }
 
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1050; }
@@ -167,7 +158,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .modal-panel { background: white; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: scaleIn 200ms ease-out; }
     .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #E2E8F0; }
     .modal-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
-    .modal-close { background: none; border: none; font-size: 1.5rem; color: #8892A4; cursor: pointer; line-height: 1; }
+    .modal-close { background: none; border: none; font-size: 1.5rem; color: #94A3B8; cursor: pointer; line-height: 1; }
     .modal-body { padding: 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -176,8 +167,8 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .page-btn {
       width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E2E8F0;
       background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-      &.active { background: #1565C0; color: white; border-color: #1565C0; }
-      &:hover:not(.active) { background: #F4F6F9; }
+      &.active { background: #2563EB; color: white; border-color: #2563EB; }
+      &:hover:not(.active) { background: #F1F5F9; }
     }
   `]
 })
@@ -204,11 +195,14 @@ export class ClassesComponent implements OnInit {
     private svc: AdminService,
     private fb: FormBuilder,
     private authService: AuthService,
-    private notify: NotificationService
+    private notify: NotificationService,
+    private ts: TranslationService
   ) {
     this.schoolId = this.authService.getSchoolId() || 1;
     this.form = this.fb.group({ name: ['', Validators.required], level: [''], studentCount: [30] });
   }
+
+  t(key: string): string { return this.ts.t(key); }
 
   ngOnInit() { this.load(); }
 
