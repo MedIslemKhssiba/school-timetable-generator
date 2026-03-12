@@ -23,7 +23,9 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 // Soft constraints
                 teacherRoomStability(constraintFactory),
                 teacherTimeEfficiency(constraintFactory),
-                subjectVarietyPerDay(constraintFactory)
+                subjectVarietyPerDay(constraintFactory),
+                subjectSpreadAcrossDays(constraintFactory),
+                classGroupDayBalance(constraintFactory)
         };
     }
 
@@ -123,8 +125,20 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Teacher time efficiency");
     }
 
-    // Penalize having the same subject twice in a row for the same class on the same day
+    // Penalize having the same subject multiple times on the same day for the same class
     Constraint subjectVarietyPerDay(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEachUniquePair(LessonAssignment.class,
+                        Joiners.equal(LessonAssignment::getClassGroupId),
+                        Joiners.equal(LessonAssignment::getSubjectId))
+                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
+                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek())
+                .penalize(HardSoftScore.ONE_SOFT, (l1, l2) -> 3)
+                .asConstraint("Subject variety per day");
+    }
+
+    // Spread same subject across different days for the same class
+    Constraint subjectSpreadAcrossDays(ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEachUniquePair(LessonAssignment.class,
                         Joiners.equal(LessonAssignment::getClassGroupId),
@@ -133,7 +147,20 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
                         && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
                         && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) == 1)
-                .penalize(HardSoftScore.ONE_SOFT, (l1, l2) -> 2)
-                .asConstraint("Subject variety per day");
+                .penalize(HardSoftScore.ONE_SOFT, (l1, l2) -> 5)
+                .asConstraint("Subject spread across days");
+    }
+
+    // Balance class group lessons evenly across days
+    Constraint classGroupDayBalance(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEach(LessonAssignment.class)
+                .filter(la -> la.getTimeslot() != null)
+                .groupBy(LessonAssignment::getClassGroupId,
+                        la -> la.getTimeslot().getDayOfWeek(),
+                        ConstraintCollectors.count())
+                .filter((classId, day, count) -> count > 5)
+                .penalize(HardSoftScore.ONE_SOFT, (classId, day, count) -> (count - 5) * 2)
+                .asConstraint("Class group day balance");
     }
 }

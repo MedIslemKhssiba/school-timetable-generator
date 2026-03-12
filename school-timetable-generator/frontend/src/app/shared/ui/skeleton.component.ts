@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+﻿import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -44,12 +44,12 @@ import { CommonModule } from '@angular/common';
 
     .skel-row {
       display: flex; gap: 16px; padding: 14px 16px;
-      border-bottom: 1px solid #E2E8F0;
+      border-bottom: 1px solid #DDE3EE;
     }
-    .skel-header .skel-cell { height: 12px; background: #E2E8F0; }
+    .skel-header .skel-cell { height: 12px; background: #DDE3EE; }
     .skel-cell {
       flex: 1; height: 16px; border-radius: 6px;
-      background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+      background: linear-gradient(90deg, #DDE3EE 25%, #EAEEF6 50%, #DDE3EE 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
     }
@@ -57,12 +57,12 @@ import { CommonModule } from '@angular/common';
     .skel-cards { display: flex; gap: 16px; flex-wrap: wrap; }
     .skel-card {
       flex: 1; min-width: 200px; padding: 20px;
-      border-radius: 12px; border: 1px solid #E2E8F0;
+      border-radius: 14px; border: 1px solid #DDE3EE;
       display: flex; align-items: center; gap: 16px;
     }
     .skel-card-icon {
-      width: 54px; height: 54px; border-radius: 12px;
-      background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+      width: 56px; height: 56px; border-radius: 14px;
+      background: linear-gradient(90deg, #DDE3EE 25%, #EAEEF6 50%, #DDE3EE 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
       flex-shrink: 0;
@@ -71,7 +71,7 @@ import { CommonModule } from '@angular/common';
 
     .skel-line {
       height: 14px; border-radius: 6px;
-      background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+      background: linear-gradient(90deg, #DDE3EE 25%, #EAEEF6 50%, #DDE3EE 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
       margin-bottom: 10px;

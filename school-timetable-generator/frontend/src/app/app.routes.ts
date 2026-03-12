@@ -10,11 +10,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
   {
-    path: 'profile',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
-  },
-  {
     path: 'super-admin',
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ROLE_SUPER_ADMIN'] },

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule, GridModule, ButtonDirective, BadgeModule, ProgressModule } from '@coreui/angular';
@@ -168,12 +168,12 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .solving-card { border-left: 4px solid #2563EB !important; }
     .spinner {
-      width: 28px; height: 28px; border: 3px solid #EFF6FF;
+      width: 28px; height: 28px; border: 3px solid rgba(37, 99, 235,0.15);
       border-top-color: #2563EB; border-radius: 50%;
       animation: spin 0.8s linear infinite; flex-shrink: 0;
     }
@@ -181,56 +181,58 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 
     .filter-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .filter-group { display: flex; align-items: center; gap: 6px; }
-    .filter-label { font-size: 0.8rem; font-weight: 600; color: #94A3B8; white-space: nowrap; }
+    .filter-label { font-size: 0.8rem; font-weight: 600; color: #8D99A8; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
     .filter-select {
-      font-size: 0.85rem; padding: 4px 10px; border: 1px solid #E2E8F0;
-      border-radius: 8px; background: white; outline: none;
+      font-size: 0.85rem; padding: 4px 10px; border: 1px solid #DDE3EE;
+      border-radius: 8px; background: #F8FAFF; outline: none; font-family: 'Montserrat', sans-serif;
       &:focus { border-color: #2563EB; }
     }
 
     .timetable-grid-wrapper { overflow-x: auto; }
     .timetable-grid {
       width: 100%; border-collapse: collapse; min-width: 800px;
-      th, td { padding: 8px 10px; border: 1px solid #E2E8F0; vertical-align: top; }
+      th, td { padding: 8px 10px; border: 1px solid #DDE3EE; vertical-align: top; }
       thead th {
-        background: #F8FAFC; font-size: 0.8rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.04em; color: #0F172A; text-align: center;
+        background: #F0F4FA; font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.04em; color: #1A2332; text-align: center;
+        font-family: 'Montserrat', sans-serif;
       }
       .time-col { width: 100px; }
-      .time-cell { font-size: 0.75rem; font-weight: 600; color: #2563EB; white-space: nowrap; text-align: center; background: #FAFBFE; }
+      .time-cell { font-size: 0.75rem; font-weight: 600; color: #2563EB; white-space: nowrap; text-align: center; background: #F8FAFF; font-family: 'Montserrat', sans-serif; }
       .grid-cell { min-height: 60px; }
     }
     .grid-lesson {
       padding: 6px 8px; margin-bottom: 4px; border-radius: 6px;
-      border-left: 3px solid #2563EB; background: #F8FAFD;
+      border-left: 3px solid #2563EB; background: #F0F4FA;
       font-size: 0.75rem; transition: transform 150ms;
       &:hover { transform: scale(1.02); }
       &:last-child { margin-bottom: 0; }
     }
-    .grid-subject { font-weight: 700; color: #0F172A; margin-bottom: 2px; }
-    .grid-meta { color: #94A3B8; }
+    .grid-subject { font-weight: 700; color: #1A2332; margin-bottom: 2px; font-family: 'Montserrat', sans-serif; }
+    .grid-meta { color: #8D99A8; font-family: 'Montserrat', sans-serif; }
 
     .day-header {
       display: flex; align-items: center;
-      background: linear-gradient(135deg, #2563EB, #60A5FA);
-      color: white; font-weight: 600;
+      background: #2563EB;
+      color: #F8FAFF; font-weight: 600; font-family: 'Montserrat', sans-serif;
     }
     .lesson-slot {
-      padding: 12px; margin: 6px; background: #f8fafd;
+      padding: 12px; margin: 6px; background: #F0F4FA;
       border-radius: 8px; border-left: 3px solid #2563EB;
       transition: transform 0.15s, box-shadow 0.15s;
-      &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37,99,235,0.1); }
+      &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37, 99, 235,0.1); }
     }
     .lesson-time {
       display: flex; align-items: center; gap: 6px;
       font-size: 0.8rem; font-weight: 600; color: #2563EB; margin-bottom: 4px;
+      font-family: 'Montserrat', sans-serif;
     }
-    .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #0F172A; }
+    .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .lesson-details { display: flex; flex-direction: column; gap: 2px; }
-    .lesson-details span { font-size: 0.78rem; color: #94A3B8; }
+    .lesson-details span { font-size: 0.78rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
   `]
 })
-export class TimetableComponent implements OnInit {
+export class TimetableComponent implements OnInit, OnDestroy {
   lessons: Lesson[] = [];
   filteredLessons: Lesson[] = [];
   solving = false;
@@ -245,6 +247,7 @@ export class TimetableComponent implements OnInit {
   private schoolId = 1;
   private subjectColors: Record<string, string> = {};
   private colorPalette = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#0EA5E9', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
+  private pollInterval: any;
 
   constructor(
     private adminService: AdminService,
@@ -259,18 +262,58 @@ export class TimetableComponent implements OnInit {
 
   ngOnInit(): void { this.refresh(); }
 
+  ngOnDestroy(): void { this.stopPolling(); }
+
   solve(): void {
     this.solving = true;
     this.adminService.solveTimetable(this.schoolId, {}).subscribe({
-      next: () => this.notify.info('Solving started! This may take a few minutes.'),
+      next: () => {
+        this.notify.info('Solving started! This may take a few minutes.');
+        this.startPolling();
+      },
       error: () => { this.solving = false; this.notify.error('Failed to start solving'); }
     });
   }
 
   stop(): void {
     this.adminService.stopSolving(this.schoolId).subscribe({
-      next: () => { this.solving = false; this.notify.info('Solving stopped'); this.refresh(); },
+      next: () => { this.solving = false; this.stopPolling(); this.notify.info('Solving stopped'); this.pollSolution(); },
       error: () => this.notify.error('Failed to stop solving')
+    });
+  }
+
+  private startPolling(): void {
+    this.stopPolling();
+    this.pollInterval = setInterval(() => this.pollSolution(), 3000);
+  }
+
+  private stopPolling(): void {
+    if (this.pollInterval) { clearInterval(this.pollInterval); this.pollInterval = null; }
+  }
+
+  private pollSolution(): void {
+    this.adminService.getSolution(this.schoolId).subscribe({
+      next: (solution: any) => {
+        if (solution && solution.lessonAssignments) {
+          this.lessons = solution.lessonAssignments
+            .filter((la: any) => la.timeslot && la.room)
+            .map((la: any, i: number) => ({
+              id: la.id || i,
+              subjectName: la.subject?.name || '',
+              teacherName: la.teacher ? `${la.teacher.firstName} ${la.teacher.lastName}` : '',
+              classGroupName: la.classGroup?.name || '',
+              roomName: la.room?.name || '',
+              roomId: la.room?.id,
+              timeslotId: la.timeslot?.id,
+              dayOfWeek: la.timeslot?.dayOfWeek || '',
+              startTime: la.timeslot?.startTime || '',
+              endTime: la.timeslot?.endTime || ''
+            }));
+          this.buildMeta();
+          this.applyFilter();
+        }
+      },
+      error: () => {}
     });
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -92,42 +92,36 @@ import { Subscription, interval, switchMap } from 'rxjs';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
     .stat-card {
       display: flex; flex-direction: column; align-items: center; gap: 10px;
-      padding: 24px 16px; border-radius: 12px; background: white; text-decoration: none;
-      border: 1px solid #E2E8F0; border-left: 4px solid transparent;
-      transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;
+      padding: 24px 16px; border-radius: 14px; background: #F8FAFF; text-decoration: none;
+      border: 1px solid #DDE3EE; border-left: 4px solid transparent;
+      transition: transform 250ms, box-shadow 250ms; cursor: pointer;
     }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(13, 27, 62,0.1); }
     .stat-primary { border-left-color: #2563EB; }
-    .stat-info { border-left-color: #0EA5E9; }
-    .stat-success { border-left-color: #22C55E; }
+    .stat-info { border-left-color: #4A7C8A; }
+    .stat-success { border-left-color: #6B9080; }
     .stat-icon-wrap {
       width: 52px; height: 52px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
     }
-    .stat-value { font-size: 1.75rem; font-weight: 800; color: #0F172A; line-height: 1; }
-    .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94A3B8; }
+    .stat-value { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; line-height: 1; }
+    .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
 
     .welcome-card { border-left: 4px solid #2563EB !important; }
-    .welcome-icon {
-      width: 52px; height: 52px; border-radius: 12px;
-      background: linear-gradient(135deg, #2563EB, #60A5FA);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; box-shadow: 0 4px 12px rgba(37,99,235,0.2);
-    }
 
     .quick-link {
       display: flex; align-items: center; gap: 12px;
-      padding: 14px 20px; text-decoration: none; color: #0F172A;
-      font-weight: 500; font-size: 0.9rem;
-      border-bottom: 1px solid #E2E8F0; transition: background 0.15s;
+      padding: 14px 20px; text-decoration: none; color: #1A2332;
+      font-weight: 500; font-size: 0.9rem; font-family: 'Montserrat', sans-serif;
+      border-bottom: 1px solid #EAEEF6; transition: background 200ms;
       &:last-child { border-bottom: none; }
-      &:hover { background: #F8FAFC; }
+      &:hover { background: #F0F4FA; }
     }
   `]
 })

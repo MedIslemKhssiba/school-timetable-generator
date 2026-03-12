@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CardModule, ButtonDirective, FormModule } from '@coreui/angular';
@@ -11,22 +11,11 @@ import { NotificationService } from '../../core/services/notification.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, CardModule, ButtonDirective, FormModule],
   template: `
-    <div class="page-header mb-4">
-      <div>
-        <h2 class="page-title">{{ t('my_profile') }}</h2>
-        <p class="page-subtitle">{{ t('manage_account') }}</p>
-      </div>
-    </div>
-
-    <div class="profile-layout">
-      <div class="profile-sidebar">
-        <c-card class="sidebar-card">
-          <c-card-body class="text-center">
-            <div class="sidebar-avatar">{{ userInitials }}</div>
-            <h4 class="sidebar-name">{{ userName }}</h4>
-            <p class="sidebar-email">{{ userEmail }}</p>
-          </c-card-body>
-        </c-card>
+    <div class="profile-container">
+      <div class="profile-avatar-section">
+        <div class="sidebar-avatar">{{ userInitials }}</div>
+        <h4 class="sidebar-name">{{ userName }}</h4>
+        <p class="sidebar-email">{{ userEmail }}</p>
       </div>
 
       <div class="profile-content">
@@ -94,46 +83,35 @@ import { NotificationService } from '../../core/services/notification.service';
     </div>
   `,
   styles: [`
-    .page-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .profile-container { padding: 24px; }
 
-    .profile-layout { display: flex; gap: 24px; align-items: flex-start; }
-
-    .profile-sidebar { width: 280px; flex-shrink: 0; }
-    .sidebar-card {
-      border-radius: 14px !important; border: 1px solid #E2E8F0 !important;
-      box-shadow: 0 2px 8px rgba(15,23,42,0.06) !important;
+    .profile-avatar-section {
+      text-align: center; padding: 20px 0 24px;
+      border-bottom: 1px solid #DDE3EE; margin-bottom: 24px;
     }
     .sidebar-avatar {
-      width: 80px; height: 80px; border-radius: 16px;
-      background: linear-gradient(135deg, #2563EB, #60A5FA);
+      width: 72px; height: 72px; border-radius: 16px;
+      background: #2563EB;
       color: white; display: flex; align-items: center; justify-content: center;
-      font-size: 1.75rem; font-weight: 800; margin: 0 auto 16px;
-      border: 3px solid rgba(37,99,235,0.2);
+      font-size: 1.5rem; font-weight: 700; font-family: 'Montserrat', sans-serif; margin: 0 auto 12px;
+      border: 3px solid rgba(37, 99, 235,0.2);
     }
-    .sidebar-name { font-weight: 700; font-size: 1.1rem; color: #0F172A; margin: 0 0 4px; }
-    .sidebar-email { color: #94A3B8; font-size: 0.85rem; margin: 0; }
+    .sidebar-name { font-weight: 700; font-size: 1rem; color: #1A2332; margin: 0 0 4px; font-family: 'Montserrat', sans-serif; }
+    .sidebar-email { color: #8D99A8; font-size: 0.8rem; margin: 0; }
 
     .profile-content { flex: 1; min-width: 0; }
 
     .info-card {
-      border: 1px solid #E2E8F0 !important; border-radius: 14px !important;
-      box-shadow: 0 2px 8px rgba(15,23,42,0.06) !important;
+      border: 1px solid #DDE3EE !important; border-radius: 14px !important;
+      box-shadow: 0 2px 8px rgba(13, 27, 62,0.06) !important; background: #F8FAFF !important;
     }
     .card-header-content { display: flex; align-items: center; gap: 8px; }
-    .form-label-custom { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748B; }
+    .form-label-custom { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: #8D99A8; }
     .form-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .readonly-field { background: #F8FAFC !important; cursor: not-allowed; }
+    .readonly-field { background: #F0F4FA !important; cursor: not-allowed; }
     .save-btn {
       display: flex; align-items: center; border-radius: 10px !important;
       font-weight: 600 !important; padding: 0.5rem 1.25rem !important;
-    }
-
-    @media (max-width: 768px) {
-      .profile-layout { flex-direction: column; }
-      .profile-sidebar { width: 100%; }
-      .form-row-grid { grid-template-columns: 1fr; }
     }
   `]
 })

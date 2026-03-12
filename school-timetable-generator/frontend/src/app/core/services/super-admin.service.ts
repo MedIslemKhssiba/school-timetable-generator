@@ -44,6 +44,10 @@ export class SuperAdminService {
     return this.http.post<User>(`${this.apiUrl}/admins`, request);
   }
 
+  updateAdmin(id: number, data: { firstName: string; lastName: string; email: string; schoolId?: number | null }): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/admins/${id}`, data);
+  }
+
   deleteAdmin(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/admins/${id}`);
   }

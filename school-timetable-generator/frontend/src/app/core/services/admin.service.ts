@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability } from '../models';
+import { ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability, Timeslot } from '../models';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -80,6 +80,23 @@ export class AdminService {
 
   deleteRoom(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/rooms/${id}`);
+  }
+
+  // Timeslots
+  getTimeslots(): Observable<Timeslot[]> {
+    return this.http.get<Timeslot[]>(`${this.apiUrl}/timetable/timeslots`);
+  }
+
+  createTimeslot(timeslot: { dayOfWeek: string; startTime: string; endTime: string; orderInDay?: number }): Observable<Timeslot> {
+    return this.http.post<Timeslot>(`${this.apiUrl}/timetable/timeslots`, timeslot);
+  }
+
+  updateTimeslot(id: number, timeslot: { dayOfWeek: string; startTime: string; endTime: string; orderInDay?: number }): Observable<Timeslot> {
+    return this.http.put<Timeslot>(`${this.apiUrl}/timetable/timeslots/${id}`, timeslot);
+  }
+
+  deleteTimeslot(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/timetable/timeslots/${id}`);
   }
 
   // Timetable

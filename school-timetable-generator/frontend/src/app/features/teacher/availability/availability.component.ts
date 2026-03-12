@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -70,29 +70,29 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .info-card { border-left: 4px solid #2563EB !important; }
 
     .day-header {
       display: flex; align-items: center;
-      background: linear-gradient(135deg, #2563EB, #60A5FA);
-      color: white; font-weight: 600;
+      background: #2563EB;
+      color: #F8FAFF; font-weight: 600; font-family: 'Montserrat', sans-serif;
     }
     .slot-row {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 12px; margin: 4px 6px; border-radius: 8px;
-      border-left: 3px solid #E2E8F0; cursor: pointer;
+      border-left: 3px solid #DDE3EE; cursor: pointer;
       transition: all 0.15s;
-      &:hover { background: #F8FAFC; }
+      &:hover { background: #F0F4FA; }
       &.available {
-        border-left-color: #22C55E;
-        background: rgba(34, 197, 94, 0.06);
+        border-left-color: #6B9080;
+        background: rgba(107, 144, 128, 0.06);
       }
     }
     .slot-check { width: 18px; height: 18px; flex-shrink: 0; }
-    .slot-time { font-weight: 600; font-size: 0.85rem; color: #0F172A; }
+    .slot-time { font-weight: 600; font-size: 0.85rem; color: #1A2332; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class AvailabilityComponent implements OnInit {

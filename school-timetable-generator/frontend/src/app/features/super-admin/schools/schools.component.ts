@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
@@ -179,43 +179,46 @@ import { TranslationService } from '../../../core/services/translation.service';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .toolbar {
       display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-      padding: 16px 20px !important; background: white !important;
+      padding: 16px 20px !important; background: #F8FAFF !important;
     }
     .search-box {
       display: flex; align-items: center; gap: 8px; padding: 8px 14px;
-      border: 1.5px solid #CBD5E1; border-radius: 10px; background: #F8FAFC;
+      border: 1.5px solid #DDE3EE; border-radius: 10px; background: #EAEEF6;
       transition: border-color 150ms; min-width: 260px;
-      &:focus-within { border-color: #60A5FA; background: white; }
+      &:focus-within { border-color: #2563EB; background: #F8FAFF; }
     }
     .search-input {
-      border: none; outline: none; background: transparent; font-size: 0.875rem; color: #0F172A; width: 100%;
-      &::placeholder { color: #94A3B8; }
+      border: none; outline: none; background: transparent; font-size: 0.875rem; color: #1A2332; width: 100%;
+      font-family: 'Montserrat', sans-serif;
+      &::placeholder { color: #8D99A8; }
     }
     .toolbar-info { display: flex; align-items: center; gap: 12px; }
     .count-badge {
-      font-size: 0.8rem; font-weight: 600; color: #475569;
-      background: #E2E8F0; padding: 4px 12px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 600; color: #5C6A7A;
+      background: #DDE3EE; padding: 4px 12px; border-radius: 20px; font-family: 'Montserrat', sans-serif;
     }
     .filter-select {
-      padding: 6px 12px; border-radius: 8px; border: 1.5px solid #CBD5E1;
-      font-size: 0.8125rem; color: #334155; background: white; cursor: pointer;
-      &:focus { border-color: #60A5FA; outline: none; }
+      padding: 6px 12px; border-radius: 8px; border: 1.5px solid #DDE3EE;
+      font-size: 0.8125rem; color: #1A2332; background: #F8FAFF; cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      &:focus { border-color: #2563EB; outline: none; }
     }
 
     .table-responsive-wrapper { overflow-x: auto; }
-    .cell-primary { font-weight: 600; color: #0F172A; }
+    .cell-primary { font-weight: 600; color: #1A2332; font-family: 'Montserrat', sans-serif; }
 
     .status-badge {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
     }
-    .status-active { background: #F0FDF4; color: #22C55E; }
-    .status-inactive { background: #FEF2F2; color: #EF4444; }
+    .status-active { background: rgba(107,144,128,0.1); color: #6B9080; }
+    .status-inactive { background: rgba(196,69,54,0.08); color: #C44536; }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
     .action-btns { display: flex; gap: 2px; justify-content: flex-end; }
@@ -223,43 +226,43 @@ import { TranslationService } from '../../../core/services/translation.service';
     /* Pagination */
     .pagination-bar {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px; border-top: 1px solid #E2E8F0;
+      padding: 12px 20px; border-top: 1px solid #DDE3EE;
     }
-    .pagination-info { font-size: 0.8rem; color: #475569; }
+    .pagination-info { font-size: 0.8rem; color: #5C6A7A; font-family: 'Montserrat', sans-serif; }
     .pagination-btns { display: flex; gap: 4px; }
     .pg-btn {
-      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E2E8F0;
-      background: white; color: #334155; font-size: 0.8rem; font-weight: 600;
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #DDE3EE;
+      background: #F8FAFF; color: #1A2332; font-size: 0.8rem; font-weight: 600;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: all 150ms;
-      &:hover:not(:disabled) { background: #F1F5F9; }
-      &.active { background: #2563EB; color: white; border-color: #2563EB; }
+      transition: all 150ms; font-family: 'Montserrat', sans-serif;
+      &:hover:not(:disabled) { background: #EAEEF6; }
+      &.active { background: #2563EB; color: #F8FAFF; border-color: #2563EB; }
       &:disabled { opacity: 0.4; cursor: not-allowed; }
     }
 
     /* Modal */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 1050; backdrop-filter: blur(4px); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); z-index: 1050; backdrop-filter: blur(4px); }
     .modal-wrapper {
       position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 24px;
     }
     .modal-box {
-      background: white; border-radius: 16px; width: 100%; max-width: 500px;
-      box-shadow: 0 25px 50px rgba(15,23,42,0.25);
+      background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 500px;
+      box-shadow: 0 25px 50px rgba(13, 27, 62,0.2);
       animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1);
     }
     .modal-header-custom {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 20px 24px; border-bottom: 1px solid #E2E8F0;
-      h3 { margin: 0; font-size: 1.125rem; font-weight: 700; color: #0F172A; }
+      padding: 20px 24px; border-bottom: 1px solid #DDE3EE;
+      h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 1.125rem; font-weight: 700; color: #1A2332; }
     }
     .modal-close {
-      background: none; border: none; cursor: pointer; color: #94A3B8; padding: 4px; border-radius: 6px;
-      &:hover { background: #F1F5F9; color: #0F172A; }
+      background: none; border: none; cursor: pointer; color: #8D99A8; padding: 4px; border-radius: 6px;
+      &:hover { background: #EAEEF6; color: #1A2332; }
     }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .form-field { display: flex; flex-direction: column; }
     .modal-footer-custom {
-      padding: 16px 24px; border-top: 1px solid #E2E8F0;
+      padding: 16px 24px; border-top: 1px solid #DDE3EE;
       display: flex; justify-content: flex-end; gap: 10px;
     }
 
@@ -267,16 +270,15 @@ import { TranslationService } from '../../../core/services/translation.service';
 
     .stats-mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .stats-mini-card {
-      background: #F8FAFC; border-radius: 12px; padding: 20px; text-align: center;
-      border: 1px solid #E2E8F0;
+      background: #F0F4FA; border-radius: 12px; padding: 20px; text-align: center;
+      border: 1px solid #DDE3EE;
     }
     .smc-icon {
       width: 44px; height: 44px; border-radius: 12px; margin: 0 auto 12px;
       display: flex; align-items: center; justify-content: center;
-      :deep(svg) { width: 22px; height: 22px; fill: currentColor; }
     }
-    .smc-value { font-size: 1.5rem; font-weight: 800; color: #0F172A; }
-    .smc-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94A3B8; margin-top: 4px; }
+    .smc-value { font-family: 'Montserrat', sans-serif; font-size: 1.5rem; font-weight: 700; color: #1A2332; }
+    .smc-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #8D99A8; margin-top: 4px; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class SchoolsComponent implements OnInit {
@@ -302,10 +304,10 @@ export class SchoolsComponent implements OnInit {
   statsSchoolName = '';
   schoolStats: Record<string, number> = {};
   statsItems = [
-    { key: 'teachers', label: 'Teachers', bg: '#EFF6FF', color: '#2563EB' },
-    { key: 'classes', label: 'Classes', bg: '#F0FDF4', color: '#22C55E' },
-    { key: 'subjects', label: 'Subjects', bg: '#FFFBEB', color: '#F59E0B' },
-    { key: 'rooms', label: 'Rooms', bg: '#F0F9FF', color: '#0EA5E9' }
+    { key: 'teachers', label: 'Teachers', bg: 'rgba(37, 99, 235,0.1)', color: '#2563EB' },
+    { key: 'classes', label: 'Classes', bg: 'rgba(107,144,128,0.1)', color: '#6B9080' },
+    { key: 'subjects', label: 'Subjects', bg: 'rgba(212,160,60,0.1)', color: '#D4A03C' },
+    { key: 'rooms', label: 'Rooms', bg: 'rgba(74,124,138,0.1)', color: '#4A7C8A' }
   ];
 
   constructor(

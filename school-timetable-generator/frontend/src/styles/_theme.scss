@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════════
-// EcoCode Global Theme — CoreUI Overrides & Design System
+// EcoCode — "Educational Blue" Theme
+// Modern Blue Educational Design System
 // ═══════════════════════════════════════════════════════════
 @use 'variables' as *;
 
@@ -16,6 +17,7 @@
   --cui-body-color: #{$text-primary};
   --cui-border-color: #{$border-color};
   --cui-card-border-color: #{$border-color};
+  --cui-font-sans-serif: #{$font-family};
 }
 
 // ══════════════════════════════════════════════════════
@@ -27,17 +29,23 @@
   box-shadow: $shadow-card !important;
   background: $white !important;
   overflow: hidden;
-  transition: box-shadow $transition-base, transform $transition-base;
+  transition: box-shadow $transition-smooth, transform $transition-smooth;
+
+  &:hover {
+    box-shadow: $shadow-card-hover !important;
+  }
 }
 
 .card-header, c-card-header {
-  background: $white !important;
-  border-bottom: 1px solid $gray-200 !important;
+  background: transparent !important;
+  border-bottom: 1px solid $gray-100 !important;
   padding: $spacing-md $spacing-lg !important;
-  font-weight: 600;
-  font-size: $font-size-base;
+  font-family: $font-display;
+  font-weight: 700;
+  font-size: $font-size-lg;
   color: $text-primary;
-  strong { font-weight: 700; }
+  letter-spacing: 0.01em;
+  strong { font-family: $font-display; font-weight: 700; }
 }
 
 .card-body, c-card-body {
@@ -51,75 +59,83 @@
   border-radius: $radius !important;
   font-weight: 600 !important;
   font-size: $font-size-base !important;
-  padding: 0.5rem 1.25rem !important;
+  font-family: $font-family !important;
+  padding: 0.55rem 1.3rem !important;
   transition: all $transition-base !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  letter-spacing: 0.01em !important;
+  gap: 7px !important;
+  letter-spacing: 0.02em !important;
   border: none !important;
   cursor: pointer !important;
+  text-transform: none !important;
   svg { flex-shrink: 0; }
-  &:focus { box-shadow: 0 0 0 3px rgba($primary, 0.2) !important; }
+  &:focus { box-shadow: 0 0 0 3px rgba($primary, 0.18) !important; }
 }
 
 .btn-primary, [cButton][color="primary"] {
-  background: $primary-gradient !important;
-  color: $white !important;
-  box-shadow: 0 2px 8px rgba($primary, 0.25) !important;
+  background: $primary !important;
+  color: $text-on-primary !important;
+  box-shadow: 0 2px 8px rgba($primary, 0.22) !important;
   &:hover:not(:disabled) {
+    background: $primary-dark !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba($primary, 0.35) !important;
+    box-shadow: 0 6px 20px rgba($primary, 0.3) !important;
   }
   &:active:not(:disabled) { transform: translateY(0); }
 }
 
 .btn-success, [cButton][color="success"] {
-  background: linear-gradient(135deg, $success, darken($success, 5%)) !important;
+  background: $success !important;
   color: $white !important;
-  box-shadow: 0 2px 8px rgba($success, 0.25) !important;
-  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba($success, 0.35) !important; }
+  box-shadow: 0 2px 8px rgba($success, 0.2) !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba($success, 0.3) !important; background: darken($success, 6%) !important; }
 }
 
 .btn-danger, [cButton][color="danger"]:not([variant="ghost"]):not([variant="outline"]) {
-  background: linear-gradient(135deg, $danger, darken($danger, 5%)) !important;
+  background: $danger !important;
   color: $white !important;
-  box-shadow: 0 2px 8px rgba($danger, 0.2) !important;
-  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba($danger, 0.3) !important; }
+  box-shadow: 0 2px 8px rgba($danger, 0.18) !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba($danger, 0.28) !important; background: darken($danger, 6%) !important; }
 }
 
 .btn-warning, [cButton][color="warning"] {
-  background: linear-gradient(135deg, $warning, darken($warning, 8%)) !important;
-  color: $white !important;
-  box-shadow: 0 2px 8px rgba($warning, 0.2) !important;
-  &:hover:not(:disabled) { transform: translateY(-1px); }
+  background: $warning !important;
+  color: $gray-800 !important;
+  box-shadow: 0 2px 8px rgba($warning, 0.18) !important;
+  &:hover:not(:disabled) { transform: translateY(-1px); background: darken($warning, 8%) !important; }
 }
 
 .btn-info, [cButton][color="info"]:not([variant="ghost"]):not([variant="outline"]) {
-  background: linear-gradient(135deg, $info, $accent-light) !important;
+  background: $info !important;
   color: $white !important;
-  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba($info, 0.3) !important; }
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba($info, 0.25) !important; background: darken($info, 6%) !important; }
 }
 
 .btn-secondary, [cButton][color="secondary"] {
-  background: $gray-200 !important;
+  background: $gray-100 !important;
   color: $text-primary !important;
   border: 1px solid $gray-300 !important;
-  &:hover:not(:disabled) { background: $gray-300 !important; }
+  &:hover:not(:disabled) { background: $gray-200 !important; }
 }
 
 .btn-light, [cButton][color="light"] {
   background: $white !important;
   color: $text-secondary !important;
-  border: 1px solid $gray-300 !important;
+  border: 1px solid $border-color !important;
   box-shadow: $shadow-xs !important;
-  &:hover:not(:disabled) { background: $gray-100 !important; color: $text-primary !important; }
+  &:hover:not(:disabled) { background: $gray-50 !important; color: $text-primary !important; border-color: $gray-300 !important; }
 }
 
 [cButton][variant="outline"] {
   background: transparent !important;
   border: 1.5px solid currentColor !important;
   &:hover:not(:disabled) { transform: translateY(-1px); }
+}
+
+[cButton][color="primary"][variant="outline"] {
+  color: $primary !important; border-color: $primary !important;
+  &:hover { background: $primary-lighter !important; }
 }
 
 [cButton][color="info"][variant="outline"] {
@@ -129,24 +145,25 @@
 
 [cButton][color="secondary"][variant="outline"] {
   color: $secondary !important; border-color: $gray-400 !important;
-  &:hover { background: $gray-100 !important; }
+  &:hover { background: $gray-50 !important; }
 }
 
 [cButton][variant="ghost"] {
   background: transparent !important;
   box-shadow: none !important;
-  padding: 0.35rem 0.6rem !important;
+  padding: 0.4rem 0.65rem !important;
   border-radius: $radius-sm !important;
   &:hover { transform: none !important; }
 }
 
+[cButton][color="primary"][variant="ghost"] { color: $primary !important; &:hover { background: $primary-lighter !important; } }
 [cButton][color="info"][variant="ghost"]    { color: $info !important;    &:hover { background: $info-light !important; } }
 [cButton][color="danger"][variant="ghost"]  { color: $danger !important;  &:hover { background: $danger-light !important; } }
 [cButton][color="warning"][variant="ghost"] { color: $warning !important; &:hover { background: $warning-light !important; } }
 [cButton][color="success"][variant="ghost"] { color: $success !important; &:hover { background: $success-light !important; } }
 
 .btn:disabled, [cButton]:disabled {
-  opacity: 0.5 !important;
+  opacity: 0.45 !important;
   cursor: not-allowed !important;
   transform: none !important;
   box-shadow: none !important;
@@ -160,11 +177,17 @@
   border: 1.5px solid $border-input !important;
   padding: 0.6rem 0.9rem !important;
   font-size: $font-size-base !important;
+  font-family: $font-family !important;
   color: $text-primary !important;
-  background: $white !important;
+  background: $bg-surface !important;
   transition: border-color $transition-fast, box-shadow $transition-fast !important;
   &::placeholder { color: $text-muted !important; }
-  &:focus { border-color: $primary-light !important; box-shadow: 0 0 0 3px rgba($primary, 0.1) !important; outline: none !important; }
+  &:focus {
+    border-color: $primary-light !important;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1) !important;
+    outline: none !important;
+    background: $white !important;
+  }
   &:hover:not(:focus):not(:disabled) { border-color: $gray-400 !important; }
 }
 
@@ -172,8 +195,8 @@
   font-weight: 600 !important;
   font-size: $font-size-sm !important;
   color: $text-primary !important;
-  margin-bottom: 0.35rem !important;
-  letter-spacing: 0.01em;
+  margin-bottom: 0.4rem !important;
+  letter-spacing: 0.02em;
 }
 
 .input-group {
@@ -202,6 +225,17 @@ select[multiple][cFormControl] {
   option { padding: 6px 10px; border-radius: $radius-xs; margin-bottom: 2px; &:checked { background: $primary-lighter; color: $primary-dark; } }
 }
 
+.form-check-input {
+  border-color: $border-input !important;
+  &:checked {
+    background-color: $primary !important;
+    border-color: $primary !important;
+  }
+  &:focus {
+    box-shadow: 0 0 0 3px rgba($primary, 0.12) !important;
+  }
+}
+
 // ══════════════════════════════════════════════════════
 // TABLES
 // ══════════════════════════════════════════════════════
@@ -217,18 +251,19 @@ select[multiple][cFormControl] {
     font-weight: 700 !important;
     font-size: $font-size-xs !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    padding: 0.85rem 1rem !important;
+    letter-spacing: 0.08em !important;
+    padding: 0.9rem 1rem !important;
     border-bottom: 2px solid $gray-200 !important;
     white-space: nowrap;
+    font-family: $font-family;
   }
 
   tbody tr {
     transition: background $transition-fast;
     &:hover { background: $primary-lighter !important; }
     td {
-      padding: 0.85rem 1rem !important;
-      border-bottom: 1px solid $gray-200 !important;
+      padding: 0.9rem 1rem !important;
+      border-bottom: 1px solid $border-light !important;
       vertical-align: middle !important;
       color: $text-primary;
     }
@@ -242,9 +277,10 @@ select[multiple][cFormControl] {
 .badge, c-badge {
   font-weight: 600 !important;
   font-size: $font-size-xs !important;
-  padding: 0.3em 0.75em !important;
+  padding: 0.3em 0.8em !important;
   border-radius: $radius-full !important;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  font-family: $font-family;
 }
 
 // ══════════════════════════════════════════════════════
@@ -255,8 +291,14 @@ select[multiple][cFormControl] {
   font-size: $font-size-base;
   font-weight: 500;
   border: none !important;
+  border-left: 4px solid transparent !important;
   box-shadow: $shadow-sm;
-  padding: 0.85rem 1.25rem !important;
+  padding: 0.9rem 1.3rem !important;
+
+  &[color="success"], &.alert-success { border-left-color: $success !important; background: $success-light !important; color: darken($success, 15%) !important; }
+  &[color="danger"], &.alert-danger   { border-left-color: $danger !important; background: $danger-light !important; color: darken($danger, 10%) !important; }
+  &[color="warning"], &.alert-warning { border-left-color: $warning !important; background: $warning-light !important; color: darken($warning, 20%) !important; }
+  &[color="info"], &.alert-info       { border-left-color: $info !important; background: $info-light !important; color: darken($info, 10%) !important; }
 }
 
 // ══════════════════════════════════════════════════════
@@ -264,10 +306,11 @@ select[multiple][cFormControl] {
 // ══════════════════════════════════════════════════════
 .dropdown-menu {
   border-radius: $radius-md !important;
-  border: 1px solid $gray-200 !important;
+  border: 1px solid $border-color !important;
   box-shadow: $shadow-md !important;
   padding: $spacing-sm !important;
   min-width: 200px;
+  background: $bg-surface !important;
   animation: dropFade 150ms ease;
 
   .dropdown-item {
@@ -278,19 +321,20 @@ select[multiple][cFormControl] {
     transition: background $transition-fast;
     margin-bottom: 1px;
     &:hover { background: $primary-lighter !important; color: $primary-dark !important; }
-    &:active { background: $primary !important; color: $white !important; }
+    &:active { background: $primary !important; color: $text-on-primary !important; }
   }
 
   .dropdown-header {
     font-size: $font-size-xs !important;
     font-weight: 700 !important;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: $text-muted !important;
     padding: 0.5rem 0.85rem !important;
+    font-family: $font-family;
   }
 
-  .dropdown-divider { border-color: $gray-200; margin: $spacing-xs 0; }
+  .dropdown-divider { border-color: $border-light; margin: $spacing-xs 0; }
 }
 
 @keyframes dropFade {
@@ -304,7 +348,7 @@ select[multiple][cFormControl] {
 .progress, c-progress {
   border-radius: $radius-full !important;
   background: $gray-200 !important;
-  height: 6px !important;
+  height: 7px !important;
   overflow: hidden;
   .progress-bar, c-progress-bar {
     background: $primary-gradient !important;
@@ -316,21 +360,22 @@ select[multiple][cFormControl] {
 // MODAL
 // ══════════════════════════════════════════════════════
 .modal-backdrop {
-  background: rgba(15, 23, 42, 0.5) !important;
-  backdrop-filter: blur(4px);
+  background: rgba(13, 20, 40, 0.45) !important;
+  backdrop-filter: blur(6px);
 }
 
 .modal-content {
   border-radius: $radius-lg !important;
   border: none !important;
   box-shadow: $shadow-modal !important;
+  background: $bg-surface !important;
   overflow: hidden;
 }
 
 .modal-header {
   padding: $spacing-lg $spacing-lg $spacing-md !important;
-  border-bottom: 1px solid $gray-200 !important;
-  .modal-title { font-weight: 700; font-size: $font-size-lg; }
+  border-bottom: 1px solid $border-light !important;
+  .modal-title { font-family: $font-display; font-weight: 700; font-size: $font-size-xl; color: $text-primary; }
   .btn-close { opacity: 0.4; &:hover { opacity: 1; } }
 }
 
@@ -340,7 +385,7 @@ select[multiple][cFormControl] {
 
 .modal-footer {
   padding: $spacing-md $spacing-lg !important;
-  border-top: 1px solid $gray-200 !important;
+  border-top: 1px solid $border-light !important;
   gap: 8px;
 }
 
@@ -348,19 +393,19 @@ select[multiple][cFormControl] {
 // STAT ICON (dashboard cards)
 // ══════════════════════════════════════════════════════
 .stat-icon {
-  width: 54px; height: 54px;
+  width: 56px; height: 56px;
   border-radius: $radius-md;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  transition: transform $transition-base;
+  transition: transform $transition-smooth;
   svg { width: 26px; height: 26px; fill: $white; }
 }
 
-.stat-icon.bg-primary, .bg-primary.stat-icon { background: $primary-gradient !important; }
-.stat-icon.bg-info, .bg-info.stat-icon       { background: linear-gradient(135deg, $info, $accent-light) !important; }
-.stat-icon.bg-warning, .bg-warning.stat-icon  { background: linear-gradient(135deg, $warning, lighten($warning, 10%)) !important; }
-.stat-icon.bg-success, .bg-success.stat-icon  { background: linear-gradient(135deg, $success, lighten($success, 12%)) !important; }
-.stat-icon.bg-danger, .bg-danger.stat-icon    { background: linear-gradient(135deg, $danger, lighten($danger, 12%)) !important; }
+.stat-icon.bg-primary, .bg-primary.stat-icon { background: $primary !important; }
+.stat-icon.bg-info, .bg-info.stat-icon       { background: $info !important; }
+.stat-icon.bg-warning, .bg-warning.stat-icon  { background: $warning !important; }
+.stat-icon.bg-success, .bg-success.stat-icon  { background: $success !important; }
+.stat-icon.bg-danger, .bg-danger.stat-icon    { background: $danger !important; }
 
 // ══════════════════════════════════════════════════════
 // RESPONSIVE

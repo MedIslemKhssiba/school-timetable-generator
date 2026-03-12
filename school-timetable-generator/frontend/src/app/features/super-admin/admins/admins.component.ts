@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
@@ -68,6 +68,7 @@ import { TranslationService } from '../../../core/services/translation.service';
                       </c-badge>
                     </td>
                     <td class="text-end">
+                      <button cButton color="primary" variant="ghost" size="sm" (click)="openEditModal(a)">{{ t('edit') }}</button>
                       <button cButton color="warning" variant="ghost" size="sm" (click)="openPasswordModal(a)">{{ t('change_password') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(a)">{{ t('delete') }}</button>
                     </td>
@@ -93,13 +94,13 @@ import { TranslationService } from '../../../core/services/translation.service';
       </c-card-body>
     </c-card>
 
-    <!-- Create Modal -->
+    <!-- Create / Edit Modal -->
     @if (modalVisible) {
       <div class="modal-backdrop" (click)="closeModal()"></div>
       <div class="modal-wrapper">
         <div class="modal-box">
           <div class="modal-header-custom">
-            <h3>{{ t('add_new_admin') }}</h3>
+            <h3>{{ editingAdmin ? t('edit_admin') : t('add_new_admin') }}</h3>
             <button class="modal-close" (click)="closeModal()">&times;</button>
           </div>
           <form [formGroup]="adminForm" (ngSubmit)="onSubmit()">
@@ -118,10 +119,12 @@ import { TranslationService } from '../../../core/services/translation.service';
                 <label cLabel>{{ t('email') }} *</label>
                 <input cFormControl formControlName="email" type="email" placeholder="admin&#64;example.com" />
               </div>
-              <div class="form-field">
-                <label cLabel>{{ t('password') }} *</label>
-                <input cFormControl formControlName="password" type="password" placeholder="Minimum 6 characters" />
-              </div>
+              @if (!editingAdmin) {
+                <div class="form-field">
+                  <label cLabel>{{ t('password') }} *</label>
+                  <input cFormControl formControlName="password" type="password" placeholder="Minimum 6 characters" />
+                </div>
+              }
               <div class="form-field">
                 <label cLabel>{{ t('assign_to_school') }}</label>
                 <select cFormControl formControlName="schoolId">
@@ -135,7 +138,7 @@ import { TranslationService } from '../../../core/services/translation.service';
             <div class="modal-footer-custom">
               <button cButton color="secondary" type="button" (click)="closeModal()">{{ t('cancel') }}</button>
               <button cButton color="primary" type="submit" [disabled]="adminForm.invalid || saving">
-                @if (saving) { {{ t('creating') }} } @else { {{ t('create_admin') }} }
+                @if (saving) { {{ editingAdmin ? t('saving') : t('creating') }} } @else { {{ editingAdmin ? t('save_changes') : t('create_admin') }} }
               </button>
             </div>
           </form>
@@ -188,54 +191,55 @@ import { TranslationService } from '../../../core/services/translation.service';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .toolbar {
       display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-      padding: 16px 20px !important; background: white !important;
+      padding: 16px 20px !important; background: #F8FAFF !important;
     }
     .search-box {
       display: flex; align-items: center; gap: 8px; padding: 8px 14px;
-      border: 1.5px solid #CBD5E1; border-radius: 10px; background: #F8FAFC;
+      border: 1.5px solid #DDE3EE; border-radius: 10px; background: #EAEEF6;
       transition: border-color 150ms; min-width: 260px;
-      &:focus-within { border-color: #60A5FA; background: white; }
+      &:focus-within { border-color: #2563EB; background: #F8FAFF; }
     }
-    .search-input { border: none; outline: none; background: transparent; font-size: 0.875rem; color: #0F172A; width: 100%; &::placeholder { color: #94A3B8; } }
-    .count-badge { font-size: 0.8rem; font-weight: 600; color: #475569; background: #E2E8F0; padding: 4px 12px; border-radius: 20px; }
+    .search-input { border: none; outline: none; background: transparent; font-size: 0.875rem; color: #1A2332; width: 100%; font-family: 'Montserrat', sans-serif; &::placeholder { color: #8D99A8; } }
+    .count-badge { font-size: 0.8rem; font-weight: 600; color: #5C6A7A; background: #DDE3EE; padding: 4px 12px; border-radius: 20px; font-family: 'Montserrat', sans-serif; }
 
     .table-responsive-wrapper { overflow-x: auto; }
-    .cell-primary { font-weight: 600; color: #0F172A; }
+    .cell-primary { font-weight: 600; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .user-cell { display: flex; align-items: center; gap: 12px; }
     .user-avatar {
       width: 36px; height: 36px; border-radius: 10px;
-      background: linear-gradient(135deg, #2563EB, #60A5FA);
-      color: white; display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+      background: #2563EB;
+      color: #F8FAFF; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; flex-shrink: 0; font-family: 'Montserrat', sans-serif;
     }
     .school-badge { font-size: 0.8rem; padding: 5px 10px; display: inline-flex; align-items: center; }
 
-    .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-top: 1px solid #E2E8F0; }
-    .pagination-info { font-size: 0.8rem; color: #475569; }
+    .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-top: 1px solid #DDE3EE; }
+    .pagination-info { font-size: 0.8rem; color: #5C6A7A; font-family: 'Montserrat', sans-serif; }
     .pagination-btns { display: flex; gap: 4px; }
     .pg-btn {
-      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E2E8F0;
-      background: white; color: #334155; font-size: 0.8rem; font-weight: 600;
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #DDE3EE;
+      background: #F8FAFF; color: #1A2332; font-size: 0.8rem; font-weight: 600;
       cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 150ms;
-      &:hover:not(:disabled) { background: #F1F5F9; }
-      &.active { background: #2563EB; color: white; border-color: #2563EB; }
+      font-family: 'Montserrat', sans-serif;
+      &:hover:not(:disabled) { background: #EAEEF6; }
+      &.active { background: #2563EB; color: #F8FAFF; border-color: #2563EB; }
       &:disabled { opacity: 0.4; cursor: not-allowed; }
     }
 
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 1050; backdrop-filter: blur(4px); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); z-index: 1050; backdrop-filter: blur(4px); }
     .modal-wrapper { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 24px; }
-    .modal-box { background: white; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px rgba(15,23,42,0.25); animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1); }
-    .modal-header-custom { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #E2E8F0; h3 { margin: 0; font-size: 1.125rem; font-weight: 700; color: #0F172A; } }
-    .modal-close { background: none; border: none; cursor: pointer; color: #94A3B8; padding: 4px; border-radius: 6px; &:hover { background: #F1F5F9; color: #0F172A; } }
+    .modal-box { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px rgba(13, 27, 62,0.2); animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1); }
+    .modal-header-custom { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 1.125rem; font-weight: 700; color: #1A2332; } }
+    .modal-close { background: none; border: none; cursor: pointer; color: #8D99A8; padding: 4px; border-radius: 6px; &:hover { background: #EAEEF6; color: #1A2332; } }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .form-field { display: flex; flex-direction: column; flex: 1; }
     .form-row { display: flex; gap: 16px; }
-    .modal-footer-custom { padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 10px; }
+    .modal-footer-custom { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 10px; }
 
     @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
@@ -248,6 +252,7 @@ export class AdminsComponent implements OnInit {
   schools: School[] = [];
   adminForm: FormGroup;
   modalVisible = false;
+  editingAdmin: User | null = null;
   deleteModalVisible = false;
   adminToDelete: User | null = null;
   loading = true;
@@ -321,24 +326,58 @@ export class AdminsComponent implements OnInit {
   }
 
   openModal(): void {
+    this.editingAdmin = null;
     this.adminForm.reset({ role: 'ROLE_ADMIN' });
+    this.adminForm.get('password')?.setValidators(Validators.required);
+    this.adminForm.get('password')?.updateValueAndValidity();
     this.modalVisible = true;
   }
 
-  closeModal(): void { this.modalVisible = false; }
+  openEditModal(admin: User): void {
+    this.editingAdmin = admin;
+    this.adminForm.patchValue({
+      firstName: admin.firstName,
+      lastName: admin.lastName,
+      email: admin.email,
+      schoolId: admin.schoolId ?? null,
+      role: 'ROLE_ADMIN'
+    });
+    this.adminForm.get('password')?.clearValidators();
+    this.adminForm.get('password')?.updateValueAndValidity();
+    this.modalVisible = true;
+  }
+
+  closeModal(): void {
+    this.modalVisible = false;
+    this.editingAdmin = null;
+  }
 
   onSubmit(): void {
     if (this.adminForm.invalid) return;
     this.saving = true;
-    this.superAdminService.createAdmin(this.adminForm.value).subscribe({
-      next: () => {
-        this.loadAdmins();
-        this.closeModal();
-        this.saving = false;
-        this.notif.success('Admin created successfully');
-      },
-      error: () => { this.saving = false; this.notif.error('Failed to create admin'); }
-    });
+
+    if (this.editingAdmin) {
+      const { firstName, lastName, email, schoolId } = this.adminForm.value;
+      this.superAdminService.updateAdmin(this.editingAdmin.id, { firstName, lastName, email, schoolId }).subscribe({
+        next: () => {
+          this.loadAdmins();
+          this.closeModal();
+          this.saving = false;
+          this.notif.success('Admin updated successfully');
+        },
+        error: () => { this.saving = false; this.notif.error('Failed to update admin'); }
+      });
+    } else {
+      this.superAdminService.createAdmin(this.adminForm.value).subscribe({
+        next: () => {
+          this.loadAdmins();
+          this.closeModal();
+          this.saving = false;
+          this.notif.success('Admin created successfully');
+        },
+        error: () => { this.saving = false; this.notif.error('Failed to create admin'); }
+      });
+    }
   }
 
   confirmDelete(admin: User): void {

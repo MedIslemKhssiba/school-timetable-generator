@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CardModule, GridModule, ButtonDirective } from '@coreui/angular';
@@ -82,57 +82,42 @@ import { Subscription, interval, switchMap } from 'rxjs';
     }
   `,
   styles: [`
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
     .stat-card {
-      background: white; border-radius: 14px; padding: 20px 24px;
+      background: #F8FAFF; border-radius: 14px; padding: 22px 24px;
       display: flex; align-items: center; gap: 16px;
-      border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(15,23,42,0.06);
-      cursor: pointer; transition: all 200ms; text-decoration: none; color: inherit;
+      border: 1px solid #DDE3EE; box-shadow: 0 2px 8px rgba(13, 27, 62,0.05);
+      cursor: pointer; transition: all 250ms; text-decoration: none; color: inherit;
     }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,23,42,0.12); }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(13, 27, 62,0.1); }
 
     .stat-icon-wrapper {
-      width: 54px; height: 54px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      :deep(svg) { width: 26px; height: 26px; fill: white; }
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .stat-icon-primary { background: linear-gradient(135deg, #2563EB, #60A5FA); }
-    .stat-icon-info    { background: linear-gradient(135deg, #0EA5E9, #38BDF8); }
-    .stat-icon-warning { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+    .stat-icon-primary { background: #2563EB; }
+    .stat-icon-info    { background: #4A7C8A; }
+    .stat-icon-warning { background: #D4A03C; }
 
     .stat-content { flex: 1; }
-    .stat-value { font-size: 1.75rem; font-weight: 800; color: #0F172A; line-height: 1; }
-    .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94A3B8; margin-top: 4px; }
-    .stat-arrow { color: #94A3B8; }
+    .stat-value { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; line-height: 1; }
+    .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8D99A8; margin-top: 4px; font-family: 'Montserrat', sans-serif; }
 
     .welcome-card { border-left: 4px solid #2563EB !important; }
-    .welcome-icon {
-      width: 52px; height: 52px; border-radius: 12px;
-      background: linear-gradient(135deg, #2563EB, #60A5FA);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; box-shadow: 0 4px 12px rgba(37,99,235,0.2);
-    }
 
     .quick-link {
       display: flex; align-items: center; gap: 14px;
       padding: 14px 20px; text-decoration: none; color: inherit;
-      border-bottom: 1px solid #E2E8F0; transition: background 150ms;
+      border-bottom: 1px solid #EAEEF6; transition: background 200ms;
       cursor: pointer;
-      &:hover { background: #F8FAFC; }
+      &:hover { background: #F0F4FA; }
       &:last-child { border-bottom: none; }
     }
-    .quick-icon {
-      width: 40px; height: 40px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .qi-primary { background: #EFF6FF; color: #2563EB; }
-    .qi-info    { background: #F0F9FF; color: #0EA5E9; }
-    .quick-title { font-weight: 600; font-size: 0.875rem; color: #0F172A; }
-    .quick-desc  { font-size: 0.75rem; color: #94A3B8; }
+    .quick-title { font-weight: 600; font-size: 0.875rem; color: #1A2332; font-family: 'Montserrat', sans-serif; }
+    .quick-desc  { font-size: 0.75rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class SuperAdminDashboardComponent implements OnInit, OnDestroy {

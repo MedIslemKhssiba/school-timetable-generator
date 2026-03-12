@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService, Toast } from '../../core/services/notification.service';
 
@@ -32,28 +32,29 @@ import { NotificationService, Toast } from '../../core/services/notification.ser
     }
     .toast-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; border-radius: 12px;
-      background: white; color: #0F172A;
-      box-shadow: 0 10px 30px rgba(15,23,42,0.12), 0 2px 8px rgba(15,23,42,0.06);
+      padding: 14px 16px; border-radius: 14px;
+      background: #F8FAFF; color: #1A2332;
+      box-shadow: 0 10px 30px rgba(13, 27, 62,0.1), 0 2px 8px rgba(13, 27, 62,0.05);
       cursor: pointer; animation: slideIn 250ms cubic-bezier(0.34,1.56,0.64,1);
       border-left: 4px solid transparent;
+      font-family: 'Montserrat', sans-serif;
     }
-    .toast-success { border-left-color: #22C55E; }
-    .toast-error   { border-left-color: #EF4444; }
-    .toast-warning { border-left-color: #F59E0B; }
-    .toast-info    { border-left-color: #0EA5E9; }
+    .toast-success { border-left-color: #6B9080; }
+    .toast-error   { border-left-color: #C44536; }
+    .toast-warning { border-left-color: #D4A03C; }
+    .toast-info    { border-left-color: #4A7C8A; }
 
     .toast-icon { flex-shrink: 0; width: 22px; height: 22px; }
-    .toast-success .toast-icon { color: #22C55E; }
-    .toast-error   .toast-icon { color: #EF4444; }
-    .toast-warning .toast-icon { color: #F59E0B; }
-    .toast-info    .toast-icon { color: #0EA5E9; }
+    .toast-success .toast-icon { color: #6B9080; }
+    .toast-error   .toast-icon { color: #C44536; }
+    .toast-warning .toast-icon { color: #D4A03C; }
+    .toast-info    .toast-icon { color: #4A7C8A; }
 
     .toast-message { flex: 1; font-size: 0.875rem; font-weight: 500; line-height: 1.4; }
     .toast-close {
       background: none; border: none; cursor: pointer; padding: 2px;
-      color: #94A3B8; border-radius: 4px;
-      &:hover { color: #0F172A; background: #F1F5F9; }
+      color: #8D99A8; border-radius: 4px;
+      &:hover { color: #1A2332; background: #F0F4FA; }
     }
 
     @keyframes slideIn {

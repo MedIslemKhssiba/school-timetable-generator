@@ -18,6 +18,7 @@ com\timetable\model\ClassGroup$ClassGroupBuilder.class
 com\timetable\solver\TimetableConstraintProvider.class
 com\timetable\controller\TimetableController.class
 com\timetable\model\ClassGroup.class
+com\timetable\dto\TimeslotDTO.class
 com\timetable\dto\LoginRequest.class
 com\timetable\model\Role.class
 com\timetable\service\TimetableService.class

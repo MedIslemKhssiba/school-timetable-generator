@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { CardModule, GridModule, BadgeModule } from '@coreui/angular';
@@ -64,27 +64,28 @@ import { TranslationService } from '../../../core/services/translation.service';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .day-header {
       display: flex; align-items: center;
-      background: linear-gradient(135deg, #2563EB, #60A5FA);
-      color: white; font-weight: 600;
+      background: #2563EB;
+      color: #F8FAFF; font-weight: 600; font-family: 'Montserrat', sans-serif;
     }
     .lesson-slot {
-      padding: 12px; margin: 6px; background: #f8fafd;
+      padding: 12px; margin: 6px; background: #F0F4FA;
       border-radius: 8px; border-left: 3px solid #2563EB;
       transition: transform 0.15s, box-shadow 0.15s;
-      &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37,99,235,0.1); }
+      &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37, 99, 235,0.1); }
     }
     .lesson-time {
       display: flex; align-items: center; gap: 6px;
       font-size: 0.8rem; font-weight: 600; color: #2563EB; margin-bottom: 4px;
+      font-family: 'Montserrat', sans-serif;
     }
-    .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #0F172A; }
+    .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .lesson-details { display: flex; flex-direction: column; gap: 2px; }
-    .lesson-details span { font-size: 0.78rem; color: #94A3B8; }
+    .lesson-details span { font-size: 0.78rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class ScheduleComponent implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -21,17 +21,18 @@ import { CommonModule } from '@angular/common';
       display: flex; flex-direction: column; align-items: center;
       padding: 48px 24px; text-align: center;
     }
-    .empty-icon { color: #94A3B8; margin-bottom: 16px; }
-    .empty-title { font-size: 1.125rem; font-weight: 700; color: #0F172A; margin: 0 0 8px; }
-    .empty-message { font-size: 0.875rem; color: #475569; margin: 0 0 24px; max-width: 360px; line-height: 1.5; }
+    .empty-icon { color: #8D99A8; margin-bottom: 16px; }
+    .empty-title { font-family: 'Montserrat', sans-serif; font-size: 1.2rem; font-weight: 700; color: #1A2332; margin: 0 0 8px; }
+    .empty-message { font-size: 0.875rem; color: #3E4C5E; margin: 0 0 24px; max-width: 360px; line-height: 1.6; font-family: 'Montserrat', sans-serif; }
     .empty-action {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 10px 20px; border-radius: 10px; border: none;
-      background: linear-gradient(135deg, #2563EB, #3B82F6);
-      color: white; font-weight: 600; font-size: 0.875rem;
-      cursor: pointer; transition: all 200ms;
-      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
-      &:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(37,99,235,0.35); }
+      padding: 10px 22px; border-radius: 10px; border: none;
+      background: #2563EB;
+      color: #F0F4FA; font-weight: 600; font-size: 0.875rem;
+      cursor: pointer; transition: all 250ms;
+      font-family: 'Montserrat', sans-serif;
+      box-shadow: 0 2px 8px rgba(37, 99, 235,0.22);
+      &:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37, 99, 235,0.3); background: #1D4ED8; }
     }
   `]
 })

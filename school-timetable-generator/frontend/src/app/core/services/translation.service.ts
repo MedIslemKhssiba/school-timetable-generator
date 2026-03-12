@@ -213,7 +213,30 @@ const translations: Record<Language, Record<string, string>> = {
     'THURSDAY': 'Thursday',
     'FRIDAY': 'Friday',
     'SATURDAY': 'Saturday',
-    'SUNDAY': 'Sunday'
+    'SUNDAY': 'Sunday',
+
+    // Timeslots
+    'timeslots': 'Timeslots',
+    'timeslot': 'timeslot',
+    'manage_timeslots_desc': 'Configure class periods and scheduling slots',
+    'add_timeslot': 'Add Timeslot',
+    'add_new_timeslot': 'Add New Timeslot',
+    'edit_timeslot': 'Edit Timeslot',
+    'remove_timeslot': 'Remove Timeslot',
+    'remove': 'Remove',
+    'day': 'Day',
+    'start_time': 'Start Time',
+    'end_time': 'End Time',
+    'order': 'Order',
+    'order_in_day': 'Order in Day',
+    'select_day': 'Select a day',
+    'all_days': 'All Days',
+    'no_timeslots_yet': 'No timeslots yet',
+    'create_first_timeslot': 'Create your first timeslot to get started.',
+    'try_different_filter': 'Try a different filter.',
+
+    // Edit admin
+    'edit_admin': 'Edit Admin'
   },
   fr: {
     'save': 'Enregistrer',
@@ -397,7 +420,30 @@ const translations: Record<Language, Record<string, string>> = {
     'THURSDAY': 'Jeudi',
     'FRIDAY': 'Vendredi',
     'SATURDAY': 'Samedi',
-    'SUNDAY': 'Dimanche'
+    'SUNDAY': 'Dimanche',
+
+    // Timeslots
+    'timeslots': 'Créneaux horaires',
+    'timeslot': 'créneau',
+    'manage_timeslots_desc': 'Configurer les périodes de cours et les créneaux horaires',
+    'add_timeslot': 'Ajouter un créneau',
+    'add_new_timeslot': 'Ajouter un nouveau créneau',
+    'edit_timeslot': 'Modifier le créneau',
+    'remove_timeslot': 'Supprimer le créneau',
+    'remove': 'Supprimer',
+    'day': 'Jour',
+    'start_time': 'Heure de début',
+    'end_time': 'Heure de fin',
+    'order': 'Ordre',
+    'order_in_day': 'Ordre dans la journée',
+    'select_day': 'Sélectionner un jour',
+    'all_days': 'Tous les jours',
+    'no_timeslots_yet': 'Pas encore de créneaux',
+    'create_first_timeslot': 'Créez votre premier créneau pour commencer.',
+    'try_different_filter': 'Essayez un filtre différent.',
+
+    // Edit admin
+    'edit_admin': 'Modifier l\'admin'
   },
   ar: {
     'save': 'حفظ',
@@ -581,7 +627,30 @@ const translations: Record<Language, Record<string, string>> = {
     'THURSDAY': 'الخميس',
     'FRIDAY': 'الجمعة',
     'SATURDAY': 'السبت',
-    'SUNDAY': 'الأحد'
+    'SUNDAY': 'الأحد',
+
+    // Timeslots
+    'timeslots': 'الفترات الزمنية',
+    'timeslot': 'فترة',
+    'manage_timeslots_desc': 'تهيئة فترات الحصص وأوقات الجدولة',
+    'add_timeslot': 'إضافة فترة',
+    'add_new_timeslot': 'إضافة فترة جديدة',
+    'edit_timeslot': 'تعديل الفترة',
+    'remove_timeslot': 'حذف الفترة',
+    'remove': 'حذف',
+    'day': 'اليوم',
+    'start_time': 'وقت البداية',
+    'end_time': 'وقت النهاية',
+    'order': 'الترتيب',
+    'order_in_day': 'الترتيب في اليوم',
+    'select_day': 'اختر يومًا',
+    'all_days': 'جميع الأيام',
+    'no_timeslots_yet': 'لا توجد فترات بعد',
+    'create_first_timeslot': 'أنشئ فترتك الأولى للبدء.',
+    'try_different_filter': 'جرب فلترًا مختلفًا.',
+
+    // Edit admin
+    'edit_admin': 'تعديل المسؤول'
   }
 };
 

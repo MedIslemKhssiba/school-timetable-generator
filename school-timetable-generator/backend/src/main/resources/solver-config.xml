@@ -10,4 +10,10 @@
     <termination>
         <minutesSpentLimit>5</minutesSpentLimit>
     </termination>
+    <constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+    </constructionHeuristic>
+    <localSearch>
+        <localSearchType>LATE_ACCEPTANCE</localSearchType>
+    </localSearch>
 </solver>

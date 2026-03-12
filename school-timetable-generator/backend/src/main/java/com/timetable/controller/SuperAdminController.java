@@ -1,6 +1,8 @@
 package com.timetable.controller;
 
 import com.timetable.dto.RegisterRequest;
+import com.timetable.dto.UpdateAdminRequest;
+import com.timetable.exception.ResourceNotFoundException;
 import com.timetable.model.Role;
 import com.timetable.model.School;
 import com.timetable.model.User;
@@ -68,6 +70,25 @@ public class SuperAdminController {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(userRepository.save(admin));
+    }
+
+    @PutMapping("/admins/{id}")
+    public ResponseEntity<User> updateAdmin(@PathVariable Long id, @Valid @RequestBody UpdateAdminRequest request) {
+        User admin = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + id));
+
+        admin.setFirstName(request.getFirstName());
+        admin.setLastName(request.getLastName());
+        admin.setEmail(request.getEmail());
+
+        if (request.getSchoolId() != null) {
+            School school = schoolService.getSchoolById(request.getSchoolId());
+            admin.setSchool(school);
+        } else {
+            admin.setSchool(null);
+        }
+
+        return ResponseEntity.ok(userRepository.save(admin));
     }
 
     @DeleteMapping("/admins/{id}")

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -29,8 +29,8 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(15,23,42,0.5);
-      z-index: 1050; backdrop-filter: blur(4px);
+      position: fixed; inset: 0; background: rgba(13, 20, 40,0.4);
+      z-index: 1050; backdrop-filter: blur(5px);
       animation: fadeIn 150ms ease;
     }
     .modal-wrapper {
@@ -38,38 +38,37 @@ import { CommonModule } from '@angular/common';
       z-index: 1051; padding: 24px;
     }
     .modal-box {
-      background: white; border-radius: 16px; padding: 32px; max-width: 400px; width: 100%;
-      text-align: center; box-shadow: 0 25px 50px -12px rgba(15,23,42,0.25);
+      background: #F8FAFF; border-radius: 18px; padding: 36px; max-width: 400px; width: 100%;
+      text-align: center; box-shadow: 0 25px 50px -12px rgba(13, 20, 40,0.25);
       animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1);
     }
     .modal-icon {
       width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 16px;
-      display: flex; align-items: center; justify-content: center;
-      svg { width: 28px; height: 28px; }
+      display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
     }
-    .modal-danger .modal-icon { background: #FEF2F2; color: #EF4444; }
-    .modal-warning .modal-icon { background: #FFFBEB; color: #F59E0B; }
-    .modal-success .modal-icon { background: #F0FDF4; color: #22C55E; }
-    .modal-info .modal-icon { background: #F0F9FF; color: #0EA5E9; }
+    .modal-danger .modal-icon { background: #FCF0EE; color: #C44536; }
+    .modal-warning .modal-icon { background: #FDF8EC; color: #D4A03C; }
+    .modal-success .modal-icon { background: #EEF5F1; color: #6B9080; }
+    .modal-info .modal-icon { background: #EDF4F6; color: #4A7C8A; }
 
-    .modal-title { font-size: 1.125rem; font-weight: 700; color: #0F172A; margin: 0 0 8px; }
-    .modal-message { font-size: 0.875rem; color: #475569; margin: 0 0 24px; line-height: 1.5; }
+    .modal-title { font-family: 'Montserrat', sans-serif; font-size: 1.2rem; font-weight: 700; color: #1A2332; margin: 0 0 8px; }
+    .modal-message { font-size: 0.875rem; color: #3E4C5E; margin: 0 0 24px; line-height: 1.6; font-family: 'Montserrat', sans-serif; }
 
     .modal-actions { display: flex; gap: 12px; justify-content: center; }
     .modal-actions button {
       padding: 10px 24px; border-radius: 10px; font-weight: 600; font-size: 0.875rem;
-      cursor: pointer; transition: all 200ms; border: none;
+      cursor: pointer; transition: all 250ms; border: none; font-family: 'Montserrat', sans-serif;
     }
     .btn-cancel {
-      background: #E2E8F0; color: #334155;
-      &:hover { background: #CBD5E1; }
+      background: #DDE3EE; color: #2A3546;
+      &:hover { background: #C4CDD9; }
     }
-    .btn-confirm.btn-danger { background: linear-gradient(135deg, #EF4444, #F87171); color: white; }
-    .btn-confirm.btn-danger:hover { box-shadow: 0 4px 16px rgba(239,68,68,0.3); transform: translateY(-1px); }
-    .btn-confirm.btn-warning { background: linear-gradient(135deg, #F59E0B, #FBBF24); color: white; }
-    .btn-confirm.btn-success { background: linear-gradient(135deg, #22C55E, #4ADE80); color: white; }
-    .btn-confirm.btn-info { background: linear-gradient(135deg, #2563EB, #60A5FA); color: white; }
-    .btn-confirm.btn-info:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.3); transform: translateY(-1px); }
+    .btn-confirm.btn-danger { background: #C44536; color: #F8FAFF; }
+    .btn-confirm.btn-danger:hover { box-shadow: 0 4px 16px rgba(196,69,54,0.3); transform: translateY(-1px); }
+    .btn-confirm.btn-warning { background: #D4A03C; color: #F8FAFF; }
+    .btn-confirm.btn-success { background: #6B9080; color: #F8FAFF; }
+    .btn-confirm.btn-info { background: #2563EB; color: #F8FAFF; }
+    .btn-confirm.btn-info:hover { box-shadow: 0 4px 16px rgba(37, 99, 235,0.3); transform: translateY(-1px); }
 
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }

@@ -12,6 +12,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'subjects', loadComponent: () => import('./subjects/subjects.component').then(m => m.SubjectsComponent) },
       { path: 'rooms', loadComponent: () => import('./rooms/rooms.component').then(m => m.RoomsComponent) },
       { path: 'timetable', loadComponent: () => import('./timetable/timetable.component').then(m => m.TimetableComponent) },
+      { path: 'timeslots', loadComponent: () => import('./timeslots/timeslots.component').then(m => m.TimeslotsComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   }

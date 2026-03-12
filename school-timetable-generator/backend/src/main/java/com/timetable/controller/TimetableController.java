@@ -1,6 +1,9 @@
 package com.timetable.controller;
 
 import com.timetable.dto.LessonDTO;
+import com.timetable.dto.TimeslotDTO;
+import com.timetable.exception.ResourceNotFoundException;
+import com.timetable.model.DayOfWeek;
 import com.timetable.model.Lesson;
 import com.timetable.model.Timeslot;
 import com.timetable.repository.LessonRepository;
@@ -8,14 +11,17 @@ import com.timetable.repository.TimeslotRepository;
 import com.timetable.service.ImportExportService;
 import com.timetable.service.TimetableService;
 import com.timetable.solver.TimetableSolution;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +39,34 @@ public class TimetableController {
     @GetMapping("/timeslots")
     public ResponseEntity<List<Timeslot>> getTimeslots() {
         return ResponseEntity.ok(timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc());
+    }
+
+    @PostMapping("/timeslots")
+    public ResponseEntity<Timeslot> createTimeslot(@Valid @RequestBody TimeslotDTO dto) {
+        Timeslot timeslot = Timeslot.builder()
+                .dayOfWeek(DayOfWeek.valueOf(dto.getDayOfWeek()))
+                .startTime(LocalTime.parse(dto.getStartTime()))
+                .endTime(LocalTime.parse(dto.getEndTime()))
+                .orderInDay(dto.getOrderInDay())
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(timeslotRepository.save(timeslot));
+    }
+
+    @PutMapping("/timeslots/{id}")
+    public ResponseEntity<Timeslot> updateTimeslot(@PathVariable Long id, @Valid @RequestBody TimeslotDTO dto) {
+        Timeslot timeslot = timeslotRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Timeslot not found with id: " + id));
+        timeslot.setDayOfWeek(DayOfWeek.valueOf(dto.getDayOfWeek()));
+        timeslot.setStartTime(LocalTime.parse(dto.getStartTime()));
+        timeslot.setEndTime(LocalTime.parse(dto.getEndTime()));
+        timeslot.setOrderInDay(dto.getOrderInDay());
+        return ResponseEntity.ok(timeslotRepository.save(timeslot));
+    }
+
+    @DeleteMapping("/timeslots/{id}")
+    public ResponseEntity<Void> deleteTimeslot(@PathVariable Long id) {
+        timeslotRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/solve/{schoolId}")

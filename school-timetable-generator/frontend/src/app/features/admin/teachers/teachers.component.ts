@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
@@ -166,52 +166,52 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0; }
-    .page-subtitle { font-size: 0.875rem; color: #94A3B8; margin: 4px 0 0; }
+    .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
+    .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
     .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 16px; }
     .search-box {
       display: flex; align-items: center; gap: 8px;
-      background: #F1F5F9; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px;
-      input { border: none; background: none; outline: none; width: 100%; font-size: 0.875rem; }
+      background: #EAEEF6; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px;
+      input { border: none; background: none; outline: none; width: 100%; font-size: 0.875rem; font-family: 'Montserrat', sans-serif; }
     }
     .count-badge { font-size: 0.8rem; padding: 6px 12px; }
     .avatar {
       width: 38px; height: 38px; border-radius: 10px; font-weight: 700; font-size: 0.8rem;
       display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #EFF6FF, #BFDBFE); color: #2563EB;
+      background: #2563EB; color: #F8FAFF; font-family: 'Montserrat', sans-serif;
     }
     .subject-tags { display: flex; flex-wrap: wrap; gap: 4px; }
     .subject-tag {
       font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 6px;
-      border: 1.5px solid; background: white;
+      border: 1.5px solid; background: #F8FAFF; font-family: 'Montserrat', sans-serif;
     }
 
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1050; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); backdrop-filter: blur(4px); z-index: 1050; }
     .modal-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 20px; }
-    .modal-panel { background: white; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: scaleIn 200ms ease-out; }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #E2E8F0; }
-    .modal-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
-    .modal-close { background: none; border: none; font-size: 1.5rem; color: #94A3B8; cursor: pointer; line-height: 1; }
+    .modal-panel { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(13, 27, 62,0.15); animation: scaleIn 200ms ease-out; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; }
+    .modal-title { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0; color: #1A2332; }
+    .modal-close { background: none; border: none; font-size: 1.5rem; color: #8D99A8; cursor: pointer; line-height: 1; }
     .modal-body { padding: 24px; }
-    .modal-footer { padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 8px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
     .subject-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
     .subject-check {
       display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-      border: 1.5px solid #E2E8F0; border-radius: 8px; cursor: pointer; transition: all 150ms;
-      font-size: 0.85rem; font-weight: 500;
+      border: 1.5px solid #DDE3EE; border-radius: 8px; cursor: pointer; transition: all 150ms;
+      font-size: 0.85rem; font-weight: 500; font-family: 'Montserrat', sans-serif;
       input { display: none; }
-      &.checked { border-color: #2563EB; background: #EFF6FF; }
+      &.checked { border-color: #2563EB; background: rgba(37, 99, 235,0.08); }
     }
     .subject-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
     .pagination { display: flex; gap: 4px; }
     .page-btn {
-      width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E2E8F0;
-      background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-      &.active { background: #2563EB; color: white; border-color: #2563EB; }
-      &:hover:not(.active) { background: #F1F5F9; }
+      width: 36px; height: 36px; border-radius: 8px; border: 1px solid #DDE3EE;
+      background: #F8FAFF; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif;
+      &.active { background: #2563EB; color: #F8FAFF; border-color: #2563EB; }
+      &:hover:not(.active) { background: #EAEEF6; }
     }
   `]
 })
