@@ -94,6 +94,7 @@ public class AdminController {
                 .orElseThrow(() -> new ResourceNotFoundException("School not found with id: " + dto.getSchoolId()));
         Subject subject = Subject.builder()
                 .name(dto.getName())
+            .level(dto.getLevel())
                 .color(dto.getColor())
                 .hoursPerWeek(dto.getHoursPerWeek())
                 .sessionDuration(dto.getSessionDuration())
@@ -107,6 +108,7 @@ public class AdminController {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found with id: " + id));
         subject.setName(dto.getName());
+        subject.setLevel(dto.getLevel());
         subject.setColor(dto.getColor());
         subject.setHoursPerWeek(dto.getHoursPerWeek());
         subject.setSessionDuration(dto.getSessionDuration());

@@ -26,6 +26,12 @@ public class Timeslot {
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
+    @Column(name = "break_start_time")
+    private LocalTime breakStartTime;
+
+    @Column(name = "break_end_time")
+    private LocalTime breakEndTime;
+
     @Column(name = "order_in_day")
     private Integer orderInDay;
 }

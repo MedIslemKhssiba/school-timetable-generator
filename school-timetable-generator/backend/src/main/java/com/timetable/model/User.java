@@ -1,6 +1,7 @@
 package com.timetable.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -54,5 +55,15 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @JsonProperty("schoolId")
+    public Long getSchoolId() {
+        return school != null ? school.getId() : null;
+    }
+
+    @JsonProperty("schoolName")
+    public String getSchoolName() {
+        return school != null ? school.getName() : null;
     }
 }

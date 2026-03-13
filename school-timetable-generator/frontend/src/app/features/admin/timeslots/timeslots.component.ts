@@ -22,7 +22,7 @@ import { TranslationService } from '../../../core/services/translation.service';
         <p class="page-subtitle">{{ t('manage_timeslots_desc') }}</p>
       </div>
       <button cButton color="primary" (click)="openModal()">
-        + {{ t('add_timeslot') }}
+        + Générer les créneaux du jour
       </button>
     </div>
 
@@ -55,6 +55,7 @@ import { TranslationService } from '../../../core/services/translation.service';
                   <th>{{ t('day') }}</th>
                   <th>{{ t('start_time') }}</th>
                   <th>{{ t('end_time') }}</th>
+                  <th>{{ t('break') || 'Pause' }}</th>
                   <th>{{ t('order') }}</th>
                   <th class="text-end">{{ t('actions') }}</th>
                 </tr>
@@ -69,6 +70,7 @@ import { TranslationService } from '../../../core/services/translation.service';
                     </td>
                     <td class="cell-primary">{{ ts.startTime }}</td>
                     <td class="cell-primary">{{ ts.endTime }}</td>
+                    <td class="text-body-secondary">{{ ts.breakStartTime && ts.breakEndTime ? (ts.breakStartTime + ' - ' + ts.breakEndTime) : '—' }}</td>
                     <td class="text-body-secondary">{{ ts.orderInDay }}</td>
                     <td class="text-end">
                       <button cButton color="primary" variant="ghost" size="sm" (click)="openEditModal(ts)">{{ t('edit') }}</button>
@@ -118,23 +120,39 @@ import { TranslationService } from '../../../core/services/translation.service';
               </div>
               <div class="form-row">
                 <div class="form-field">
-                  <label cLabel>{{ t('start_time') }} *</label>
+                  <label cLabel>{{ editingTimeslot ? t('start_time') : 'Heure de début du jour' }} *</label>
                   <input cFormControl formControlName="startTime" type="time" />
                 </div>
                 <div class="form-field">
-                  <label cLabel>{{ t('end_time') }} *</label>
+                  <label cLabel>{{ editingTimeslot ? t('end_time') : 'Heure de fin du jour' }} *</label>
                   <input cFormControl formControlName="endTime" type="time" />
                 </div>
               </div>
-              <div class="form-field">
-                <label cLabel>{{ t('order_in_day') }}</label>
-                <input cFormControl formControlName="orderInDay" type="number" min="1" placeholder="1" />
+              <div class="form-row">
+                <div class="form-field">
+                  <label cLabel>{{ t('break') || 'Pause' }} {{ t('start_time') }}</label>
+                  <input cFormControl formControlName="breakStartTime" type="time" />
+                </div>
+                <div class="form-field">
+                  <label cLabel>{{ t('break') || 'Pause' }} {{ t('end_time') }}</label>
+                  <input cFormControl formControlName="breakEndTime" type="time" />
+                </div>
               </div>
+              @if (editingTimeslot) {
+                <div class="form-field">
+                  <label cLabel>{{ t('order_in_day') }}</label>
+                  <input cFormControl formControlName="orderInDay" type="number" min="1" placeholder="1" />
+                </div>
+              }
             </div>
             <div class="modal-footer-custom">
               <button cButton color="secondary" type="button" (click)="closeModal()">{{ t('cancel') }}</button>
               <button cButton color="primary" type="submit" [disabled]="timeslotForm.invalid || saving">
-                @if (saving) { {{ editingTimeslot ? t('saving') : t('creating') }} } @else { {{ editingTimeslot ? t('save_changes') : t('create') }} }
+                @if (saving) {
+                  {{ editingTimeslot ? t('saving') : 'Génération...' }}
+                } @else {
+                  {{ editingTimeslot ? t('save_changes') : 'Générer tous les créneaux' }}
+                }
               </button>
             </div>
           </form>
@@ -210,6 +228,7 @@ export class TimeslotsComponent implements OnInit {
   page = 1;
   pageSize = 15;
   Math = Math;
+  private schoolId = 1;
 
   days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
@@ -220,10 +239,13 @@ export class TimeslotsComponent implements OnInit {
     private notif: NotificationService,
     private ts: TranslationService
   ) {
+    this.schoolId = this.authService.getSchoolId() || 1;
     this.timeslotForm = this.fb.group({
       dayOfWeek: ['', Validators.required],
       startTime: ['', Validators.required],
       endTime: ['', Validators.required],
+      breakStartTime: [''],
+      breakEndTime: [''],
       orderInDay: [null]
     });
   }
@@ -267,7 +289,7 @@ export class TimeslotsComponent implements OnInit {
 
   openModal(): void {
     this.editingTimeslot = null;
-    this.timeslotForm.reset();
+    this.timeslotForm.reset({ orderInDay: null });
     this.modalVisible = true;
   }
 
@@ -277,6 +299,8 @@ export class TimeslotsComponent implements OnInit {
       dayOfWeek: timeslot.dayOfWeek,
       startTime: timeslot.startTime,
       endTime: timeslot.endTime,
+      breakStartTime: timeslot.breakStartTime || '',
+      breakEndTime: timeslot.breakEndTime || '',
       orderInDay: timeslot.orderInDay
     });
     this.modalVisible = true;
@@ -289,8 +313,33 @@ export class TimeslotsComponent implements OnInit {
 
   onSubmit(): void {
     if (this.timeslotForm.invalid) return;
+
+    const { startTime, endTime, breakStartTime, breakEndTime } = this.timeslotForm.value;
+    if (startTime >= endTime) {
+      this.notif.error('L\'heure de début doit être avant l\'heure de fin');
+      return;
+    }
+    if ((!!breakStartTime && !breakEndTime) || (!breakStartTime && !!breakEndTime)) {
+      this.notif.error('Veuillez renseigner début et fin de pause ensemble');
+      return;
+    }
+    if (breakStartTime && breakEndTime) {
+      if (breakStartTime >= breakEndTime) {
+        this.notif.error('Le début de la pause doit être avant la fin de la pause');
+        return;
+      }
+      if (breakStartTime < startTime || breakEndTime > endTime) {
+        this.notif.error('La pause doit être comprise dans la journée');
+        return;
+      }
+    }
+
     this.saving = true;
-    const data = this.timeslotForm.value;
+    const data = {
+      ...this.timeslotForm.value,
+      breakStartTime: this.timeslotForm.value.breakStartTime || null,
+      breakEndTime: this.timeslotForm.value.breakEndTime || null
+    };
 
     if (this.editingTimeslot) {
       this.adminService.updateTimeslot(this.editingTimeslot.id, data).subscribe({
@@ -298,9 +347,21 @@ export class TimeslotsComponent implements OnInit {
         error: () => { this.saving = false; this.notif.error('Failed to update timeslot'); }
       });
     } else {
-      this.adminService.createTimeslot(data).subscribe({
-        next: () => { this.loadTimeslots(); this.closeModal(); this.saving = false; this.notif.success('Timeslot created'); },
-        error: () => { this.saving = false; this.notif.error('Failed to create timeslot'); }
+      this.adminService.generateDayTimeslots({
+        dayOfWeek: data.dayOfWeek,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        breakStartTime: data.breakStartTime,
+        breakEndTime: data.breakEndTime,
+        schoolId: this.schoolId
+      }).subscribe({
+        next: generated => {
+          this.loadTimeslots();
+          this.closeModal();
+          this.saving = false;
+          this.notif.success(`${generated.length} créneaux générés automatiquement`);
+        },
+        error: () => { this.saving = false; this.notif.error('Échec de génération automatique des créneaux'); }
       });
     }
   }

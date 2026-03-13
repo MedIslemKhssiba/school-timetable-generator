@@ -9,4 +9,5 @@ import java.util.List;
 public interface TimeslotRepository extends JpaRepository<Timeslot, Long> {
     List<Timeslot> findAllByOrderByDayOfWeekAscOrderInDayAsc();
     boolean existsByDayOfWeek(DayOfWeek dayOfWeek);
+    List<Timeslot> findByDayOfWeekOrderByStartTimeAsc(DayOfWeek dayOfWeek);
 }

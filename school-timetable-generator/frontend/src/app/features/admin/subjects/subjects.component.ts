@@ -51,6 +51,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
               <thead>
                 <tr>
                   <th>{{ t('subjects') }}</th>
+                  <th>{{ t('level') }}</th>
                   <th>{{ t('hours_week') }}</th>
                   <th>{{ t('session_duration') }}</th>
                   <th class="text-end">{{ t('actions') }}</th>
@@ -65,8 +66,9 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                         <span class="fw-semibold">{{ s.name }}</span>
                       </div>
                     </td>
+                    <td><c-badge color="secondary" variant="outline">{{ s.level }}</c-badge></td>
                     <td><c-badge color="light" textColor="dark">{{ s.hoursPerWeek }}h / week</c-badge></td>
-                    <td><c-badge color="info" variant="outline">{{ s.sessionDuration }} min / session</c-badge></td>
+                    <td><c-badge color="info" variant="outline">{{ s.sessionDuration }} min</c-badge></td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(s)">{{ t('edit') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(s)">{{ t('delete') }}</button>
@@ -106,19 +108,21 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
               </div>
               <div class="row g-3">
                 <div class="col-6">
+                  <label class="form-label">{{ t('level') }}</label>
+                  <select class="form-control" formControlName="level">
+                    <option value="">{{ t('select_level') }}</option>
+                    <option value="1AS">1AS</option>
+                    <option value="2AS">2AS</option>
+                    <option value="3AS">3AS</option>
+                  </select>
+                </div>
+                <div class="col-6">
                   <label class="form-label">{{ t('hours_week') }}</label>
                   <input class="form-control" formControlName="hoursPerWeek" type="number" min="1" />
                 </div>
                 <div class="col-6">
                   <label class="form-label">{{ t('session_duration') }}</label>
-                  <select class="form-control" formControlName="sessionDuration">
-                    <option [ngValue]="30">30 min</option>
-                    <option [ngValue]="40">40 min</option>
-                    <option [ngValue]="45">45 min</option>
-                    <option [ngValue]="60">60 min</option>
-                    <option [ngValue]="90">90 min</option>
-                    <option [ngValue]="120">120 min</option>
-                  </select>
+                  <input class="form-control" formControlName="sessionDuration" type="number" min="30" step="5" />
                 </div>
               </div>
             </div>
@@ -212,7 +216,13 @@ export class SubjectsComponent implements OnInit {
     private ts: TranslationService
   ) {
     this.schoolId = this.authService.getSchoolId() || 1;
-    this.form = this.fb.group({ name: ['', Validators.required], color: [''], hoursPerWeek: [2], sessionDuration: [60] });
+    this.form = this.fb.group({
+      name: ['', Validators.required],
+      level: ['', Validators.required],
+      color: [''],
+      hoursPerWeek: [2, [Validators.required, Validators.min(1)]],
+      sessionDuration: [60, [Validators.required, Validators.min(30)]]
+    });
   }
 
   t(key: string): string { return this.ts.t(key); }
@@ -236,7 +246,7 @@ export class SubjectsComponent implements OnInit {
   openModal(): void {
     this.editing = false;
     this.editId = null;
-    this.form.reset({ color: '', hoursPerWeek: 2, sessionDuration: 60 });
+    this.form.reset({ level: '', color: '', hoursPerWeek: 2, sessionDuration: 60 });
     this.showModal = true;
   }
 

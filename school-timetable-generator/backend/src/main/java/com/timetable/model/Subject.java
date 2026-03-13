@@ -22,6 +22,9 @@ public class Subject {
     @Builder.Default
     private int hoursPerWeek = 1;
 
+    @Column
+    private String level;
+
     @Builder.Default
     private int sessionDuration = 1;
 

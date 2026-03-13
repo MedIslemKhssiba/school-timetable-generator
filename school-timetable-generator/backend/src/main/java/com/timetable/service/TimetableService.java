@@ -32,8 +32,9 @@ public class TimetableService {
 
     private final Map<Long, TimetableSolution> solutionMap = new ConcurrentHashMap<>();
 
+    @Transactional(readOnly = true)
     public String solve(Long schoolId) {
-        List<Teacher> teachers = teacherRepository.findBySchoolId(schoolId);
+        List<Teacher> teachers = teacherRepository.findWithSubjectsBySchoolId(schoolId);
         List<ClassGroup> classGroups = classGroupRepository.findBySchoolId(schoolId);
         List<Subject> subjects = subjectRepository.findBySchoolId(schoolId);
         List<Room> rooms = roomRepository.findBySchoolId(schoolId);

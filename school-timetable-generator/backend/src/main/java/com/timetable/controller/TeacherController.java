@@ -53,6 +53,19 @@ public class TeacherController {
 
     @GetMapping("/{teacherId}/availabilities")
     public ResponseEntity<List<AvailabilityDTO>> getAvailabilities(@PathVariable Long teacherId) {
+        Teacher teacher = teacherService.getTeacherById(teacherId);
+        List<Timeslot> allTimeslots = timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc();
+        for (Timeslot timeslot : allTimeslots) {
+            if (!availabilityRepository.existsByTeacherIdAndTimeslotId(teacherId, timeslot.getId())) {
+                TeacherAvailability ta = TeacherAvailability.builder()
+                        .teacher(teacher)
+                        .timeslot(timeslot)
+                        .available(true)
+                        .build();
+                availabilityRepository.save(ta);
+            }
+        }
+
         List<TeacherAvailability> avails = availabilityRepository.findByTeacherId(teacherId);
         List<AvailabilityDTO> dtos = avails.stream().map(a -> {
             AvailabilityDTO dto = new AvailabilityDTO();

@@ -1,6 +1,7 @@
 ﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CardModule, GridModule, ButtonDirective } from '@coreui/angular';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -25,14 +26,15 @@ import { Subscription, interval, switchMap } from 'rxjs';
     } @else {
       <div class="stats-grid mb-4">
         @for (stat of statCards; track stat.key) {
-          <div class="stat-card" [routerLink]="stat.route">
+          <a class="stat-card" [routerLink]="stat.route">
             <div class="stat-icon-wrapper" [class]="'stat-icon-' + stat.color">
+              <span class="stat-icon" [innerHTML]="stat.icon"></span>
             </div>
             <div class="stat-content">
-              <div class="stat-value">{{ stats[stat.key] ?? 0 }}</div>
+              <div class="stat-value">{{ stats[stat.key] }}</div>
               <div class="stat-label">{{ stat.label }}</div>
             </div>
-          </div>
+          </a>
         }
       </div>
 
@@ -64,12 +66,14 @@ import { Subscription, interval, switchMap } from 'rxjs';
             <c-card-header><strong>{{ t('quick_actions') }}</strong></c-card-header>
             <c-card-body class="p-0">
               <a class="quick-link" routerLink="../schools">
+                <span class="quick-icon" [innerHTML]="icons.schools"></span>
                 <div class="flex-grow-1">
                   <div class="quick-title">{{ t('manage_schools') }}</div>
                   <div class="quick-desc">{{ t('add_edit_schools') }}</div>
                 </div>
               </a>
               <a class="quick-link" routerLink="../admins">
+                <span class="quick-icon" [innerHTML]="icons.admins"></span>
                 <div class="flex-grow-1">
                   <div class="quick-title">{{ t('manage_admins') }}</div>
                   <div class="quick-desc">{{ t('assign_admins') }}</div>
@@ -98,6 +102,8 @@ import { Subscription, interval, switchMap } from 'rxjs';
       width: 56px; height: 56px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
+    .stat-icon { display: inline-flex; color: #fff; }
+    .stat-icon :deep(svg) { width: 22px; height: 22px; stroke: currentColor; fill: none; }
     .stat-icon-primary { background: #2563EB; }
     .stat-icon-info    { background: #4A7C8A; }
     .stat-icon-warning { background: #D4A03C; }
@@ -116,6 +122,11 @@ import { Subscription, interval, switchMap } from 'rxjs';
       &:hover { background: #F0F4FA; }
       &:last-child { border-bottom: none; }
     }
+    .quick-icon {
+      width: 32px; height: 32px; border-radius: 10px; background: #EAEEF6;
+      display: inline-flex; align-items: center; justify-content: center; color: #2563EB; flex-shrink: 0;
+    }
+    .quick-icon :deep(svg) { width: 16px; height: 16px; stroke: currentColor; fill: none; }
     .quick-title { font-weight: 600; font-size: 0.875rem; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .quick-desc  { font-size: 0.75rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
   `]
@@ -126,13 +137,30 @@ export class SuperAdminDashboardComponent implements OnInit, OnDestroy {
   loading = true;
   private pollSub?: Subscription;
 
+  private icon(d: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+    );
+  }
+
+  icons = {
+    schools: this.icon('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+    admins: this.icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    users: this.icon('<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/>')
+  };
+
   statCards = [
-    { key: 'totalSchools', label: 'Schools', color: 'primary', route: '../schools' },
-    { key: 'totalAdmins', label: 'Administrators', color: 'info', route: '../admins' },
-    { key: 'totalUsers', label: 'Total Users', color: 'warning', route: '../admins' }
+    { key: 'totalSchools', label: 'Schools', color: 'primary', route: '../schools', icon: this.icons.schools },
+    { key: 'totalAdmins', label: 'Administrators', color: 'info', route: '../admins', icon: this.icons.admins },
+    { key: 'totalUsers', label: 'Total Users', color: 'warning', route: '../admins', icon: this.icons.users }
   ];
 
-  constructor(private superAdminService: SuperAdminService, private authService: AuthService, private ts: TranslationService) {
+  constructor(
+    private superAdminService: SuperAdminService,
+    private authService: AuthService,
+    private ts: TranslationService,
+    private sanitizer: DomSanitizer
+  ) {
     this.authService.currentUser$.subscribe(u => {
       if (u) this.userName = u.firstName;
     });

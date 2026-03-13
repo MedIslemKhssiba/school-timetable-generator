@@ -22,6 +22,7 @@ C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\RoomDT
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\SchoolDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\SubjectDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\TeacherDTO.java
+C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\TimeslotDayGenerationDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\TimeslotDTO.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\dto\UpdateAdminRequest.java
 C:\PFE\school-timetable-generator\backend\src\main\java\com\timetable\exception\GlobalExceptionHandler.java

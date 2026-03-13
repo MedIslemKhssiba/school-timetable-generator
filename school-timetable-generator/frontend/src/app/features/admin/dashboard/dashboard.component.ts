@@ -1,6 +1,7 @@
 ﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CardModule, GridModule, ButtonDirective } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -25,14 +26,15 @@ import { Subscription, interval, switchMap } from 'rxjs';
     } @else {
       <div class="stats-grid mb-4">
         @for (stat of statCards; track stat.key) {
-          <div class="stat-card" [routerLink]="stat.route">
+          <a class="stat-card" [routerLink]="stat.route">
             <div class="stat-icon-wrapper" [class]="'stat-icon-' + stat.color">
+              <span class="stat-icon" [innerHTML]="stat.icon"></span>
             </div>
             <div class="stat-content">
-              <div class="stat-value">{{ stats[stat.key] ?? 0 }}</div>
+              <div class="stat-value">{{ stats[stat.key] }}</div>
               <div class="stat-label">{{ stat.label }}</div>
             </div>
-          </div>
+          </a>
         }
       </div>
 
@@ -62,15 +64,19 @@ import { Subscription, interval, switchMap } from 'rxjs';
             <c-card-header><strong>{{ t('quick_actions') }}</strong></c-card-header>
             <c-card-body class="p-0">
               <a class="quick-link" routerLink="../teachers">
+                <span class="quick-icon" [innerHTML]="icons.teachers"></span>
                 <div class="flex-grow-1"><div class="quick-title">{{ t('teachers') }}</div><div class="quick-desc">{{ t('manage_teaching_staff') }}</div></div>
               </a>
               <a class="quick-link" routerLink="../classes">
+                <span class="quick-icon" [innerHTML]="icons.classes"></span>
                 <div class="flex-grow-1"><div class="quick-title">{{ t('classes') }}</div><div class="quick-desc">{{ t('manage_class_groups') }}</div></div>
               </a>
               <a class="quick-link" routerLink="../subjects">
+                <span class="quick-icon" [innerHTML]="icons.subjects"></span>
                 <div class="flex-grow-1"><div class="quick-title">{{ t('subjects') }}</div><div class="quick-desc">{{ t('manage_curriculum') }}</div></div>
               </a>
               <a class="quick-link" routerLink="../rooms">
+                <span class="quick-icon" [innerHTML]="icons.rooms"></span>
                 <div class="flex-grow-1"><div class="quick-title">{{ t('rooms') }}</div><div class="quick-desc">{{ t('manage_classrooms') }}</div></div>
               </a>
             </c-card-body>
@@ -95,6 +101,8 @@ import { Subscription, interval, switchMap } from 'rxjs';
       width: 56px; height: 56px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
+    .stat-icon { display: inline-flex; color: #fff; }
+    .stat-icon :deep(svg) { width: 22px; height: 22px; stroke: currentColor; fill: none; }
     .stat-icon-primary { background: #2563EB; }
     .stat-icon-info    { background: #4A7C8A; }
     .stat-icon-warning { background: #D4A03C; }
@@ -112,6 +120,11 @@ import { Subscription, interval, switchMap } from 'rxjs';
       &:hover { background: #F0F4FA; }
       &:last-child { border-bottom: none; }
     }
+    .quick-icon {
+      width: 32px; height: 32px; border-radius: 10px; background: #EAEEF6;
+      display: inline-flex; align-items: center; justify-content: center; color: #2563EB; flex-shrink: 0;
+    }
+    .quick-icon :deep(svg) { width: 16px; height: 16px; stroke: currentColor; fill: none; }
     .quick-title { font-weight: 600; font-size: 0.875rem; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .quick-desc  { font-size: 0.75rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
   `]
@@ -123,14 +136,32 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private schoolId = 1;
   private pollSub?: Subscription;
 
+  private icon(d: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+    );
+  }
+
+  icons = {
+    teachers: this.icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    classes: this.icon('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
+    subjects: this.icon('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'),
+    rooms: this.icon('<path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/>')
+  };
+
   statCards = [
-    { key: 'totalTeachers', label: 'Teachers', color: 'primary', route: '../teachers' },
-    { key: 'totalClasses', label: 'Classes', color: 'info', route: '../classes' },
-    { key: 'totalSubjects', label: 'Subjects', color: 'warning', route: '../subjects' },
-    { key: 'totalRooms', label: 'Rooms', color: 'success', route: '../rooms' }
+    { key: 'totalTeachers', label: 'Teachers', color: 'primary', route: '../teachers', icon: this.icons.teachers },
+    { key: 'totalClasses', label: 'Classes', color: 'info', route: '../classes', icon: this.icons.classes },
+    { key: 'totalSubjects', label: 'Subjects', color: 'warning', route: '../subjects', icon: this.icons.subjects },
+    { key: 'totalRooms', label: 'Rooms', color: 'success', route: '../rooms', icon: this.icons.rooms }
   ];
 
-  constructor(private adminService: AdminService, private authService: AuthService, private ts: TranslationService) {
+  constructor(
+    private adminService: AdminService,
+    private authService: AuthService,
+    private ts: TranslationService,
+    private sanitizer: DomSanitizer
+  ) {
     this.schoolId = this.authService.getSchoolId() || 1;
     this.authService.currentUser$.subscribe(u => {
       if (u) this.userName = u.firstName;

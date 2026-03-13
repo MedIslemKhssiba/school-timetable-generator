@@ -5,11 +5,15 @@ import com.timetable.exception.ResourceNotFoundException;
 import com.timetable.model.School;
 import com.timetable.model.Subject;
 import com.timetable.model.Teacher;
+import com.timetable.model.TeacherAvailability;
+import com.timetable.model.Timeslot;
 import com.timetable.model.User;
 import com.timetable.model.Role;
 import com.timetable.repository.SchoolRepository;
 import com.timetable.repository.SubjectRepository;
+import com.timetable.repository.TeacherAvailabilityRepository;
 import com.timetable.repository.TeacherRepository;
+import com.timetable.repository.TimeslotRepository;
 import com.timetable.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +32,8 @@ public class TeacherService {
     private final SchoolRepository schoolRepository;
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
+    private final TimeslotRepository timeslotRepository;
+    private final TeacherAvailabilityRepository teacherAvailabilityRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
@@ -70,7 +76,21 @@ public class TeacherService {
             teacher.setSubjects(subjects);
         }
 
-        return toDTO(teacherRepository.save(teacher));
+        Teacher savedTeacher = teacherRepository.save(teacher);
+
+        // Keep availability matrix synchronized: every teacher gets every existing timeslot by default.
+        List<Timeslot> timeslots = timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc();
+        for (Timeslot timeslot : timeslots) {
+            if (!teacherAvailabilityRepository.existsByTeacherIdAndTimeslotId(savedTeacher.getId(), timeslot.getId())) {
+                teacherAvailabilityRepository.save(TeacherAvailability.builder()
+                        .teacher(savedTeacher)
+                        .timeslot(timeslot)
+                        .available(true)
+                        .build());
+            }
+        }
+
+        return toDTO(savedTeacher);
     }
 
     @Transactional

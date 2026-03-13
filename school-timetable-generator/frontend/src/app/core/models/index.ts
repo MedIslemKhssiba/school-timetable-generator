@@ -5,6 +5,8 @@ export interface User {
   lastName: string;
   role: string;
   schoolId?: number;
+  schoolName?: string;
+  school?: School;
 }
 
 export interface AuthResponse {
@@ -71,6 +73,7 @@ export interface ClassGroup {
 export interface Subject {
   id: number;
   name: string;
+  level: string;
   color: string;
   hoursPerWeek: number;
   sessionDuration: number;
@@ -104,6 +107,8 @@ export interface Timeslot {
   dayOfWeek: string;
   startTime: string;
   endTime: string;
+  breakStartTime?: string;
+  breakEndTime?: string;
   orderInDay: number;
 }
 

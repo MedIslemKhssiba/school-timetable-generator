@@ -57,14 +57,14 @@ import { TranslationService } from '../../../core/services/translation.service';
                   <tr>
                     <td>
                       <div class="user-cell">
-                        <div class="user-avatar">{{ a.firstName?.charAt(0) }}{{ a.lastName?.charAt(0) }}</div>
+                        <div class="user-avatar">{{ a.firstName.charAt(0) }}{{ a.lastName.charAt(0) }}</div>
                         <span class="cell-primary">{{ a.firstName }} {{ a.lastName }}</span>
                       </div>
                     </td>
                     <td class="text-body-secondary">{{ a.email }}</td>
                     <td>
-                      <c-badge [color]="a.schoolId ? 'primary' : 'light'" [textColor]="a.schoolId ? '' : 'secondary'" class="school-badge">
-                        {{ getSchoolName(a.schoolId) }}
+                      <c-badge [color]="(a.schoolId || a.school?.id) ? 'primary' : 'light'" [textColor]="(a.schoolId || a.school?.id) ? '' : 'secondary'" class="school-badge">
+                        {{ getSchoolName(a) }}
                       </c-badge>
                     </td>
                     <td class="text-end">
@@ -126,9 +126,8 @@ import { TranslationService } from '../../../core/services/translation.service';
                 </div>
               }
               <div class="form-field">
-                <label cLabel>{{ t('assign_to_school') }}</label>
+                <label cLabel>{{ t('assign_to_school') }} *</label>
                 <select cFormControl formControlName="schoolId">
-                  <option [ngValue]="null">{{ t('no_school_assigned') }}</option>
                   @for (school of schools; track school.id) {
                     <option [ngValue]="school.id">{{ school.name }}</option>
                   }
@@ -320,7 +319,9 @@ export class AdminsComponent implements OnInit {
     this.page = 1;
   }
 
-  getSchoolName(schoolId?: number): string {
+  getSchoolName(admin: User): string {
+    const schoolId = admin.schoolId ?? admin.school?.id;
+    if (admin.schoolName) return admin.schoolName;
     if (!schoolId) return '—';
     return this.schools.find(s => s.id === schoolId)?.name ?? '—';
   }
@@ -328,6 +329,8 @@ export class AdminsComponent implements OnInit {
   openModal(): void {
     this.editingAdmin = null;
     this.adminForm.reset({ role: 'ROLE_ADMIN' });
+    this.adminForm.get('schoolId')?.setValidators(Validators.required);
+    this.adminForm.get('schoolId')?.updateValueAndValidity();
     this.adminForm.get('password')?.setValidators(Validators.required);
     this.adminForm.get('password')?.updateValueAndValidity();
     this.modalVisible = true;
@@ -339,11 +342,13 @@ export class AdminsComponent implements OnInit {
       firstName: admin.firstName,
       lastName: admin.lastName,
       email: admin.email,
-      schoolId: admin.schoolId ?? null,
+      schoolId: admin.schoolId ?? admin.school?.id ?? null,
       role: 'ROLE_ADMIN'
     });
     this.adminForm.get('password')?.clearValidators();
     this.adminForm.get('password')?.updateValueAndValidity();
+    this.adminForm.get('schoolId')?.setValidators(Validators.required);
+    this.adminForm.get('schoolId')?.updateValueAndValidity();
     this.modalVisible = true;
   }
 

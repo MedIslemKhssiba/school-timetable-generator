@@ -1,17 +1,27 @@
 package com.timetable.dto;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
-public class TimeslotDTO {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class TimeslotDayGenerationDTO {
     @NotNull
     private String dayOfWeek;
+
     @NotNull
     private String startTime;
+
     @NotNull
     private String endTime;
+
     private String breakStartTime;
     private String breakEndTime;
-    private Integer orderInDay;
+
+    private Long schoolId;
 }

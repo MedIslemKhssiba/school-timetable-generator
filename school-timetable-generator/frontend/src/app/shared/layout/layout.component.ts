@@ -1,6 +1,7 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslationService } from '../../core/services/translation.service';
 import { ContainerComponent } from '@coreui/angular';
@@ -140,13 +141,13 @@ import { ProfileComponent } from '../../features/profile/profile.component';
 
     .nav-entry {
       display: flex; align-items: center; gap: 12px; padding: 0.7rem 1rem;
-      border-radius: 10px; color: rgba(248, 250, 255,0.75); text-decoration: none;
+      border-radius: 10px; color: rgba(248, 250, 255,0.9); text-decoration: none;
       font-size: 0.875rem; font-weight: 500; cursor: pointer;
       font-family: 'Montserrat', sans-serif;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       margin-bottom: 3px; position: relative;
     }
-    .nav-entry:hover { color: rgba(248, 250, 255,0.95); background: rgba(248, 250, 255,0.06); }
+    .nav-entry:hover { color: #FFFFFF; background: rgba(248, 250, 255,0.06); }
     .nav-entry.active {
       color: #F0F4FA;
       background: rgba(37, 99, 235,0.35);
@@ -157,11 +158,13 @@ import { ProfileComponent } from '../../features/profile/profile.component';
       content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
       width: 4px; height: 22px; background: #93C5FD; border-radius: 0 3px 3px 0;
     }
-    .nav-entry.logout-entry { color: rgba(248, 250, 255,0.35); }
-    .nav-entry.logout-entry:hover { color: #E07B5B; background: rgba(196,69,54,0.15); }
+    .nav-entry.logout-entry { color: #FFFFFF; }
+    .nav-entry.logout-entry .nav-icon { color: #FFFFFF; }
+    .nav-entry.logout-entry:hover { color: #EF4444; background: rgba(239,68,68,0.15); }
+    .nav-entry.logout-entry:hover .nav-icon { color: #EF4444; }
 
-    .nav-icon { display: flex; flex-shrink: 0; }
-    .nav-icon :deep(svg) { fill: currentColor; }
+    .nav-icon { display: flex; flex-shrink: 0; color: #FFFFFF; }
+    .nav-icon :deep(svg) { stroke: currentColor; fill: none; }
 
     /* ── SIDEBAR FOOTER ── */
     .sidebar-footer {
@@ -292,14 +295,15 @@ export class LayoutComponent implements OnInit {
   userName = '';
   userInitials = '';
   roleLabel = '';
-  navLinks: { path: string; label: string; icon: string }[] = [];
+  navLinks: { path: string; label: string; icon: SafeHtml }[] = [];
   sidebarMobileOpen = false;
   showProfilePanel = false;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private sanitizer: DomSanitizer
   ) {}
 
   t(key: string): string {
@@ -324,8 +328,10 @@ export class LayoutComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  private svg(d: string): string {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  private svg(d: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+    );
   }
 
   private setNavLinks(role: string): void {

@@ -87,11 +87,22 @@ export class AdminService {
     return this.http.get<Timeslot[]>(`${this.apiUrl}/timetable/timeslots`);
   }
 
-  createTimeslot(timeslot: { dayOfWeek: string; startTime: string; endTime: string; orderInDay?: number }): Observable<Timeslot> {
+  createTimeslot(timeslot: { dayOfWeek: string; startTime: string; endTime: string; breakStartTime?: string; breakEndTime?: string; orderInDay?: number }): Observable<Timeslot> {
     return this.http.post<Timeslot>(`${this.apiUrl}/timetable/timeslots`, timeslot);
   }
 
-  updateTimeslot(id: number, timeslot: { dayOfWeek: string; startTime: string; endTime: string; orderInDay?: number }): Observable<Timeslot> {
+  generateDayTimeslots(payload: {
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    breakStartTime?: string | null;
+    breakEndTime?: string | null;
+    schoolId?: number | null;
+  }): Observable<Timeslot[]> {
+    return this.http.post<Timeslot[]>(`${this.apiUrl}/timetable/timeslots/generate-day`, payload);
+  }
+
+  updateTimeslot(id: number, timeslot: { dayOfWeek: string; startTime: string; endTime: string; breakStartTime?: string; breakEndTime?: string; orderInDay?: number }): Observable<Timeslot> {
     return this.http.put<Timeslot>(`${this.apiUrl}/timetable/timeslots/${id}`, timeslot);
   }
 

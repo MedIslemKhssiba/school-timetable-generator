@@ -2,8 +2,10 @@ package com.timetable.config;
 
 import com.timetable.model.DayOfWeek;
 import com.timetable.model.Role;
+import com.timetable.model.School;
 import com.timetable.model.Timeslot;
 import com.timetable.model.User;
+import com.timetable.repository.SchoolRepository;
 import com.timetable.repository.TimeslotRepository;
 import com.timetable.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
     private final TimeslotRepository timeslotRepository;
+    private final SchoolRepository schoolRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -29,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         initializeTimeslots();
         initializeSuperAdmin();
+        assignSchoolsToExistingAdmins();
     }
 
     private void initializeTimeslots() {
@@ -86,5 +90,27 @@ public class DataInitializer implements CommandLineRunner {
 
         userRepository.save(superAdmin);
         log.info("Created default super admin: {} / admin123", superAdminEmail);
+    }
+
+    private void assignSchoolsToExistingAdmins() {
+        List<School> schools = schoolRepository.findAll();
+        if (schools.isEmpty()) {
+            return;
+        }
+
+        School fallbackSchool = schools.get(0);
+        List<User> admins = userRepository.findByRole(Role.ROLE_ADMIN);
+        long updated = 0;
+        for (User admin : admins) {
+            if (admin.getSchool() == null) {
+                admin.setSchool(fallbackSchool);
+                userRepository.save(admin);
+                updated++;
+            }
+        }
+
+        if (updated > 0) {
+            log.info("Assigned default school '{}' to {} admin account(s) without school", fallbackSchool.getName(), updated);
+        }
     }
 }
