@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -61,7 +60,6 @@ public class AdminController {
                 .name(dto.getName())
                 .level(dto.getLevel())
                 .studentCount(dto.getStudentCount())
-                .totalHoursPerWeek(dto.getTotalHoursPerWeek() != null ? dto.getTotalHoursPerWeek() : 30)
                 .school(school)
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED).body(classGroupRepository.save(classGroup));
@@ -74,7 +72,6 @@ public class AdminController {
         classGroup.setName(dto.getName());
         classGroup.setLevel(dto.getLevel());
         classGroup.setStudentCount(dto.getStudentCount());
-        classGroup.setTotalHoursPerWeek(dto.getTotalHoursPerWeek() != null ? dto.getTotalHoursPerWeek() : classGroup.getTotalHoursPerWeek());
         return ResponseEntity.ok(classGroupRepository.save(classGroup));
     }
 
@@ -119,10 +116,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/subjects/{id}")
-    @Transactional
     public ResponseEntity<Void> deleteSubject(@PathVariable Long id) {
-        lessonRepository.deleteBySubjectId(id);
-        subjectRepository.detachFromTeachers(id);
         subjectRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }

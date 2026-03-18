@@ -24,7 +24,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -32,8 +31,6 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -159,74 +156,10 @@ public class TimetableController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PostMapping("/timeslots/copy-monday-to-week")
-    @Transactional
-    public ResponseEntity<List<Timeslot>> copyMondayToRestDays() {
-        List<Timeslot> mondaySlots = timeslotRepository.findByDayOfWeekOrderByStartTimeAsc(DayOfWeek.MONDAY);
-        if (mondaySlots.isEmpty()) {
-            throw new IllegalStateException("No Monday timeslots found to copy.");
-        }
-
-        List<DayOfWeek> targetDays = EnumSet.of(
-                DayOfWeek.TUESDAY,
-                DayOfWeek.WEDNESDAY,
-                DayOfWeek.THURSDAY,
-                DayOfWeek.FRIDAY,
-                DayOfWeek.SATURDAY
-        ).stream().toList();
-
-        for (DayOfWeek targetDay : targetDays) {
-            List<Timeslot> existingForDay = timeslotRepository.findByDayOfWeekOrderByStartTimeAsc(targetDay);
-            if (!existingForDay.isEmpty()) {
-                List<Long> ids = existingForDay.stream().map(Timeslot::getId).toList();
-                List<Lesson> impactedLessons = lessonRepository.findByTimeslotIdIn(ids);
-                if (!impactedLessons.isEmpty()) {
-                    for (Lesson lesson : impactedLessons) {
-                        lesson.setTimeslot(null);
-                    }
-                    lessonRepository.saveAll(impactedLessons);
-                    lessonRepository.flush();
-                }
-
-                teacherAvailabilityRepository.deleteByTimeslotIdIn(ids);
-                teacherAvailabilityRepository.flush();
-                timeslotRepository.deleteAllInBatch(existingForDay);
-                timeslotRepository.flush();
-            }
-
-            for (Timeslot mondaySlot : mondaySlots) {
-                Timeslot newSlot = Timeslot.builder()
-                        .dayOfWeek(targetDay)
-                        .startTime(mondaySlot.getStartTime())
-                        .endTime(mondaySlot.getEndTime())
-                        .breakStartTime(mondaySlot.getBreakStartTime())
-                        .breakEndTime(mondaySlot.getBreakEndTime())
-                        .orderInDay(mondaySlot.getOrderInDay())
-                        .build();
-                Timeslot saved = timeslotRepository.save(newSlot);
-                syncTeachersWithTimeslot(saved);
-            }
-        }
-
-        return ResponseEntity.ok(timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc());
-    }
-
     @DeleteMapping("/timeslots/{id}")
-    @Transactional
     public ResponseEntity<Void> deleteTimeslot(@PathVariable Long id) {
-        List<Lesson> impactedLessons = lessonRepository.findByTimeslotIdIn(List.of(id));
-        if (!impactedLessons.isEmpty()) {
-            for (Lesson lesson : impactedLessons) {
-                lesson.setTimeslot(null);
-            }
-            lessonRepository.saveAll(impactedLessons);
-            lessonRepository.flush();
-        }
-
         teacherAvailabilityRepository.deleteByTimeslotId(id);
-        teacherAvailabilityRepository.flush();
         timeslotRepository.deleteById(id);
-        timeslotRepository.flush();
         return ResponseEntity.noContent().build();
     }
 
@@ -327,13 +260,6 @@ public class TimetableController {
         return ResponseEntity.ok(timetableService.solve(schoolId));
     }
 
-    @GetMapping("/status/{schoolId}")
-    public ResponseEntity<Map<String, String>> getSolveStatus(@PathVariable Long schoolId) {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", timetableService.getStatus(schoolId).name());
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/solution/{schoolId}")
     public ResponseEntity<TimetableSolution> getSolution(@PathVariable Long schoolId) {
         TimetableSolution solution = timetableService.getSolution(schoolId);
@@ -355,38 +281,23 @@ public class TimetableController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PostMapping("/share/{schoolId}")
-    public ResponseEntity<List<LessonDTO>> shareWithTeachers(@PathVariable Long schoolId) {
-        List<Lesson> lessons;
-        try {
-            lessons = timetableService.saveSolution(schoolId);
-        } catch (ResourceNotFoundException ex) {
-            lessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
-            if (lessons.isEmpty()) {
-                throw ex;
-            }
-        }
-        List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
-    }
-
     @GetMapping("/lessons/{schoolId}")
     public ResponseEntity<List<LessonDTO>> getLessons(@PathVariable Long schoolId) {
-        List<Lesson> lessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
+        List<Lesson> lessons = lessonRepository.findBySchoolId(schoolId);
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/lessons/class/{classGroupId}")
     public ResponseEntity<List<LessonDTO>> getLessonsByClass(@PathVariable Long classGroupId) {
-        List<Lesson> lessons = lessonRepository.findByClassGroupIdWithDetails(classGroupId);
+        List<Lesson> lessons = lessonRepository.findByClassGroupId(classGroupId);
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/lessons/teacher/{teacherId}")
     public ResponseEntity<List<LessonDTO>> getLessonsByTeacher(@PathVariable Long teacherId) {
-        List<Lesson> lessons = lessonRepository.findByTeacherIdWithDetails(teacherId);
+        List<Lesson> lessons = lessonRepository.findByTeacherId(teacherId);
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }

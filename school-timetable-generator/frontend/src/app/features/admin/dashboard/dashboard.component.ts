@@ -6,7 +6,6 @@ import { CardModule, GridModule, ButtonDirective } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { Lesson } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { Subscription, interval, switchMap } from 'rxjs';
 
@@ -57,48 +56,6 @@ import { Subscription, interval, switchMap } from 'rxjs';
                   </div>
                 </div>
               </div>
-            </c-card-body>
-          </c-card>
-
-          <c-card>
-            <c-card-header class="d-flex justify-content-between align-items-center">
-              <strong>Saved Timetable</strong>
-              <button cButton color="primary" size="sm" variant="outline" routerLink="../timetable">Open Timetable</button>
-            </c-card-header>
-            <c-card-body class="p-0">
-              @if (savedLessons.length === 0) {
-                <div class="text-center text-muted py-4">No saved timetable yet.</div>
-              } @else {
-                <div class="table-responsive">
-                  <table class="table table-hover mb-0">
-                    <thead>
-                      <tr>
-                        <th>Day</th>
-                        <th>Time</th>
-                        <th>Class</th>
-                        <th>Subject</th>
-                        <th>Teacher</th>
-                        <th>Room</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (lesson of previewLessons; track lesson.id) {
-                        <tr>
-                          <td>{{ formatDay(lesson.dayOfWeek) }}</td>
-                          <td>{{ lesson.startTime }} - {{ lesson.endTime }}</td>
-                          <td>{{ lesson.classGroupName }}</td>
-                          <td>{{ lesson.subjectName }}</td>
-                          <td>{{ lesson.teacherName }}</td>
-                          <td>{{ lesson.roomName }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-                @if (savedLessons.length > previewLessons.length) {
-                  <div class="px-3 py-2 text-muted small">Showing {{ previewLessons.length }} of {{ savedLessons.length }} saved lessons.</div>
-                }
-              }
             </c-card-body>
           </c-card>
         </c-col>
@@ -174,7 +131,6 @@ import { Subscription, interval, switchMap } from 'rxjs';
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   stats: Record<string, number> = {};
-  savedLessons: Lesson[] = [];
   userName = '';
   loading = true;
   private schoolId = 1;
@@ -214,37 +170,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   t(key: string): string { return this.ts.t(key); }
 
-  get previewLessons(): Lesson[] {
-    return this.savedLessons.slice(0, 12);
-  }
-
-  formatDay(day: string): string {
-    return this.t(day);
-  }
-
   ngOnInit(): void {
     this.adminService.getDashboard(this.schoolId).subscribe({
       next: s => { this.stats = s; this.loading = false; },
       error: () => this.loading = false
     });
-    this.loadSavedLessons();
-
     this.pollSub = interval(30000).pipe(
       switchMap(() => this.adminService.getDashboard(this.schoolId))
     ).subscribe(s => this.stats = s);
-  }
-
-  private loadSavedLessons(): void {
-    this.adminService.getLessons(this.schoolId).subscribe({
-      next: lessons => {
-        this.savedLessons = [...lessons].sort((a, b) => {
-          const dayCompare = a.dayOfWeek.localeCompare(b.dayOfWeek);
-          if (dayCompare !== 0) return dayCompare;
-          return a.startTime.localeCompare(b.startTime);
-        });
-      },
-      error: () => { this.savedLessons = []; }
-    });
   }
 
   ngOnDestroy(): void {

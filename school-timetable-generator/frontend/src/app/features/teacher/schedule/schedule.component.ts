@@ -14,9 +14,6 @@ import { TranslationService } from '../../../core/services/translation.service';
   template: `
     <div class="page-header mb-4">
       <div>
-        <div class="header-icon mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="5" y="12" width="4" height="4"/><rect x="11" y="12" width="4" height="4"/><rect x="17" y="12" width="4" height="4"/></svg>
-        </div>
         <h2 class="page-title">{{ t('my_schedule') }}</h2>
         <p class="page-subtitle">{{ t('weekly_timetable') }}</p>
       </div>
@@ -28,43 +25,34 @@ import { TranslationService } from '../../../core/services/translation.service';
     @if (loading) {
       <ui-skeleton type="cards" [count]="5" />
     } @else if (lessons.length > 0) {
-      <div class="day-summary mb-3">
+      <c-row>
         @for (day of days; track day) {
-          <div class="day-chip">
-            <span class="day-name">{{ formatDay(day) }}</span>
-            <span class="day-count">{{ getDayCount(day) }}</span>
-          </div>
-        }
-      </div>
-
-      <c-card>
-        <c-card-body class="p-0">
-          <div class="table-wrap">
-            <table class="schedule-table">
-              <thead>
-                <tr>
-                  <th>{{ t('day') }}</th>
-                  <th>{{ t('time') }}</th>
-                  <th>{{ t('subject') }}</th>
-                  <th>{{ t('class') }}</th>
-                  <th>{{ t('room') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (lesson of sortedLessons; track lesson.id) {
-                  <tr>
-                    <td><span class="day-badge">{{ formatDay(lesson.dayOfWeek) }}</span></td>
-                    <td class="time-cell">{{ lesson.startTime }} - {{ lesson.endTime }}</td>
-                    <td class="subject-cell">{{ lesson.subjectName }}</td>
-                    <td>{{ lesson.classGroupName }}</td>
-                    <td>{{ lesson.roomName }}</td>
-                  </tr>
+          <c-col lg="4" md="6" class="mb-4">
+            <c-card class="h-100">
+              <c-card-header class="day-header">
+                <span>{{ formatDay(day) }}</span>
+                <c-badge color="light" textColor="dark" class="ms-auto">{{ getLessonsForDay(day).length }}</c-badge>
+              </c-card-header>
+              <c-card-body class="p-2">
+                @for (lesson of getLessonsForDay(day); track lesson.id) {
+                  <div class="lesson-slot" [style.border-left-color]="getSubjectColor(lesson.subjectName)">
+                    <div class="lesson-time">
+                      {{ lesson.startTime }} - {{ lesson.endTime }}
+                    </div>
+                    <div class="lesson-subject">{{ lesson.subjectName }}</div>
+                    <div class="lesson-details">
+                      <span>{{ lesson.classGroupName }}</span>
+                      <span>{{ lesson.roomName }}</span>
+                    </div>
+                  </div>
+                } @empty {
+                    <div class="text-center text-muted py-4"><small>{{ t('no_lessons') }}</small></div>
                 }
-              </tbody>
-            </table>
-          </div>
-        </c-card-body>
-      </c-card>
+              </c-card-body>
+            </c-card>
+          </c-col>
+        }
+      </c-row>
     } @else {
       <c-card>
         <c-card-body class="text-center py-5">
@@ -76,91 +64,36 @@ import { TranslationService } from '../../../core/services/translation.service';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .header-icon {
-      width: 34px; height: 34px; border-radius: 10px;
-      background: #EAEEF6; color: #2563EB;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
     .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
     .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
-    .day-summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 10px;
-    }
-    .day-chip {
-      background: #F8FAFF;
-      border: 1px solid #DDE3EE;
-      border-radius: 10px;
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .day-name { font-size: 0.8rem; font-weight: 600; color: #1A2332; font-family: 'Montserrat', sans-serif; }
-    .day-count {
+    .day-header {
+      display: flex; align-items: center;
       background: #2563EB;
-      color: #F8FAFF;
-      border-radius: 999px;
-      min-width: 24px;
-      text-align: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 2px 8px;
+      color: #F8FAFF; font-weight: 600; font-family: 'Montserrat', sans-serif;
+    }
+    .lesson-slot {
+      padding: 12px; margin: 6px; background: #F0F4FA;
+      border-radius: 8px; border-left: 3px solid #2563EB;
+      transition: transform 0.15s, box-shadow 0.15s;
+      &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37, 99, 235,0.1); }
+    }
+    .lesson-time {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.8rem; font-weight: 600; color: #2563EB; margin-bottom: 4px;
       font-family: 'Montserrat', sans-serif;
     }
-
-    .table-wrap { overflow-x: auto; }
-    .schedule-table {
-      width: 100%;
-      min-width: 680px;
-      border-collapse: collapse;
-    }
-    .schedule-table th,
-    .schedule-table td {
-      padding: 12px 14px;
-      border-bottom: 1px solid #DDE3EE;
-      font-size: 0.85rem;
-      color: #1A2332;
-      font-family: 'Montserrat', sans-serif;
-    }
-    .schedule-table thead th {
-      background: #F0F4FA;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #8D99A8;
-      font-weight: 700;
-      border-bottom: 1px solid #DDE3EE;
-    }
-    .schedule-table tbody tr:hover { background: #F8FAFF; }
-    .day-badge {
-      background: #E8F0FF;
-      color: #2563EB;
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      display: inline-block;
-    }
-    .time-cell { color: #2563EB !important; font-weight: 600; white-space: nowrap; }
-    .subject-cell { font-weight: 700; }
+    .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #1A2332; font-family: 'Montserrat', sans-serif; }
+    .lesson-details { display: flex; flex-direction: column; gap: 2px; }
+    .lesson-details span { font-size: 0.78rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class ScheduleComponent implements OnInit {
   lessons: Lesson[] = [];
   loading = true;
-  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-  private dayOrder: Record<string, number> = {
-    MONDAY: 1,
-    TUESDAY: 2,
-    WEDNESDAY: 3,
-    THURSDAY: 4,
-    FRIDAY: 5,
-    SATURDAY: 6,
-    SUNDAY: 7
-  };
+  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+  private subjectColors: Record<string, string> = {};
+  private colorPalette = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#0EA5E9', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
 
   constructor(private http: HttpClient, private ts: TranslationService) {}
 
@@ -177,15 +110,15 @@ export class ScheduleComponent implements OnInit {
     return this.ts.t(day);
   }
 
-  getDayCount(day: string): number {
-    return this.lessons.filter(l => l.dayOfWeek === day).length;
+  getLessonsForDay(day: string): Lesson[] {
+    return this.lessons.filter(l => l.dayOfWeek === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
-  get sortedLessons(): Lesson[] {
-    return [...this.lessons].sort((a, b) => {
-      const dayCompare = (this.dayOrder[a.dayOfWeek] ?? 99) - (this.dayOrder[b.dayOfWeek] ?? 99);
-      if (dayCompare !== 0) return dayCompare;
-      return a.startTime.localeCompare(b.startTime);
-    });
+  getSubjectColor(name: string): string {
+    if (!this.subjectColors[name]) {
+      const idx = Object.keys(this.subjectColors).length % this.colorPalette.length;
+      this.subjectColors[name] = this.colorPalette[idx];
+    }
+    return this.subjectColors[name];
   }
 }

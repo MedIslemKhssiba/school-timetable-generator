@@ -29,8 +29,8 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
         <button cButton color="secondary" variant="outline" (click)="save()" [disabled]="solving || lessons.length === 0">
           {{ t('save') }}
         </button>
-        <button cButton color="success" (click)="share()" [disabled]="solving || lessons.length === 0">
-          Share to Teachers
+        <button cButton color="light" (click)="refresh()">
+          {{ t('refresh') }}
         </button>
         <button cButton color="success" variant="outline" (click)="exportExcel()" [disabled]="lessons.length === 0">
           {{ t('export') }}
@@ -43,11 +43,10 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
         <c-card-body class="d-flex align-items-center gap-3">
           <div class="spinner"></div>
           <div class="flex-grow-1">
-            <div class="fw-semibold mb-1">{{ solvingMessage }}</div>
+            <div class="fw-semibold mb-1">{{ t('ai_solver_working') }}</div>
             <c-progress [animated]="true" style="height: 6px">
-              <c-progress-bar color="primary" [value]="solverProgress"></c-progress-bar>
+              <c-progress-bar color="primary" [value]="100"></c-progress-bar>
             </c-progress>
-            <div class="solver-hint mt-2">{{ solverProgress }}% • {{ t('ai_solver_working') }}</div>
           </div>
         </c-card-body>
       </c-card>
@@ -179,7 +178,6 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
       animation: spin 0.8s linear infinite; flex-shrink: 0;
     }
     @keyframes spin { 100% { transform: rotate(360deg); } }
-    .solver-hint { font-size: 0.75rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
 
     .filter-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .filter-group { display: flex; align-items: center; gap: 6px; }
@@ -242,7 +240,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
   viewMode: 'grid' | 'cards' = 'grid';
   filterClass = '';
   filterTeacher = '';
-  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
   timeSlots: string[] = [];
   classNames: string[] = [];
   teacherNames: string[] = [];
@@ -250,9 +248,6 @@ export class TimetableComponent implements OnInit, OnDestroy {
   private subjectColors: Record<string, string> = {};
   private colorPalette = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#0EA5E9', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
   private pollInterval: any;
-  private progressInterval: any;
-  solverProgress = 5;
-  solvingMessage = 'AI solver is analyzing timetable constraints...';
 
   constructor(
     private adminService: AdminService,
@@ -265,50 +260,25 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
   t(key: string): string { return this.ts.t(key); }
 
-  ngOnInit(): void {
-    this.refresh();
-    this.checkSolveStatus();
-  }
+  ngOnInit(): void { this.refresh(); }
 
-  ngOnDestroy(): void {
-    this.stopPolling();
-    this.stopProgressAnimation();
-  }
+  ngOnDestroy(): void { this.stopPolling(); }
 
   solve(): void {
     this.solving = true;
-    this.startProgressAnimation();
     this.adminService.solveTimetable(this.schoolId, {}).subscribe({
       next: () => {
         this.notify.info('Solving started! This may take a few minutes.');
         this.startPolling();
       },
-      error: () => {
-        this.solving = false;
-        this.stopProgressAnimation();
-        this.notify.error('Failed to start solving');
-      }
+      error: () => { this.solving = false; this.notify.error('Failed to start solving'); }
     });
   }
 
   stop(): void {
     this.adminService.stopSolving(this.schoolId).subscribe({
-      next: () => { this.solving = false; this.stopPolling(); this.stopProgressAnimation(); this.notify.info('Solving stopped'); this.pollSolution(); },
+      next: () => { this.solving = false; this.stopPolling(); this.notify.info('Solving stopped'); this.pollSolution(); },
       error: () => this.notify.error('Failed to stop solving')
-    });
-  }
-
-  private checkSolveStatus(): void {
-    this.adminService.getSolveStatus(this.schoolId).subscribe({
-      next: ({ status }) => {
-        this.solving = status !== 'NOT_SOLVING';
-        if (this.solving) {
-          this.startProgressAnimation();
-          this.startPolling();
-          this.pollSolution();
-        }
-      },
-      error: () => {}
     });
   }
 
@@ -345,66 +315,12 @@ export class TimetableComponent implements OnInit, OnDestroy {
       },
       error: () => {}
     });
-
-    this.adminService.getSolveStatus(this.schoolId).subscribe({
-      next: ({ status }) => {
-        const wasSolving = this.solving;
-        this.solving = status !== 'NOT_SOLVING';
-        if (wasSolving && !this.solving) {
-          this.stopProgressAnimation();
-          this.stopPolling();
-          this.notify.success('Generation completed successfully');
-        }
-        if (!wasSolving && this.solving) {
-          this.startProgressAnimation();
-        }
-      }
-    });
-  }
-
-  private startProgressAnimation(): void {
-    this.stopProgressAnimation();
-    this.solverProgress = 8;
-    this.solvingMessage = 'AI solver is analyzing timetable constraints...';
-    this.progressInterval = setInterval(() => {
-      if (!this.solving) return;
-      if (this.solverProgress < 92) {
-        this.solverProgress += this.solverProgress < 60 ? 5 : 2;
-      }
-
-      if (this.solverProgress < 35) {
-        this.solvingMessage = 'AI solver is analyzing timetable constraints...';
-      } else if (this.solverProgress < 70) {
-        this.solvingMessage = 'AI solver is assigning teachers and rooms...';
-      } else {
-        this.solvingMessage = 'AI solver is optimizing final schedule quality...';
-      }
-    }, 1200);
-  }
-
-  private stopProgressAnimation(): void {
-    if (this.progressInterval) {
-      clearInterval(this.progressInterval);
-      this.progressInterval = null;
-    }
-    this.solverProgress = 100;
-    this.solvingMessage = 'AI solver finished.';
   }
 
   save(): void {
     this.adminService.saveTimetable(this.schoolId).subscribe({
       next: () => { this.notify.success('Timetable saved!'); this.refresh(); },
       error: () => this.notify.error('Failed to save timetable')
-    });
-  }
-
-  share(): void {
-    this.adminService.shareTimetable(this.schoolId).subscribe({
-      next: (lessons) => {
-        this.notify.success(`Shared ${lessons.length} lessons with teachers`);
-        this.refresh();
-      },
-      error: () => this.notify.error('Failed to share timetable with teachers')
     });
   }
 

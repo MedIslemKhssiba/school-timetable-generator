@@ -18,11 +18,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     @Query("SELECT l FROM Lesson l JOIN FETCH l.subject JOIN FETCH l.teacher JOIN FETCH l.classGroup JOIN FETCH l.room JOIN FETCH l.timeslot WHERE l.teacher.id = :teacherId")
     List<Lesson> findByTeacherIdWithDetails(@Param("teacherId") Long teacherId);
 
-    @Query("SELECT l FROM Lesson l JOIN FETCH l.subject JOIN FETCH l.teacher JOIN FETCH l.classGroup JOIN FETCH l.room JOIN FETCH l.timeslot WHERE l.classGroup.id = :classGroupId")
-    List<Lesson> findByClassGroupIdWithDetails(@Param("classGroupId") Long classGroupId);
-
     List<Lesson> findByTeacherId(Long teacherId);
     List<Lesson> findByClassGroupId(Long classGroupId);
-    void deleteBySubjectId(Long subjectId);
     List<Lesson> findByTimeslotIdIn(List<Long> timeslotIds);
 }

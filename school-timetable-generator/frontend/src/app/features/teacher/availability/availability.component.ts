@@ -16,9 +16,6 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
   template: `
     <div class="page-header mb-4">
       <div>
-        <div class="header-icon mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        </div>
         <h2 class="page-title">{{ t('my_availability') }}</h2>
         <p class="page-subtitle">{{ t('set_when_available') }}</p>
       </div>
@@ -26,34 +23,6 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
         {{ t('save_availability') }}
       </button>
     </div>
-
-    <c-card class="mb-3">
-      <c-card-header class="fw-semibold">Ajouter mon propre créneau de disponibilité</c-card-header>
-      <c-card-body>
-        <div class="d-flex gap-2 flex-wrap align-items-end">
-          <div>
-            <label class="form-label">Jour</label>
-            <select class="form-control" [(ngModel)]="customSlot.dayOfWeek">
-              <option value="MONDAY">{{ t('MONDAY') }}</option>
-              <option value="TUESDAY">{{ t('TUESDAY') }}</option>
-              <option value="WEDNESDAY">{{ t('WEDNESDAY') }}</option>
-              <option value="THURSDAY">{{ t('THURSDAY') }}</option>
-              <option value="FRIDAY">{{ t('FRIDAY') }}</option>
-              <option value="SATURDAY">{{ t('SATURDAY') }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Début</label>
-            <input class="form-control" type="time" [(ngModel)]="customSlot.startTime" />
-          </div>
-          <div>
-            <label class="form-label">Fin</label>
-            <input class="form-control" type="time" [(ngModel)]="customSlot.endTime" />
-          </div>
-          <button cButton color="info" (click)="createMyTimeslot()" [disabled]="creating">Ajouter</button>
-        </div>
-      </c-card-body>
-    </c-card>
 
     <c-card class="mb-4 info-card">
       <c-card-body class="d-flex align-items-center gap-3 py-3">
@@ -101,11 +70,6 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-    .header-icon {
-      width: 34px; height: 34px; border-radius: 10px;
-      background: #EAEEF6; color: #2563EB;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
     .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
     .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
@@ -138,12 +102,6 @@ export class AvailabilityComponent implements OnInit {
   days: string[] = [];
   loading = true;
   hasChanges = false;
-  creating = false;
-  customSlot = {
-    dayOfWeek: 'MONDAY',
-    startTime: '',
-    endTime: ''
-  };
 
   constructor(private http: HttpClient, private notify: NotificationService, private ts: TranslationService) {}
 
@@ -156,7 +114,7 @@ export class AvailabilityComponent implements OnInit {
         avails.forEach(a => this.availabilityMap[a.timeslotId] = a.available);
       }
     });
-    this.http.get<Timeslot[]>(`${environment.apiUrl}/teacher/timeslots`).subscribe({
+    this.http.get<Timeslot[]>(`${environment.apiUrl}/admin/timetable/timeslots`).subscribe({
       next: slots => {
         this.timeslots = slots;
         this.days = [...new Set(slots.map(s => s.dayOfWeek))];
@@ -195,55 +153,6 @@ export class AvailabilityComponent implements OnInit {
     this.http.put<TeacherAvailability[]>(`${environment.apiUrl}/teacher/availabilities`, data).subscribe({
       next: () => { this.notify.success('Availability saved!'); this.hasChanges = false; },
       error: () => this.notify.error('Failed to save availability')
-    });
-  }
-
-  createMyTimeslot(): void {
-    if (!this.customSlot.startTime || !this.customSlot.endTime) {
-      this.notify.error('Please choose start and end time');
-      return;
-    }
-    if (this.customSlot.startTime >= this.customSlot.endTime) {
-      this.notify.error('Start time must be before end time');
-      return;
-    }
-
-    this.creating = true;
-    const payload = {
-      dayOfWeek: this.customSlot.dayOfWeek,
-      startTime: `${this.customSlot.startTime}:00`,
-      endTime: `${this.customSlot.endTime}:00`
-    };
-
-    this.http.post(`${environment.apiUrl}/teacher/availabilities/timeslots`, payload).subscribe({
-      next: () => {
-        this.notify.success('Timeslot added to your availability');
-        this.customSlot.startTime = '';
-        this.customSlot.endTime = '';
-        this.reloadTimeslotsAndAvailabilities();
-        this.creating = false;
-      },
-      error: () => {
-        this.notify.error('Failed to add timeslot');
-        this.creating = false;
-      }
-    });
-  }
-
-  private reloadTimeslotsAndAvailabilities(): void {
-    this.http.get<TeacherAvailability[]>(`${environment.apiUrl}/teacher/availabilities`).subscribe({
-      next: avails => {
-        this.availabilities = avails;
-        this.availabilityMap = {};
-        avails.forEach(a => this.availabilityMap[a.timeslotId] = a.available);
-      }
-    });
-
-    this.http.get<Timeslot[]>(`${environment.apiUrl}/teacher/timeslots`).subscribe({
-      next: slots => {
-        this.timeslots = slots;
-        this.days = [...new Set(slots.map(s => s.dayOfWeek))];
-      }
     });
   }
 }

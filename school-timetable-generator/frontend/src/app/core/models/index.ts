@@ -68,7 +68,6 @@ export interface ClassGroup {
   name: string;
   level: string;
   studentCount: number;
-  totalHoursPerWeek?: number;
 }
 
 export interface Subject {

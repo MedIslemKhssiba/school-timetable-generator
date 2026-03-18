@@ -14,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,10 +34,6 @@ public class TimetableService {
 
     @Transactional(readOnly = true)
     public String solve(Long schoolId) {
-        if (solverManager.getSolverStatus(schoolId) != SolverStatus.NOT_SOLVING) {
-            return "Solving already in progress for school " + schoolId;
-        }
-
         List<Teacher> teachers = teacherRepository.findWithSubjectsBySchoolId(schoolId);
         List<ClassGroup> classGroups = classGroupRepository.findBySchoolId(schoolId);
         List<Subject> subjects = subjectRepository.findBySchoolId(schoolId);
@@ -56,6 +50,7 @@ public class TimetableService {
             throw new IllegalStateException("No rooms found for school " + schoolId);
         }
 
+        // Build a map: subjectId -> list of teachers who can teach it
         Map<Long, List<Teacher>> teachersBySubject = new HashMap<>();
         for (Teacher t : teachers) {
             for (Subject s : t.getSubjects()) {
@@ -63,34 +58,22 @@ public class TimetableService {
             }
         }
 
+        // Track assigned hours per teacher for load balancing
         Map<Long, Integer> teacherLoad = new HashMap<>();
         teachers.forEach(t -> teacherLoad.put(t.getId(), 0));
 
+        // Build lesson assignments from subjects and class groups
         List<LessonAssignment> assignments = new ArrayList<>();
         long assignmentId = 1;
         for (ClassGroup cg : classGroups) {
-            List<Subject> subjectsForClass = subjects.stream()
-                    .filter(subject -> isSubjectApplicableToClassLevel(subject, cg))
-                    .toList();
-
-            for (Subject subject : subjectsForClass) {
+            for (Subject subject : subjects) {
                 for (int i = 0; i < subject.getHoursPerWeek(); i++) {
                     List<Teacher> qualified = teachersBySubject.getOrDefault(subject.getId(), List.of());
 
+                    // Pick the teacher with the least load (round-robin balancing)
                     Teacher assignedTeacher = qualified.stream()
                             .min(Comparator.comparingInt(t -> teacherLoad.getOrDefault(t.getId(), 0)))
                             .orElse(null);
-
-                    if (assignedTeacher == null) {
-                        assignedTeacher = teachers.stream()
-                                .min(Comparator.comparingInt(t -> teacherLoad.getOrDefault(t.getId(), 0)))
-                                .orElse(null);
-
-                        if (assignedTeacher != null) {
-                            log.warn("No mapped teacher for subject '{}' in school {}. Using fallback teacher {} {}.",
-                                    subject.getName(), schoolId, assignedTeacher.getFirstName(), assignedTeacher.getLastName());
-                        }
-                    }
 
                     if (assignedTeacher != null) {
                         LessonAssignment la = new LessonAssignment();
@@ -101,6 +84,8 @@ public class TimetableService {
                         la.setSchoolId(schoolId);
                         assignments.add(la);
                         teacherLoad.merge(assignedTeacher.getId(), 1, Integer::sum);
+                    } else {
+                        log.warn("No teacher found for subject '{}' in school {}", subject.getName(), schoolId);
                     }
                 }
             }
@@ -110,6 +95,7 @@ public class TimetableService {
             throw new IllegalStateException("No lesson assignments could be generated. Check teacher-subject mappings.");
         }
 
+        // Load teacher availabilities
         List<TeacherAvailability> allAvailabilities = new ArrayList<>();
         for (Teacher t : teachers) {
             allAvailabilities.addAll(availabilityRepository.findByTeacherId(t.getId()));
@@ -146,6 +132,7 @@ public class TimetableService {
             throw new ResourceNotFoundException("No solution found for school " + schoolId);
         }
 
+        // Efficiently delete existing lessons
         lessonRepository.deleteBySchoolId(schoolId);
 
         School schoolRef = School.builder().id(schoolId).build();
@@ -169,32 +156,5 @@ public class TimetableService {
 
     public SolverStatus getStatus(Long schoolId) {
         return solverManager.getSolverStatus(schoolId);
-    }
-
-    private boolean isSubjectApplicableToClassLevel(Subject subject, ClassGroup classGroup) {
-        String subjectLevel = normalizeLevel(subject.getLevel());
-        String classLevel = normalizeLevel(classGroup.getLevel());
-
-        if (subjectLevel.isEmpty()) {
-            return true;
-        }
-        if (classLevel.isEmpty()) {
-            return false;
-        }
-
-        return subjectLevel.equals(classLevel);
-    }
-
-    private String normalizeLevel(String value) {
-        if (value == null || value.isBlank()) {
-            return "";
-        }
-
-        String normalized = value.trim().toUpperCase(Locale.ROOT);
-        Matcher matcher = Pattern.compile("(\\d+)").matcher(normalized);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return normalized;
     }
 }

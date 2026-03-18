@@ -59,16 +59,16 @@ import { NotificationService } from '../../core/services/notification.service';
               <div class="form-row-grid">
                 <div class="mb-3">
                   <label cLabel for="currentPassword" class="form-label-custom">{{ t('current_password') }}</label>
-                  <input cFormControl id="currentPassword" formControlName="currentPassword" type="password" autocomplete="current-password" />
+                  <input cFormControl id="currentPassword" formControlName="currentPassword" type="password" />
                 </div>
                 <div class="mb-3">
                   <label cLabel for="newPassword" class="form-label-custom">{{ t('new_password') }}</label>
-                  <input cFormControl id="newPassword" formControlName="newPassword" type="password" autocomplete="new-password" />
+                  <input cFormControl id="newPassword" formControlName="newPassword" type="password" />
                 </div>
               </div>
               <div class="mb-3">
                 <label cLabel for="confirmPassword" class="form-label-custom">{{ t('confirm_new_password') }}</label>
-                <input cFormControl id="confirmPassword" formControlName="confirmPassword" type="password" autocomplete="new-password" />
+                <input cFormControl id="confirmPassword" formControlName="confirmPassword" type="password" />
               </div>
               @if (passwordForm.hasError('mismatch')) {
                 <p class="text-danger small mb-3">{{ t('passwords_no_match') }}</p>

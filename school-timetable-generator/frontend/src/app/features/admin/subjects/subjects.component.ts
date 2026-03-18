@@ -111,20 +111,10 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                   <label class="form-label">{{ t('level') }}</label>
                   <select class="form-control" formControlName="level">
                     <option value="">{{ t('select_level') }}</option>
-                    @for (level of availableLevels; track level) {
-                      <option [value]="level">{{ level }}</option>
-                    }
+                    <option value="1AS">1AS</option>
+                    <option value="2AS">2AS</option>
+                    <option value="3AS">3AS</option>
                   </select>
-                  @if (availableLevels.length === 0) {
-                    <div class="text-warning small mt-1">
-                      No class levels found. Create classes first to define subject levels.
-                    </div>
-                  }
-                  @if (form.get('level')?.value && !isKnownClassLevel(form.get('level')?.value)) {
-                    <div class="text-danger small mt-1">
-                      This subject level does not match existing class levels.
-                    </div>
-                  }
                 </div>
                 <div class="col-6">
                   <label class="form-label">{{ t('hours_week') }}</label>
@@ -212,7 +202,6 @@ export class SubjectsComponent implements OnInit {
   page = 1;
   pageSize = 10;
   private schoolId = 1;
-  availableLevels: string[] = [];
 
   colorPresets = ['#2563EB', '#0EA5E9', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#EC4899', '#06B6D4', '#6366F1', '#F97316'];
 
@@ -238,31 +227,13 @@ export class SubjectsComponent implements OnInit {
 
   t(key: string): string { return this.ts.t(key); }
 
-  ngOnInit() {
-    this.load();
-    this.loadAvailableLevels();
-  }
+  ngOnInit() { this.load(); }
 
   load() {
     this.svc.getSubjects(this.schoolId).subscribe({
       next: d => { this.items = d; this.applyFilter(); this.loading = false; },
       error: () => this.loading = false
     });
-  }
-
-  loadAvailableLevels(): void {
-    this.svc.getClasses(this.schoolId).subscribe({
-      next: classes => {
-        const levels = Array.from(new Set(classes
-          .map(c => (c.level || '').trim())
-          .filter(level => !!level)));
-        this.availableLevels = levels;
-      }
-    });
-  }
-
-  isKnownClassLevel(level: string): boolean {
-    return this.availableLevels.includes((level || '').trim());
   }
 
   applyFilter(): void {

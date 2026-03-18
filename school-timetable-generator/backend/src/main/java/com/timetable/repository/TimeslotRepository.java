@@ -5,12 +5,9 @@ import com.timetable.model.Timeslot;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.time.LocalTime;
 
 public interface TimeslotRepository extends JpaRepository<Timeslot, Long> {
     List<Timeslot> findAllByOrderByDayOfWeekAscOrderInDayAsc();
     boolean existsByDayOfWeek(DayOfWeek dayOfWeek);
     List<Timeslot> findByDayOfWeekOrderByStartTimeAsc(DayOfWeek dayOfWeek);
-    boolean existsByDayOfWeekAndStartTimeAndEndTime(DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime);
-    Timeslot findTopByDayOfWeekOrderByOrderInDayDesc(DayOfWeek dayOfWeek);
 }
