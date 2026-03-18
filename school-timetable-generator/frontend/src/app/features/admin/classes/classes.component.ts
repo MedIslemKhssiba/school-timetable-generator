@@ -53,6 +53,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                   <th>{{ t('name') }}</th>
                   <th>{{ t('level') }}</th>
                   <th>{{ t('students') }}</th>
+                  <th>{{ t('max_hours_week') || 'Total study hours/week' }}</th>
                   <th class="text-end">{{ t('actions') }}</th>
                 </tr>
               </thead>
@@ -64,6 +65,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                     </td>
                     <td><c-badge color="info" variant="outline">{{ c.level ? t('level_n') + ' ' + c.level : '-' }}</c-badge></td>
                     <td>{{ c.studentCount }}</td>
+                    <td>{{ c.totalHoursPerWeek ?? 30 }}</td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(c)">{{ t('edit') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(c)">{{ t('delete') }}</button>
@@ -116,6 +118,10 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
               <div class="mb-3">
                 <label class="form-label">{{ t('number_of_students') }}</label>
                 <input class="form-control" formControlName="studentCount" type="number" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">{{ t('max_hours_week') || 'Total hours per week to study' }}</label>
+                <input class="form-control" formControlName="totalHoursPerWeek" type="number" min="1" />
               </div>
             </div>
             <div class="modal-footer">
@@ -199,7 +205,12 @@ export class ClassesComponent implements OnInit {
     private ts: TranslationService
   ) {
     this.schoolId = this.authService.getSchoolId() || 1;
-    this.form = this.fb.group({ name: ['', Validators.required], level: [''], studentCount: [30] });
+    this.form = this.fb.group({
+      name: ['', Validators.required],
+      level: [''],
+      studentCount: [30],
+      totalHoursPerWeek: [30, [Validators.min(1)]]
+    });
   }
 
   t(key: string): string { return this.ts.t(key); }
@@ -225,7 +236,7 @@ export class ClassesComponent implements OnInit {
   openModal(): void {
     this.editing = false;
     this.editId = null;
-    this.form.reset({ studentCount: 30 });
+    this.form.reset({ studentCount: 30, totalHoursPerWeek: 30 });
     this.showModal = true;
   }
 

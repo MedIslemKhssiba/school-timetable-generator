@@ -102,6 +102,10 @@ export class AdminService {
     return this.http.post<Timeslot[]>(`${this.apiUrl}/timetable/timeslots/generate-day`, payload);
   }
 
+  copyMondayTimeslotsToWeek(): Observable<Timeslot[]> {
+    return this.http.post<Timeslot[]>(`${this.apiUrl}/timetable/timeslots/copy-monday-to-week`, {});
+  }
+
   updateTimeslot(id: number, timeslot: { dayOfWeek: string; startTime: string; endTime: string; breakStartTime?: string; breakEndTime?: string; orderInDay?: number }): Observable<Timeslot> {
     return this.http.put<Timeslot>(`${this.apiUrl}/timetable/timeslots/${id}`, timeslot);
   }
@@ -119,12 +123,20 @@ export class AdminService {
     return this.http.get(`${this.apiUrl}/timetable/solution/${schoolId}`);
   }
 
+  getSolveStatus(schoolId: number): Observable<{ status: string }> {
+    return this.http.get<{ status: string }>(`${this.apiUrl}/timetable/status/${schoolId}`);
+  }
+
   stopSolving(schoolId: number): Observable<string> {
     return this.http.post(`${this.apiUrl}/timetable/stop/${schoolId}`, null, { responseType: 'text' });
   }
 
   saveTimetable(schoolId: number): Observable<Lesson[]> {
     return this.http.post<Lesson[]>(`${this.apiUrl}/timetable/save/${schoolId}`, null);
+  }
+
+  shareTimetable(schoolId: number): Observable<Lesson[]> {
+    return this.http.post<Lesson[]>(`${this.apiUrl}/timetable/share/${schoolId}`, null);
   }
 
   // Lessons

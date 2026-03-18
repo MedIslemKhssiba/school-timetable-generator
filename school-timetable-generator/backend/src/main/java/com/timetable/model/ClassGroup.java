@@ -22,6 +22,10 @@ public class ClassGroup {
     @Builder.Default
     private int studentCount = 0;
 
+    @Column(name = "max_hours_per_week")
+    @Builder.Default
+    private Integer totalHoursPerWeek = 30;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id", nullable = false)
     @JsonIgnore

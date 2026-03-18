@@ -8,6 +8,7 @@
         <constraintStreamImplType>BAVET</constraintStreamImplType>
     </scoreDirectorFactory>
     <termination>
+        <bestScoreFeasible>true</bestScoreFeasible>
         <minutesSpentLimit>5</minutesSpentLimit>
     </termination>
     <constructionHeuristic>

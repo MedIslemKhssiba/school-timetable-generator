@@ -1,7 +1,9 @@
 package com.timetable.controller;
 
 import com.timetable.dto.LessonDTO;
+import com.timetable.dto.TimeslotDTO;
 import com.timetable.model.Lesson;
+import com.timetable.model.DayOfWeek;
 import com.timetable.model.Teacher;
 import com.timetable.model.TeacherAvailability;
 import com.timetable.model.User;
@@ -19,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,7 +45,7 @@ public class TeacherScheduleController {
             return ResponseEntity.ok(List.of());
         }
 
-        List<Lesson> lessons = lessonRepository.findByTeacherId(teacher.getId());
+        List<Lesson> lessons = lessonRepository.findByTeacherIdWithDetails(teacher.getId());
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
@@ -61,6 +64,11 @@ public class TeacherScheduleController {
             return dto;
         }).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/timeslots")
+    public ResponseEntity<List<Timeslot>> getTeacherTimeslots() {
+        return ResponseEntity.ok(timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc());
     }
 
     @PutMapping("/availabilities")
@@ -91,6 +99,49 @@ public class TeacherScheduleController {
             result.add(rDto);
         }
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/availabilities/timeslots")
+    @Transactional
+    public ResponseEntity<AvailabilityDTO> createMyAvailabilityTimeslot(
+            Authentication authentication,
+            @RequestBody TimeslotDTO dto) {
+        Teacher teacher = getTeacherFromAuth(authentication);
+        if (teacher == null) return ResponseEntity.badRequest().build();
+
+        DayOfWeek day = DayOfWeek.valueOf(dto.getDayOfWeek());
+        LocalTime start = LocalTime.parse(dto.getStartTime());
+        LocalTime end = LocalTime.parse(dto.getEndTime());
+        if (!start.isBefore(end)) {
+            throw new IllegalArgumentException("Start time must be before end time");
+        }
+
+        if (timeslotRepository.existsByDayOfWeekAndStartTimeAndEndTime(day, start, end)) {
+            throw new IllegalStateException("This timeslot already exists.");
+        }
+
+        Timeslot last = timeslotRepository.findTopByDayOfWeekOrderByOrderInDayDesc(day);
+        int nextOrder = last != null && last.getOrderInDay() != null ? last.getOrderInDay() + 1 : 1;
+
+        Timeslot created = timeslotRepository.save(Timeslot.builder()
+                .dayOfWeek(day)
+                .startTime(start)
+                .endTime(end)
+                .orderInDay(nextOrder)
+                .build());
+
+        TeacherAvailability availability = availabilityRepository.save(TeacherAvailability.builder()
+                .teacher(teacher)
+                .timeslot(created)
+                .available(true)
+                .build());
+
+        AvailabilityDTO response = new AvailabilityDTO();
+        response.setId(availability.getId());
+        response.setTeacherId(teacher.getId());
+        response.setTimeslotId(created.getId());
+        response.setAvailable(true);
+        return ResponseEntity.ok(response);
     }
 
     private Teacher getTeacherFromAuth(Authentication authentication) {

@@ -21,9 +21,14 @@ import { TranslationService } from '../../../core/services/translation.service';
         <h2 class="page-title">{{ t('timeslots') }}</h2>
         <p class="page-subtitle">{{ t('manage_timeslots_desc') }}</p>
       </div>
-      <button cButton color="primary" (click)="openModal()">
-        + Générer les créneaux du jour
-      </button>
+      <div class="d-flex gap-2 flex-wrap">
+        <button cButton color="info" variant="outline" (click)="copyMondayToWeek()" [disabled]="saving">
+          Copier lundi vers tous les jours
+        </button>
+        <button cButton color="primary" (click)="openModal()">
+          + Générer les créneaux du jour
+        </button>
+      </div>
     </div>
 
     <c-card>
@@ -297,10 +302,10 @@ export class TimeslotsComponent implements OnInit {
     this.editingTimeslot = timeslot;
     this.timeslotForm.patchValue({
       dayOfWeek: timeslot.dayOfWeek,
-      startTime: timeslot.startTime,
-      endTime: timeslot.endTime,
-      breakStartTime: timeslot.breakStartTime || '',
-      breakEndTime: timeslot.breakEndTime || '',
+      startTime: this.toInputTime(timeslot.startTime),
+      endTime: this.toInputTime(timeslot.endTime),
+      breakStartTime: this.toInputTime(timeslot.breakStartTime),
+      breakEndTime: this.toInputTime(timeslot.breakEndTime),
       orderInDay: timeslot.orderInDay
     });
     this.modalVisible = true;
@@ -337,8 +342,10 @@ export class TimeslotsComponent implements OnInit {
     this.saving = true;
     const data = {
       ...this.timeslotForm.value,
-      breakStartTime: this.timeslotForm.value.breakStartTime || null,
-      breakEndTime: this.timeslotForm.value.breakEndTime || null
+      startTime: this.toApiTime(this.timeslotForm.value.startTime),
+      endTime: this.toApiTime(this.timeslotForm.value.endTime),
+      breakStartTime: this.toApiTime(this.timeslotForm.value.breakStartTime) || null,
+      breakEndTime: this.toApiTime(this.timeslotForm.value.breakEndTime) || null
     };
 
     if (this.editingTimeslot) {
@@ -377,5 +384,30 @@ export class TimeslotsComponent implements OnInit {
       next: () => { this.loadTimeslots(); this.deleteModalVisible = false; this.timeslotToDelete = null; this.notif.success('Timeslot removed'); },
       error: () => { this.deleteModalVisible = false; this.notif.error('Failed to remove timeslot'); }
     });
+  }
+
+  copyMondayToWeek(): void {
+    this.saving = true;
+    this.adminService.copyMondayTimeslotsToWeek().subscribe({
+      next: () => {
+        this.loadTimeslots();
+        this.saving = false;
+        this.notif.success('Créneaux du lundi copiés vers les autres jours');
+      },
+      error: () => {
+        this.saving = false;
+        this.notif.error('Échec de copie des créneaux');
+      }
+    });
+  }
+
+  private toInputTime(value?: string | null): string {
+    if (!value) return '';
+    return value.length >= 5 ? value.slice(0, 5) : value;
+  }
+
+  private toApiTime(value?: string | null): string | null {
+    if (!value) return null;
+    return value.length === 5 ? `${value}:00` : value;
   }
 }

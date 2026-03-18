@@ -11,6 +11,7 @@ public class ClassGroupDTO {
     private String name;
     private String level;
     private int studentCount;
+    private Integer totalHoursPerWeek;
     @NotNull
     private Long schoolId;
 }
