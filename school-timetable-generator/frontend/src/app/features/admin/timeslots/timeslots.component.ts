@@ -48,52 +48,40 @@ import { TranslationService } from '../../../core/services/translation.service';
             [actionLabel]="filterDay ? '' : t('add_timeslot')"
             (action)="openModal()" />
         } @else {
-          <div class="table-responsive-wrapper">
-            <table cTable hover>
-              <thead>
-                <tr>
-                  <th>{{ t('day') }}</th>
-                  <th>{{ t('start_time') }}</th>
-                  <th>{{ t('end_time') }}</th>
-                  <th>{{ t('break') || 'Pause' }}</th>
-                  <th>{{ t('order') }}</th>
-                  <th class="text-end">{{ t('actions') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (ts of paginatedItems; track ts.id) {
-                  <tr>
-                    <td>
-                      <c-badge [color]="getDayColor(ts.dayOfWeek)" class="day-badge">
-                        {{ t(ts.dayOfWeek) }}
-                      </c-badge>
-                    </td>
-                    <td class="cell-primary">{{ ts.startTime }}</td>
-                    <td class="cell-primary">{{ ts.endTime }}</td>
-                    <td class="text-body-secondary">{{ ts.breakStartTime && ts.breakEndTime ? (ts.breakStartTime + ' - ' + ts.breakEndTime) : '—' }}</td>
-                    <td class="text-body-secondary">{{ ts.orderInDay }}</td>
-                    <td class="text-end">
-                      <button cButton color="primary" variant="ghost" size="sm" (click)="openEditModal(ts)">{{ t('edit') }}</button>
-                      <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(ts)">{{ t('delete') }}</button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+          <div class="simple-visualization">
+            <div class="week-grid">
+              @for (group of groupedTimeslots; track group.day) {
+                <div class="day-column">
+                  <div class="day-column-header">
+                    <c-badge [color]="getDayColor(group.day)" class="day-badge">{{ t(group.day) }}</c-badge>
+                    <span class="day-count">{{ group.slots.length }}</span>
+                  </div>
 
-          @if (totalPages > 1) {
-            <div class="pagination-bar">
-              <span class="pagination-info">{{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filtered.length) }} / {{ filtered.length }}</span>
-              <div class="pagination-btns">
-                <button class="pg-btn" (click)="page = page - 1" [disabled]="page === 1">&lt;</button>
-                @for (p of pageNumbers; track p) {
-                  <button class="pg-btn" [class.active]="p === page" (click)="page = p">{{ p }}</button>
-                }
-                <button class="pg-btn" (click)="page = page + 1" [disabled]="page === totalPages">&gt;</button>
-              </div>
+                  @if (group.slots.length === 0) {
+                    <div class="day-empty">{{ t('no_results') }}</div>
+                  } @else {
+                    <div class="slot-list">
+                      @for (ts of group.slots; track ts.id) {
+                        <div class="slot-item">
+                          <div class="slot-time">{{ ts.startTime }} - {{ ts.endTime }}</div>
+                          <div class="slot-meta">
+                            #{{ ts.orderInDay }}
+                            @if (ts.breakStartTime && ts.breakEndTime) {
+                              <span class="slot-break">• Pause {{ ts.breakStartTime }} - {{ ts.breakEndTime }}</span>
+                            }
+                          </div>
+                          <div class="slot-actions">
+                            <button cButton color="primary" variant="ghost" size="sm" (click)="openEditModal(ts)">{{ t('edit') }}</button>
+                            <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(ts)">{{ t('delete') }}</button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
-          }
+          </div>
         }
       </c-card-body>
     </c-card>
@@ -183,21 +171,81 @@ import { TranslationService } from '../../../core/services/translation.service';
     }
     .count-badge { font-size: 0.8rem; font-weight: 600; color: #5C6A7A; background: #DDE3EE; padding: 4px 12px; border-radius: 20px; font-family: 'Montserrat', sans-serif; }
 
-    .table-responsive-wrapper { overflow-x: auto; }
-    .cell-primary { font-weight: 600; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .day-badge { font-size: 0.8rem; padding: 5px 12px; display: inline-flex; align-items: center; }
 
-    .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-top: 1px solid #DDE3EE; }
-    .pagination-info { font-size: 0.8rem; color: #5C6A7A; font-family: 'Montserrat', sans-serif; }
-    .pagination-btns { display: flex; gap: 4px; }
-    .pg-btn {
-      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #DDE3EE;
-      background: #F8FAFF; color: #1A2332; font-size: 0.8rem; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 150ms;
+    .simple-visualization {
+      padding: 16px 20px;
+      border-bottom: 1px solid #DDE3EE;
+      background: #F8FAFF;
+    }
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .day-column {
+      border: 1px solid #DDE3EE;
+      border-radius: 12px;
+      background: #FFFFFF;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+    }
+    .day-column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #EAEEF6;
+    }
+    .day-count {
+      font-size: 0.8rem;
+      color: #5C6A7A;
+      font-weight: 600;
       font-family: 'Montserrat', sans-serif;
-      &:hover:not(:disabled) { background: #EAEEF6; }
-      &.active { background: #2563EB; color: #F8FAFF; border-color: #2563EB; }
-      &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+    .slot-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px 12px;
+    }
+    .slot-item {
+      border: 1px solid #EAEEF6;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #F8FAFF;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .slot-time {
+      font-weight: 700;
+      color: #1A2332;
+      font-size: 0.85rem;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .slot-meta {
+      font-size: 0.78rem;
+      color: #5C6A7A;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .slot-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .slot-break {
+      margin-left: 4px;
+    }
+    .day-empty {
+      margin: auto;
+      color: #8D99A8;
+      font-size: 0.8rem;
+      font-family: 'Montserrat', sans-serif;
+      text-align: center;
+      padding: 12px;
     }
 
     .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); z-index: 1050; backdrop-filter: blur(4px); }
@@ -225,9 +273,6 @@ export class TimeslotsComponent implements OnInit {
   loading = true;
   saving = false;
   filterDay = '';
-  page = 1;
-  pageSize = 15;
-  Math = Math;
   private schoolId = 1;
 
   days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -256,11 +301,20 @@ export class TimeslotsComponent implements OnInit {
 
   t(key: string): string { return this.ts.t(key); }
 
-  get totalPages(): number { return Math.ceil(this.filtered.length / this.pageSize); }
-  get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
-  get paginatedItems(): Timeslot[] {
-    const start = (this.page - 1) * this.pageSize;
-    return this.filtered.slice(start, start + this.pageSize);
+  get groupedTimeslots(): { day: string; slots: Timeslot[] }[] {
+    const visibleDays = this.filterDay ? [this.filterDay] : this.days;
+
+    return visibleDays.map(day => ({
+      day,
+      slots: this.filtered
+        .filter(ts => ts.dayOfWeek === day)
+        .sort((a, b) => {
+          if (a.orderInDay !== b.orderInDay) {
+            return a.orderInDay - b.orderInDay;
+          }
+          return a.startTime.localeCompare(b.startTime);
+        })
+    }));
   }
 
   loadTimeslots(): void {
@@ -276,7 +330,6 @@ export class TimeslotsComponent implements OnInit {
       list = list.filter(t => t.dayOfWeek === this.filterDay);
     }
     this.filtered = list;
-    this.page = 1;
   }
 
   getDayColor(day: string): string {
