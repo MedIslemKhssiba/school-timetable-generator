@@ -32,7 +32,7 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
         <button cButton color="light" (click)="refresh()">
           {{ t('refresh') }}
         </button>
-        <button cButton color="success" variant="outline" (click)="exportExcel()" [disabled]="lessons.length === 0">
+        <button cButton color="danger" class="pdf-export-btn" (click)="exportExcel()" [disabled]="lessons.length === 0">
           {{ t('export') }}
         </button>
       </div>
@@ -180,6 +180,18 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
     .filter-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .pdf-export-btn {
+      background-color: var(--cui-danger) !important;
+      border-color: var(--cui-danger) !important;
+      color: var(--cui-white) !important;
+      font-weight: 700;
+    }
+    .pdf-export-btn:hover:not(:disabled) {
+      filter: brightness(0.92);
+    }
+    .pdf-export-btn:disabled {
+      opacity: 0.65;
+    }
     .filter-group { display: flex; align-items: center; gap: 6px; }
     .filter-label { font-size: 0.8rem; font-weight: 600; color: #8D99A8; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
     .filter-select {
