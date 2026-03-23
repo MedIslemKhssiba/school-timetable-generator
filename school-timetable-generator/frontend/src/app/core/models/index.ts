@@ -119,6 +119,14 @@ export interface TeacherAvailability {
   available: boolean;
 }
 
+export interface TimetableSolveStatus {
+  status: string;
+  solving: boolean;
+  totalAssignments: number;
+  assignedAssignments: number;
+  progressPercent: number;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;

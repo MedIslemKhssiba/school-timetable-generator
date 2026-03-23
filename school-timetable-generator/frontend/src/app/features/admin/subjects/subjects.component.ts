@@ -71,6 +71,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                     <td><c-badge color="info" variant="outline">{{ s.sessionDuration }} min</c-badge></td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(s)">{{ t('edit') }}</button>
+                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(s)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(s)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -218,7 +219,7 @@ export class SubjectsComponent implements OnInit {
     this.schoolId = this.authService.getSchoolId() || 1;
     this.form = this.fb.group({
       name: ['', Validators.required],
-      level: ['', Validators.required],
+      level: [''],
       color: [''],
       hoursPerWeek: [2, [Validators.required, Validators.min(1)]],
       sessionDuration: [60, [Validators.required, Validators.min(30)]]
@@ -259,6 +260,25 @@ export class SubjectsComponent implements OnInit {
     this.showModal = true;
   }
 
+  duplicate(s: Subject): void {
+    const data = {
+      name: this.getDuplicateName(s.name),
+      level: s.level || '',
+      color: s.color || this.getAutoColor(),
+      hoursPerWeek: s.hoursPerWeek,
+      sessionDuration: s.sessionDuration,
+      schoolId: this.schoolId
+    };
+
+    this.svc.createSubject(data).subscribe({
+      next: () => {
+        this.load();
+        this.notify.success('Subject duplicated');
+      },
+      error: () => this.notify.error('Failed to duplicate subject')
+    });
+  }
+
   onSubmit() {
     if (this.form.invalid) return;
     const data = { ...this.form.value, schoolId: this.schoolId };
@@ -285,6 +305,20 @@ export class SubjectsComponent implements OnInit {
     const available = this.colorPresets.filter(c => !usedColors.includes(c));
     if (available.length > 0) return available[0];
     return this.colorPresets[this.items.length % this.colorPresets.length];
+  }
+
+  private getDuplicateName(baseName: string): string {
+    const usedNames = new Set(this.items.map(s => s.name.toLowerCase()));
+    const copyLabel = `${baseName} (copy)`;
+    if (!usedNames.has(copyLabel.toLowerCase())) {
+      return copyLabel;
+    }
+
+    let index = 2;
+    while (usedNames.has(`${copyLabel} ${index}`.toLowerCase())) {
+      index++;
+    }
+    return `${copyLabel} ${index}`;
   }
 
   doDelete(): void {

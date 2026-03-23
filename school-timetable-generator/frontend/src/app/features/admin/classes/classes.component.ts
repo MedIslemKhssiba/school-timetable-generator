@@ -66,6 +66,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                     <td>{{ c.studentCount }}</td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(c)">{{ t('edit') }}</button>
+                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(c)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(c)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -238,6 +239,23 @@ export class ClassesComponent implements OnInit {
     this.showModal = true;
   }
 
+  duplicate(c: ClassGroup): void {
+    const data = {
+      name: this.getDuplicateName(c.name),
+      level: c.level || '',
+      studentCount: c.studentCount,
+      schoolId: this.schoolId
+    };
+
+    this.svc.createClass(data).subscribe({
+      next: () => {
+        this.load();
+        this.notify.success('Class duplicated');
+      },
+      error: () => this.notify.error('Failed to duplicate class')
+    });
+  }
+
   onSubmit() {
     if (this.form.invalid) return;
     const data = { ...this.form.value, schoolId: this.schoolId };
@@ -262,5 +280,19 @@ export class ClassesComponent implements OnInit {
       next: () => { this.load(); this.showDelete = false; this.notify.success('Class deleted'); },
       error: () => this.notify.error('Failed to delete class')
     });
+  }
+
+  private getDuplicateName(baseName: string): string {
+    const usedNames = new Set(this.items.map(item => item.name.toLowerCase()));
+    const copyLabel = `${baseName} (copy)`;
+    if (!usedNames.has(copyLabel.toLowerCase())) {
+      return copyLabel;
+    }
+
+    let index = 2;
+    while (usedNames.has(`${copyLabel} ${index}`.toLowerCase())) {
+      index++;
+    }
+    return `${copyLabel} ${index}`;
   }
 }

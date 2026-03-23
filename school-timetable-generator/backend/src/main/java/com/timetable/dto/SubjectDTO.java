@@ -9,7 +9,6 @@ public class SubjectDTO {
     private Long id;
     @NotBlank
     private String name;
-    @NotBlank
     private String level;
     private String color;
     private int hoursPerWeek = 1;

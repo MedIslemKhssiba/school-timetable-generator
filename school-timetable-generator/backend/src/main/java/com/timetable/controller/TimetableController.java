@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.optaplanner.core.api.solver.SolverStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -267,6 +269,38 @@ public class TimetableController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(solution);
+    }
+
+    @GetMapping("/status/{schoolId}")
+    public ResponseEntity<Map<String, Object>> getSolveStatus(@PathVariable Long schoolId) {
+        SolverStatus status = timetableService.getStatus(schoolId);
+        TimetableSolution solution = timetableService.getSolution(schoolId);
+
+        int totalAssignments = 0;
+        int assignedAssignments = 0;
+
+        if (solution != null && solution.getLessonAssignments() != null) {
+            totalAssignments = solution.getLessonAssignments().size();
+            assignedAssignments = (int) solution.getLessonAssignments().stream()
+                    .filter(assignment -> assignment.getTimeslot() != null && assignment.getRoom() != null)
+                    .count();
+        }
+
+        int progressPercent;
+        if (totalAssignments > 0) {
+            progressPercent = Math.round((assignedAssignments * 100.0f) / totalAssignments);
+        } else {
+            progressPercent = status == SolverStatus.NOT_SOLVING ? 100 : 0;
+        }
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("status", status.name());
+        payload.put("solving", status != SolverStatus.NOT_SOLVING);
+        payload.put("totalAssignments", totalAssignments);
+        payload.put("assignedAssignments", assignedAssignments);
+        payload.put("progressPercent", Math.min(100, Math.max(0, progressPercent)));
+
+        return ResponseEntity.ok(payload);
     }
 
     @PostMapping("/stop/{schoolId}")

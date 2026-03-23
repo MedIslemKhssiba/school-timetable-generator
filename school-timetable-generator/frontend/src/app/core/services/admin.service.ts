@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability, Timeslot } from '../models';
+import { ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability, Timeslot, TimetableSolveStatus } from '../models';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -117,6 +117,10 @@ export class AdminService {
 
   getSolution(schoolId: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/timetable/solution/${schoolId}`);
+  }
+
+  getSolveStatus(schoolId: number): Observable<TimetableSolveStatus> {
+    return this.http.get<TimetableSolveStatus>(`${this.apiUrl}/timetable/status/${schoolId}`);
   }
 
   stopSolving(schoolId: number): Observable<string> {

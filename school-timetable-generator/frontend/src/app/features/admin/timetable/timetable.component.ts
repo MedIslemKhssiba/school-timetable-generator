@@ -6,8 +6,11 @@ import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { Lesson } from '../../../core/models';
+import { Lesson, Timeslot } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
+import { forkJoin } from 'rxjs';
+import { Subscription } from 'rxjs';
+import { TimetableSolveStateService } from '../../../core/services/timetable-solve-state.service';
 
 @Component({
   selector: 'app-timetable',
@@ -41,12 +44,14 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
     @if (solving) {
       <c-card class="mb-4 solving-card">
         <c-card-body class="d-flex align-items-center gap-3">
-          <div class="spinner"></div>
+          <div class="ai-orb"><div class="ai-orb-core"></div></div>
           <div class="flex-grow-1">
-            <div class="fw-semibold mb-1">{{ t('ai_solver_working') }}</div>
-            <c-progress [animated]="true" style="height: 6px">
-              <c-progress-bar color="primary" [value]="100"></c-progress-bar>
-            </c-progress>
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <div class="fw-semibold">{{ t('ai_solver_working') }}</div>
+              <div class="solver-progress-text">{{ solveProgress }}%</div>
+            </div>
+            <div class="solver-bar"><div class="solver-bar-fill" [style.width.%]="solveProgress"></div></div>
+            <div class="solver-dots mt-1"><span></span><span></span><span></span></div>
           </div>
         </c-card-body>
       </c-card>
@@ -172,12 +177,45 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
     .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
     .solving-card { border-left: 4px solid #2563EB !important; }
-    .spinner {
-      width: 28px; height: 28px; border: 3px solid rgba(37, 99, 235,0.15);
-      border-top-color: #2563EB; border-radius: 50%;
-      animation: spin 0.8s linear infinite; flex-shrink: 0;
+    .solver-progress-text { font-size: 0.8rem; font-weight: 700; color: #2563EB; }
+    .ai-orb {
+      width: 32px; height: 32px; border-radius: 50%; position: relative; flex-shrink: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(37,99,235,0.35), rgba(37,99,235,0.08));
+      box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35);
+      animation: pulse 1.4s ease-in-out infinite;
     }
+    .ai-orb-core {
+      position: absolute; inset: 9px; border-radius: 50%;
+      background: #2563EB;
+      animation: spin 1.2s linear infinite;
+    }
+    .solver-bar {
+      height: 6px; width: 100%; border-radius: 999px; overflow: hidden;
+      background: rgba(37, 99, 235, 0.12);
+    }
+    .solver-bar-fill {
+      height: 100%;
+      background: #2563EB;
+      transition: width 300ms ease;
+    }
+    .solver-dots {
+      display: inline-flex; gap: 5px;
+    }
+    .solver-dots span {
+      width: 5px; height: 5px; border-radius: 50%; background: #2563EB;
+      animation: blink 1s infinite ease-in-out;
+    }
+    .solver-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .solver-dots span:nth-child(3) { animation-delay: 0.3s; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.35); transform: scale(1); }
+      50% { box-shadow: 0 0 0 10px rgba(37,99,235,0); transform: scale(1.05); }
+    }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+      40% { opacity: 1; transform: translateY(-1px); }
+    }
 
     .filter-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .pdf-export-btn {
@@ -246,100 +284,94 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 })
 export class TimetableComponent implements OnInit, OnDestroy {
   lessons: Lesson[] = [];
+  timeslots: Timeslot[] = [];
   filteredLessons: Lesson[] = [];
   solving = false;
+  solveProgress = 0;
   loading = true;
   viewMode: 'grid' | 'cards' = 'grid';
   filterClass = '';
   filterTeacher = '';
-  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
   timeSlots: string[] = [];
   classNames: string[] = [];
   teacherNames: string[] = [];
   private schoolId = 1;
   private subjectColors: Record<string, string> = {};
   private colorPalette = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#0EA5E9', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
-  private pollInterval: any;
+  private stateSubscription?: Subscription;
 
   constructor(
     private adminService: AdminService,
     private authService: AuthService,
     private notify: NotificationService,
-    private ts: TranslationService
+    private ts: TranslationService,
+    private solveState: TimetableSolveStateService
   ) {
     this.schoolId = this.authService.getSchoolId() || 1;
   }
 
   t(key: string): string { return this.ts.t(key); }
 
-  ngOnInit(): void { this.refresh(); }
+  ngOnInit(): void {
+    this.refresh();
+    this.solveState.init(this.schoolId);
+    this.stateSubscription = this.solveState.state$.subscribe(state => {
+      this.solving = state.solving;
+      this.solveProgress = state.progressPercent;
 
-  ngOnDestroy(): void { this.stopPolling(); }
+      if (state.lessons.length > 0) {
+        this.lessons = state.lessons;
+        this.buildMeta();
+        this.applyFilter();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.stateSubscription?.unsubscribe();
+  }
 
   solve(): void {
-    this.solving = true;
-    this.adminService.solveTimetable(this.schoolId, {}).subscribe({
+    this.solveState.startSolve(this.schoolId).subscribe({
       next: () => {
         this.notify.info('Solving started! This may take a few minutes.');
-        this.startPolling();
       },
-      error: () => { this.solving = false; this.notify.error('Failed to start solving'); }
+      error: () => {
+        this.notify.error('Failed to start solving');
+      }
     });
   }
 
   stop(): void {
-    this.adminService.stopSolving(this.schoolId).subscribe({
-      next: () => { this.solving = false; this.stopPolling(); this.notify.info('Solving stopped'); this.pollSolution(); },
-      error: () => this.notify.error('Failed to stop solving')
-    });
-  }
-
-  private startPolling(): void {
-    this.stopPolling();
-    this.pollInterval = setInterval(() => this.pollSolution(), 3000);
-  }
-
-  private stopPolling(): void {
-    if (this.pollInterval) { clearInterval(this.pollInterval); this.pollInterval = null; }
-  }
-
-  private pollSolution(): void {
-    this.adminService.getSolution(this.schoolId).subscribe({
-      next: (solution: any) => {
-        if (solution && solution.lessonAssignments) {
-          this.lessons = solution.lessonAssignments
-            .filter((la: any) => la.timeslot && la.room)
-            .map((la: any, i: number) => ({
-              id: la.id || i,
-              subjectName: la.subject?.name || '',
-              teacherName: la.teacher ? `${la.teacher.firstName} ${la.teacher.lastName}` : '',
-              classGroupName: la.classGroup?.name || '',
-              roomName: la.room?.name || '',
-              roomId: la.room?.id,
-              timeslotId: la.timeslot?.id,
-              dayOfWeek: la.timeslot?.dayOfWeek || '',
-              startTime: la.timeslot?.startTime || '',
-              endTime: la.timeslot?.endTime || ''
-            }));
-          this.buildMeta();
-          this.applyFilter();
-        }
+    this.solveState.stopSolve().subscribe({
+      next: () => {
+        this.notify.info('Solving stopped');
       },
-      error: () => {}
+      error: () => this.notify.error('Failed to stop solving')
     });
   }
 
   save(): void {
     this.adminService.saveTimetable(this.schoolId).subscribe({
-      next: () => { this.notify.success('Timetable saved!'); this.refresh(); },
+      next: () => {
+        this.notify.success('Timetable saved!');
+        this.solveState.refreshFromServer();
+        this.refresh();
+      },
       error: () => this.notify.error('Failed to save timetable')
     });
   }
 
   refresh(): void {
-    this.adminService.getLessons(this.schoolId).subscribe({
-      next: l => {
-        this.lessons = l;
+    this.loading = true;
+    forkJoin({
+      lessons: this.adminService.getLessons(this.schoolId),
+      timeslots: this.adminService.getTimeslots()
+    }).subscribe({
+      next: ({ lessons, timeslots }) => {
+        this.lessons = lessons;
+        this.timeslots = timeslots;
         this.buildMeta();
         this.applyFilter();
         this.loading = false;
@@ -388,14 +420,35 @@ export class TimetableComponent implements OnInit, OnDestroy {
   }
 
   private buildMeta(): void {
+    const dayOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
     const times = new Set<string>();
+    const daysSet = new Set<string>();
     const classes = new Set<string>();
     const teachers = new Set<string>();
+
+    this.timeslots.forEach(ts => {
+      if (ts.startTime) {
+        times.add(ts.startTime);
+      }
+      if (ts.dayOfWeek) {
+        daysSet.add(ts.dayOfWeek);
+      }
+    });
+
     this.lessons.forEach(l => {
       times.add(l.startTime);
+      if (l.dayOfWeek) {
+        daysSet.add(l.dayOfWeek);
+      }
       classes.add(l.classGroupName);
       teachers.add(l.teacherName);
     });
+
+    this.days = [...daysSet].sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+    if (this.days.length === 0) {
+      this.days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    }
+
     this.timeSlots = [...times].sort();
     this.classNames = [...classes].sort();
     this.teacherNames = [...teachers].sort();

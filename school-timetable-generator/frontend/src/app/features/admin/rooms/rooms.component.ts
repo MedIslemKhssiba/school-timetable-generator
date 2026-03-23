@@ -66,6 +66,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                     <td><c-badge color="info" variant="outline">{{ r.type || t('general') }}</c-badge></td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(r)">{{ t('edit') }}</button>
+                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(r)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(r)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -235,6 +236,23 @@ export class RoomsComponent implements OnInit {
     this.showModal = true;
   }
 
+  duplicate(r: Room): void {
+    const data = {
+      name: this.getDuplicateName(r.name),
+      capacity: r.capacity,
+      type: r.type || '',
+      schoolId: this.schoolId
+    };
+
+    this.svc.createRoom(data).subscribe({
+      next: () => {
+        this.load();
+        this.notify.success('Room duplicated');
+      },
+      error: () => this.notify.error('Failed to duplicate room')
+    });
+  }
+
   onSubmit() {
     if (this.form.invalid) return;
     const data = { ...this.form.value, schoolId: this.schoolId };
@@ -259,5 +277,19 @@ export class RoomsComponent implements OnInit {
       next: () => { this.load(); this.showDelete = false; this.notify.success('Room deleted'); },
       error: () => this.notify.error('Failed to delete room')
     });
+  }
+
+  private getDuplicateName(baseName: string): string {
+    const usedNames = new Set(this.items.map(item => item.name.toLowerCase()));
+    const copyLabel = `${baseName} (copy)`;
+    if (!usedNames.has(copyLabel.toLowerCase())) {
+      return copyLabel;
+    }
+
+    let index = 2;
+    while (usedNames.has(`${copyLabel} ${index}`.toLowerCase())) {
+      index++;
+    }
+    return `${copyLabel} ${index}`;
   }
 }

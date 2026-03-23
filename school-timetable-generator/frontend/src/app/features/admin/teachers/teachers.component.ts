@@ -62,7 +62,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                   <tr>
                     <td>
                       <div class="d-flex align-items-center gap-3">
-                        <div class="avatar">{{ teacher.firstName?.charAt(0) }}{{ teacher.lastName?.charAt(0) }}</div>
+                        <div class="avatar">{{ teacher.firstName.charAt(0) }}{{ teacher.lastName.charAt(0) }}</div>
                         <div><div class="fw-semibold">{{ teacher.firstName }} {{ teacher.lastName }}</div></div>
                       </div>
                     </td>
@@ -78,6 +78,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                     </td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(teacher)">{{ t('edit') }}</button>
+                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(teacher)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(teacher)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -298,6 +299,27 @@ export class TeachersComponent implements OnInit {
     this.showModal = true;
   }
 
+  duplicate(t: Teacher): void {
+    const subjectIds = t.subjectIds?.length ? t.subjectIds : (t.subjects?.map(subject => subject.id) || []);
+    const data = {
+      firstName: t.firstName,
+      lastName: `${t.lastName} (copy)`,
+      email: this.getDuplicateEmail(t.email),
+      password: 'TempPass123!',
+      maxHoursPerWeek: t.maxHoursPerWeek,
+      subjectIds,
+      schoolId: this.schoolId
+    };
+
+    this.adminService.createTeacher(data).subscribe({
+      next: () => {
+        this.load();
+        this.notify.success('Teacher duplicated');
+      },
+      error: () => this.notify.error('Failed to duplicate teacher')
+    });
+  }
+
   isSubjectSelected(id: number): boolean {
     return (this.form.value.subjectIds || []).includes(id);
   }
@@ -332,5 +354,23 @@ export class TeachersComponent implements OnInit {
       next: () => { this.load(); this.showDelete = false; this.notify.success('Teacher deleted'); },
       error: () => this.notify.error('Failed to delete teacher')
     });
+  }
+
+  private getDuplicateEmail(baseEmail: string): string {
+    const usedEmails = new Set(this.teachers.map(teacher => teacher.email.toLowerCase()));
+    const atIndex = baseEmail.indexOf('@');
+    const localPart = atIndex > 0 ? baseEmail.slice(0, atIndex) : baseEmail;
+    const domainPart = atIndex > 0 ? baseEmail.slice(atIndex + 1) : 'teacher.demo';
+
+    const copyEmail = `${localPart}+copy@${domainPart}`;
+    if (!usedEmails.has(copyEmail.toLowerCase())) {
+      return copyEmail;
+    }
+
+    let index = 2;
+    while (usedEmails.has(`${localPart}+copy${index}@${domainPart}`.toLowerCase())) {
+      index++;
+    }
+    return `${localPart}+copy${index}@${domainPart}`;
   }
 }
