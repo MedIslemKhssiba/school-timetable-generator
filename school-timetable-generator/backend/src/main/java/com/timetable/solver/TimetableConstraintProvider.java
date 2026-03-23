@@ -8,6 +8,8 @@ import org.optaplanner.core.api.score.stream.ConstraintProvider;
 import org.optaplanner.core.api.score.stream.Joiners;
 import org.optaplanner.core.api.score.stream.ConstraintCollectors;
 
+import java.util.Locale;
+
 public class TimetableConstraintProvider implements ConstraintProvider {
 
     @Override
@@ -19,6 +21,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 classGroupConflict(constraintFactory),
                 teacherAvailability(constraintFactory),
                 teacherMaxHours(constraintFactory),
+                roomTypeCompatibility(constraintFactory),
                 roomCapacity(constraintFactory),
                 // Soft constraints
                 teacherRoomStability(constraintFactory),
@@ -99,6 +102,16 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .asConstraint("Room capacity");
     }
 
+    // Assigned room type must satisfy subject required room type when specified
+    Constraint roomTypeCompatibility(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEach(LessonAssignment.class)
+                .filter(la -> la.getRoom() != null && hasText(la.getRequiredRoomType()))
+                .filter(la -> !normalize(la.getRequiredRoomType()).equals(normalize(la.getRoom().getType())))
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Room type compatibility");
+    }
+
     // Prefer assigning a teacher to the same room throughout the day
     Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
         return constraintFactory
@@ -163,4 +176,12 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .penalize(HardSoftScore.ONE_SOFT, (classId, day, count) -> (count - 5) * 2)
                 .asConstraint("Class group day balance");
     }
+
+        private boolean hasText(String value) {
+                return value != null && !value.isBlank();
+        }
+
+        private String normalize(String value) {
+                return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+        }
 }

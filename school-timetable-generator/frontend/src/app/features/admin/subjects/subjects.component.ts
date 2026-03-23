@@ -122,6 +122,15 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                   <input class="form-control" formControlName="hoursPerWeek" type="number" min="1" />
                 </div>
                 <div class="col-6">
+                  <label class="form-label">Required Room Type</label>
+                  <select class="form-control" formControlName="requiredRoomType">
+                    <option value="">Any</option>
+                    <option value="COURS">Cours</option>
+                    <option value="SPORT">Sport</option>
+                    <option value="POLYVALENTE">Polyvalente</option>
+                  </select>
+                </div>
+                <div class="col-6">
                   <label class="form-label">{{ t('session_duration') }}</label>
                   <input class="form-control" formControlName="sessionDuration" type="number" min="30" step="5" />
                 </div>
@@ -220,6 +229,7 @@ export class SubjectsComponent implements OnInit {
     this.form = this.fb.group({
       name: ['', Validators.required],
       level: [''],
+      requiredRoomType: [''],
       color: [''],
       hoursPerWeek: [2, [Validators.required, Validators.min(1)]],
       sessionDuration: [60, [Validators.required, Validators.min(30)]]
@@ -247,7 +257,7 @@ export class SubjectsComponent implements OnInit {
   openModal(): void {
     this.editing = false;
     this.editId = null;
-    this.form.reset({ level: '', color: '', hoursPerWeek: 2, sessionDuration: 60 });
+    this.form.reset({ level: '', requiredRoomType: '', color: '', hoursPerWeek: 2, sessionDuration: 60 });
     this.showModal = true;
   }
 
@@ -264,6 +274,7 @@ export class SubjectsComponent implements OnInit {
     const data = {
       name: this.getDuplicateName(s.name),
       level: s.level || '',
+      requiredRoomType: s.requiredRoomType || '',
       color: s.color || this.getAutoColor(),
       hoursPerWeek: s.hoursPerWeek,
       sessionDuration: s.sessionDuration,

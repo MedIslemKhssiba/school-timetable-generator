@@ -95,6 +95,7 @@ public class AdminController {
         Subject subject = Subject.builder()
                 .name(dto.getName())
             .level(dto.getLevel())
+                .requiredRoomType(dto.getRequiredRoomType())
                 .color(dto.getColor())
                 .hoursPerWeek(dto.getHoursPerWeek())
                 .sessionDuration(dto.getSessionDuration())
@@ -109,6 +110,7 @@ public class AdminController {
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found with id: " + id));
         subject.setName(dto.getName());
         subject.setLevel(dto.getLevel());
+        subject.setRequiredRoomType(dto.getRequiredRoomType());
         subject.setColor(dto.getColor());
         subject.setHoursPerWeek(dto.getHoursPerWeek());
         subject.setSessionDuration(dto.getSessionDuration());

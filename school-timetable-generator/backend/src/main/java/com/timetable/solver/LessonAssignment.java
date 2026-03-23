@@ -51,4 +51,8 @@ public class LessonAssignment {
     public Long getSubjectId() {
         return subject != null ? subject.getId() : null;
     }
+
+    public String getRequiredRoomType() {
+        return subject != null ? subject.getRequiredRoomType() : null;
+    }
 }

@@ -74,6 +74,7 @@ export interface Subject {
   id: number;
   name: string;
   level: string;
+  requiredRoomType?: string;
   color: string;
   hoursPerWeek: number;
   sessionDuration: number;

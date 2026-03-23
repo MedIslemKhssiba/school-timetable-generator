@@ -10,6 +10,7 @@ public class SubjectDTO {
     @NotBlank
     private String name;
     private String level;
+    private String requiredRoomType;
     private String color;
     private int hoursPerWeek = 1;
     private int sessionDuration = 1;

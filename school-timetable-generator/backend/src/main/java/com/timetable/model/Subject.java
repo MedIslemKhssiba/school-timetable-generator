@@ -25,6 +25,9 @@ public class Subject {
     @Column
     private String level;
 
+    @Column(name = "required_room_type")
+    private String requiredRoomType;
+
     @Builder.Default
     private int sessionDuration = 1;
 
