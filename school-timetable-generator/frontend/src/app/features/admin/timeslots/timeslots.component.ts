@@ -49,27 +49,21 @@ import { TranslationService } from '../../../core/services/translation.service';
             (action)="openModal()" />
         } @else {
           <div class="simple-visualization">
-            <div class="week-grid">
+            <div class="simple-list">
               @for (group of groupedTimeslots; track group.day) {
-                <div class="day-column">
-                  <div class="day-column-header">
-                    <c-badge [color]="getDayColor(group.day)" class="day-badge">{{ t(group.day) }}</c-badge>
+                <div class="day-row">
+                  <div class="day-row-header">
+                    <span class="day-name">{{ t(group.day) }}</span>
                     <span class="day-count">{{ group.slots.length }}</span>
                   </div>
 
                   @if (group.slots.length === 0) {
                     <div class="day-empty">{{ t('no_results') }}</div>
                   } @else {
-                    <div class="slot-list">
+                    <div class="slot-row-list">
                       @for (ts of group.slots; track ts.id) {
-                        <div class="slot-item">
+                        <div class="slot-row-item">
                           <div class="slot-time">{{ ts.startTime }} - {{ ts.endTime }}</div>
-                          <div class="slot-meta">
-                            #{{ ts.orderInDay }}
-                            @if (ts.breakStartTime && ts.breakEndTime) {
-                              <span class="slot-break">• Pause {{ ts.breakStartTime }} - {{ ts.breakEndTime }}</span>
-                            }
-                          </div>
                           <div class="slot-actions">
                             <button cButton color="primary" variant="ghost" size="sm" (click)="openEditModal(ts)">{{ t('edit') }}</button>
                             <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(ts)">{{ t('delete') }}</button>
@@ -175,28 +169,31 @@ import { TranslationService } from '../../../core/services/translation.service';
 
     .simple-visualization {
       padding: 16px 20px;
-      border-bottom: 1px solid #DDE3EE;
       background: #F8FAFF;
     }
-    .week-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-    }
-    .day-column {
-      border: 1px solid #DDE3EE;
-      border-radius: 12px;
-      background: #FFFFFF;
-      min-height: 140px;
+    .simple-list {
       display: flex;
       flex-direction: column;
+      gap: 10px;
     }
-    .day-column-header {
+    .day-row {
+      border: 1px solid #DDE3EE;
+      border-radius: 10px;
+      background: #FFFFFF;
+    }
+    .day-row-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 12px;
+      padding: 8px 12px;
       border-bottom: 1px solid #EAEEF6;
+      background: #F8FAFF;
+    }
+    .day-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1A2332;
+      font-family: 'Montserrat', sans-serif;
     }
     .day-count {
       font-size: 0.8rem;
@@ -204,20 +201,21 @@ import { TranslationService } from '../../../core/services/translation.service';
       font-weight: 600;
       font-family: 'Montserrat', sans-serif;
     }
-    .slot-list {
+    .slot-row-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 10px 12px 12px;
+      gap: 6px;
+      padding: 8px 10px 10px;
     }
-    .slot-item {
-      border: 1px solid #EAEEF6;
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: #F8FAFF;
+    .slot-row-item {
+      border: 1px solid #DDE3EE;
+      border-radius: 8px;
+      padding: 6px 8px;
+      background: #FFFFFF;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
     .slot-time {
       font-weight: 700;
@@ -225,34 +223,27 @@ import { TranslationService } from '../../../core/services/translation.service';
       font-size: 0.85rem;
       font-family: 'Montserrat', sans-serif;
     }
-    .slot-meta {
-      font-size: 0.78rem;
-      color: #5C6A7A;
-      font-family: 'Montserrat', sans-serif;
-    }
     .slot-actions {
       display: flex;
-      justify-content: flex-end;
       gap: 6px;
-      margin-top: 4px;
-    }
-    .slot-break {
-      margin-left: 4px;
     }
     .day-empty {
-      margin: auto;
+      margin: 10px;
       color: #8D99A8;
       font-size: 0.8rem;
       font-family: 'Montserrat', sans-serif;
       text-align: center;
       padding: 12px;
+      border: 1px dashed #DDE3EE;
+      border-radius: 8px;
+      background: #F8FAFF;
     }
 
     .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); z-index: 1050; backdrop-filter: blur(4px); }
     .modal-wrapper { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 24px; }
     .modal-box { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px rgba(13, 27, 62,0.2); animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1); }
     .modal-header-custom { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 1.125rem; font-weight: 700; color: #1A2332; } }
-    .modal-close { background: none; border: none; cursor: pointer; color: #8D99A8; padding: 4px; border-radius: 6px; &:hover { background: #EAEEF6; color: #1A2332; } }
+    .modal-close { background: none; border: none; cursor: pointer; color: #8D99A8; padding: 2px 6px; border-radius: 6px; font-size: 2rem; line-height: 1; &:hover { background: #EAEEF6; color: #1A2332; } }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .form-field { display: flex; flex-direction: column; flex: 1; }
     .form-row { display: flex; gap: 16px; }

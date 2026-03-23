@@ -191,7 +191,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .modal-panel { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(13, 27, 62,0.15); animation: scaleIn 200ms ease-out; }
     .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; }
     .modal-title { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0; color: #1A2332; }
-    .modal-close { background: none; border: none; font-size: 1.5rem; color: #8D99A8; cursor: pointer; line-height: 1; }
+    .modal-close { background: none; border: none; font-size: 2rem; color: #8D99A8; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; }
     .modal-body { padding: 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }

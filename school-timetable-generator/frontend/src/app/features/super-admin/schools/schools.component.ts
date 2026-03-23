@@ -256,7 +256,7 @@ import { TranslationService } from '../../../core/services/translation.service';
       h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 1.125rem; font-weight: 700; color: #1A2332; }
     }
     .modal-close {
-      background: none; border: none; cursor: pointer; color: #8D99A8; padding: 4px; border-radius: 6px;
+      background: none; border: none; cursor: pointer; color: #8D99A8; padding: 2px 6px; border-radius: 6px; font-size: 2rem; line-height: 1;
       &:hover { background: #EAEEF6; color: #1A2332; }
     }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
