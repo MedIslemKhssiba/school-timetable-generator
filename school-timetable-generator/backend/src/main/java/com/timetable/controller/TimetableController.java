@@ -317,21 +317,21 @@ public class TimetableController {
 
     @GetMapping("/lessons/{schoolId}")
     public ResponseEntity<List<LessonDTO>> getLessons(@PathVariable Long schoolId) {
-        List<Lesson> lessons = lessonRepository.findBySchoolId(schoolId);
+        List<Lesson> lessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/lessons/class/{classGroupId}")
     public ResponseEntity<List<LessonDTO>> getLessonsByClass(@PathVariable Long classGroupId) {
-        List<Lesson> lessons = lessonRepository.findByClassGroupId(classGroupId);
+        List<Lesson> lessons = lessonRepository.findByClassGroupIdWithDetails(classGroupId);
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/lessons/teacher/{teacherId}")
     public ResponseEntity<List<LessonDTO>> getLessonsByTeacher(@PathVariable Long teacherId) {
-        List<Lesson> lessons = lessonRepository.findByTeacherId(teacherId);
+        List<Lesson> lessons = lessonRepository.findByTeacherIdWithDetails(teacherId);
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
