@@ -112,15 +112,21 @@ export class AvailabilityComponent implements OnInit {
       next: avails => {
         this.availabilities = avails;
         avails.forEach(a => this.availabilityMap[a.timeslotId] = a.available);
+      },
+      error: () => {
+        this.notify.error('Failed to load your availability settings');
       }
     });
-    this.http.get<Timeslot[]>(`${environment.apiUrl}/admin/timetable/timeslots`).subscribe({
+    this.http.get<Timeslot[]>(`${environment.apiUrl}/teacher/timeslots`).subscribe({
       next: slots => {
         this.timeslots = slots;
         this.days = [...new Set(slots.map(s => s.dayOfWeek))];
         this.loading = false;
       },
-      error: () => this.loading = false
+      error: () => {
+        this.notify.error('Failed to load timeslots. Please contact admin.');
+        this.loading = false;
+      }
     });
   }
 

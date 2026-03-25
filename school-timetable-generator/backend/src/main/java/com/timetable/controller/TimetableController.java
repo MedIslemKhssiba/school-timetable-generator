@@ -315,6 +315,11 @@ public class TimetableController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PostMapping("/send/{schoolId}")
+    public ResponseEntity<String> sendToTeachers(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(timetableService.sendToTeachers(schoolId));
+    }
+
     @GetMapping("/lessons/{schoolId}")
     public ResponseEntity<List<LessonDTO>> getLessons(@PathVariable Long schoolId) {
         List<Lesson> lessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
@@ -343,6 +348,15 @@ public class TimetableController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable.xlsx")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(excelData);
+    }
+
+    @GetMapping("/export/pdf/{schoolId}")
+    public ResponseEntity<byte[]> exportTimetablePdf(@PathVariable Long schoolId) throws IOException {
+        byte[] pdfData = importExportService.exportTimetablePdf(schoolId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfData);
     }
 
     private LessonDTO toLessonDTO(Lesson lesson) {

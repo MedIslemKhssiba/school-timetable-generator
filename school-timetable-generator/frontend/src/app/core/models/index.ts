@@ -128,6 +128,17 @@ export interface TimetableSolveStatus {
   progressPercent: number;
 }
 
+export interface AdminDashboardStats {
+  totalTeachers: number;
+  totalClasses: number;
+  totalSubjects: number;
+  totalRooms: number;
+  totalLessons: number;
+  timetableSavedAt?: string | null;
+  timetableSent: boolean;
+  timetableSentAt?: string | null;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;

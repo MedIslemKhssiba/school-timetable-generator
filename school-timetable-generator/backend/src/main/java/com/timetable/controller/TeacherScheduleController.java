@@ -11,6 +11,7 @@ import com.timetable.repository.LessonRepository;
 import com.timetable.repository.TeacherAvailabilityRepository;
 import com.timetable.repository.TeacherRepository;
 import com.timetable.repository.UserRepository;
+import com.timetable.repository.SchoolRepository;
 import com.timetable.dto.AvailabilityDTO;
 import com.timetable.repository.TimeslotRepository;
 import com.timetable.model.Timeslot;
@@ -37,11 +38,19 @@ public class TeacherScheduleController {
     private final UserRepository userRepository;
     private final TeacherAvailabilityRepository availabilityRepository;
     private final TimeslotRepository timeslotRepository;
+    private final SchoolRepository schoolRepository;
 
     @GetMapping("/schedule")
     public ResponseEntity<List<LessonDTO>> getMySchedule(Authentication authentication) {
         Teacher teacher = getTeacherFromAuth(authentication);
         if (teacher == null) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        boolean isTeacher = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_TEACHER".equals(a.getAuthority()));
+        Long schoolId = teacher.getSchool() != null ? teacher.getSchool().getId() : null;
+        if (isTeacher && schoolId != null && !schoolRepository.existsByIdAndTimetableSentTrue(schoolId)) {
             return ResponseEntity.ok(List.of());
         }
 

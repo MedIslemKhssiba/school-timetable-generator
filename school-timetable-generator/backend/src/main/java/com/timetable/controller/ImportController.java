@@ -22,7 +22,7 @@ public class ImportController {
     public ResponseEntity<List<String>> importExcel(
             @PathVariable Long schoolId,
             @RequestParam("file") MultipartFile file) throws IOException {
-        List<String> results = importExportService.importExcel(schoolId, file);
+        List<String> results = importExportService.importData(schoolId, file);
         return ResponseEntity.ok(results);
     }
 }

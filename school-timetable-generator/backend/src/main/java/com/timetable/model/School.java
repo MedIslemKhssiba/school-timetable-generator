@@ -29,6 +29,16 @@ public class School {
 
     private LocalDateTime createdAt;
 
+    @Column(name = "timetable_saved_at")
+    private LocalDateTime timetableSavedAt;
+
+    @Builder.Default
+    @Column(name = "timetable_sent")
+    private Boolean timetableSent = false;
+
+    @Column(name = "timetable_sent_at")
+    private LocalDateTime timetableSentAt;
+
     @JsonIgnore
     @OneToMany(mappedBy = "school", cascade = CascadeType.ALL)
     @Builder.Default

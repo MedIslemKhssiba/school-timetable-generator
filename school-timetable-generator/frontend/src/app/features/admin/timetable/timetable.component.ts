@@ -23,6 +23,7 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
         <p class="page-subtitle">{{ t('generate_manage_schedules') }}</p>
       </div>
       <div class="d-flex gap-2 flex-wrap">
+        <input #csvInput type="file" accept=".csv" class="d-none" (change)="onImportCsv($event)" />
         <button cButton color="primary" (click)="solve()" [disabled]="solving">
           {{ solving ? t('solving') : t('generate') }}
         </button>
@@ -34,6 +35,12 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
         </button>
         <button cButton color="light" (click)="refresh()">
           {{ t('refresh') }}
+        </button>
+        <button cButton color="secondary" variant="outline" (click)="csvInput.click()" [disabled]="solving">
+          {{ t('import_csv') }}
+        </button>
+        <button cButton color="danger" class="pdf-export-btn" (click)="exportPdf()" [disabled]="lessons.length === 0">
+          {{ t('export_pdf') }}
         </button>
         <button cButton color="danger" class="pdf-export-btn" (click)="exportExcel()" [disabled]="lessons.length === 0">
           {{ t('export') }}
@@ -390,6 +397,37 @@ export class TimetableComponent implements OnInit, OnDestroy {
       window.URL.revokeObjectURL(url);
       this.notify.success('Excel exported');
     });
+  }
+
+  exportPdf(): void {
+    this.adminService.exportTimetablePdf(this.schoolId).subscribe(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `timetable-school-${this.schoolId}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      this.notify.success('PDF exported');
+    });
+  }
+
+  onImportCsv(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files.length > 0 ? input.files[0] : null;
+    if (!file) {
+      return;
+    }
+
+    this.adminService.importData(this.schoolId, file).subscribe({
+      next: (messages) => {
+        const message = messages && messages.length > 0 ? messages.join(' | ') : 'CSV imported';
+        this.notify.success(message);
+        this.refresh();
+      },
+      error: () => this.notify.error('Failed to import CSV')
+    });
+
+    input.value = '';
   }
 
   applyFilter(): void {

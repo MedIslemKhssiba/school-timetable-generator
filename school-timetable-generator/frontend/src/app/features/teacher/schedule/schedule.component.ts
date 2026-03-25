@@ -25,34 +25,42 @@ import { TranslationService } from '../../../core/services/translation.service';
     @if (loading) {
       <ui-skeleton type="cards" [count]="5" />
     } @else if (lessons.length > 0) {
-      <c-row>
-        @for (day of days; track day) {
-          <c-col lg="4" md="6" class="mb-4">
-            <c-card class="h-100">
-              <c-card-header class="day-header">
-                <span>{{ formatDay(day) }}</span>
-                <c-badge color="light" textColor="dark" class="ms-auto">{{ getLessonsForDay(day).length }}</c-badge>
-              </c-card-header>
-              <c-card-body class="p-2">
-                @for (lesson of getLessonsForDay(day); track lesson.id) {
-                  <div class="lesson-slot" [style.border-left-color]="getSubjectColor(lesson.subjectName)">
-                    <div class="lesson-time">
-                      {{ lesson.startTime }} - {{ lesson.endTime }}
-                    </div>
-                    <div class="lesson-subject">{{ lesson.subjectName }}</div>
-                    <div class="lesson-details">
-                      <span>{{ lesson.classGroupName }}</span>
-                      <span>{{ lesson.roomName }}</span>
-                    </div>
-                  </div>
-                } @empty {
-                    <div class="text-center text-muted py-4"><small>{{ t('no_lessons') }}</small></div>
+      <c-card class="schedule-card">
+        <c-card-body class="p-0">
+          <div class="schedule-table-wrapper">
+            <table class="schedule-table">
+              <thead>
+                <tr>
+                  <th class="time-col">Time</th>
+                  @for (day of displayDays; track day) {
+                    <th>{{ formatDay(day) }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (slot of timeSlots; track slot) {
+                  <tr>
+                    <td class="time-col fw-semibold">{{ slot }}</td>
+                    @for (day of displayDays; track day) {
+                      <td>
+                        @for (lesson of getLessonsAt(day, slot); track lesson.id) {
+                          <div class="lesson-block" [style.border-left-color]="getSubjectColor(lesson.subjectName)">
+                            <div class="lesson-subject">{{ lesson.subjectName }}</div>
+                            <div class="lesson-meta">{{ lesson.classGroupName }} · {{ lesson.roomName }}</div>
+                            <div class="lesson-meta">{{ lesson.startTime }} - {{ lesson.endTime }}</div>
+                          </div>
+                        } @empty {
+                          <span class="cell-empty">—</span>
+                        }
+                      </td>
+                    }
+                  </tr>
                 }
-              </c-card-body>
-            </c-card>
-          </c-col>
-        }
-      </c-row>
+              </tbody>
+            </table>
+          </div>
+        </c-card-body>
+      </c-card>
     } @else {
       <c-card>
         <c-card-body class="text-center py-5">
@@ -67,31 +75,78 @@ import { TranslationService } from '../../../core/services/translation.service';
     .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
     .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
-    .day-header {
-      display: flex; align-items: center;
-      background: #2563EB;
-      color: #F8FAFF; font-weight: 600; font-family: 'Montserrat', sans-serif;
-    }
-    .lesson-slot {
-      padding: 12px; margin: 6px; background: #F0F4FA;
-      border-radius: 8px; border-left: 3px solid #2563EB;
-      transition: transform 0.15s, box-shadow 0.15s;
-      &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37, 99, 235,0.1); }
-    }
-    .lesson-time {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 0.8rem; font-weight: 600; color: #2563EB; margin-bottom: 4px;
+    .schedule-card { border: 1px solid #DDE3EE; }
+    .schedule-table-wrapper { overflow-x: auto; }
+    .schedule-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 900px;
       font-family: 'Montserrat', sans-serif;
     }
-    .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #1A2332; font-family: 'Montserrat', sans-serif; }
-    .lesson-details { display: flex; flex-direction: column; gap: 2px; }
-    .lesson-details span { font-size: 0.78rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
+    .schedule-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #1E3A8A;
+      color: #F8FAFF;
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 12px;
+      border-right: 1px solid rgba(255,255,255,0.14);
+    }
+    .schedule-table th:last-child { border-right: none; }
+    .schedule-table td {
+      vertical-align: top;
+      padding: 10px;
+      border-right: 1px solid #E7ECF5;
+      border-bottom: 1px solid #E7ECF5;
+      background: #FFFFFF;
+      min-height: 84px;
+    }
+    .schedule-table tbody tr:nth-child(even) td { background: #F9FBFF; }
+    .schedule-table td:last-child { border-right: none; }
+    .time-col {
+      width: 120px;
+      min-width: 120px;
+      text-align: center;
+      color: #334155;
+      background: #F1F5F9 !important;
+    }
+    .lesson-block {
+      border-left: 4px solid #2563EB;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #EEF4FF;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      margin-bottom: 6px;
+    }
+    .lesson-subject {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 4px;
+    }
+    .lesson-meta {
+      font-size: 0.76rem;
+      color: #475569;
+      line-height: 1.35;
+    }
+    .cell-empty {
+      color: #94A3B8;
+      font-size: 0.9rem;
+      display: inline-block;
+      padding-top: 8px;
+    }
   `]
 })
 export class ScheduleComponent implements OnInit {
   lessons: Lesson[] = [];
   loading = true;
-  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  readonly days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  displayDays: string[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  timeSlots: string[] = [];
   private subjectColors: Record<string, string> = {};
   private colorPalette = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#0EA5E9', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
 
@@ -101,7 +156,11 @@ export class ScheduleComponent implements OnInit {
 
   ngOnInit(): void {
     this.http.get<Lesson[]>(`${environment.apiUrl}/teacher/schedule`).subscribe({
-      next: l => { this.lessons = l; this.loading = false; },
+      next: l => {
+        this.lessons = l;
+        this.buildGridMeta();
+        this.loading = false;
+      },
       error: () => this.loading = false
     });
   }
@@ -110,8 +169,10 @@ export class ScheduleComponent implements OnInit {
     return this.ts.t(day);
   }
 
-  getLessonsForDay(day: string): Lesson[] {
-    return this.lessons.filter(l => l.dayOfWeek === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  getLessonsAt(day: string, slot: string): Lesson[] {
+    return this.lessons
+      .filter(l => l.dayOfWeek === day && l.startTime === slot)
+      .sort((a, b) => a.endTime.localeCompare(b.endTime));
   }
 
   getSubjectColor(name: string): string {
@@ -120,5 +181,16 @@ export class ScheduleComponent implements OnInit {
       this.subjectColors[name] = this.colorPalette[idx];
     }
     return this.subjectColors[name];
+  }
+
+  private buildGridMeta(): void {
+    const daySet = new Set(this.lessons.map(lesson => lesson.dayOfWeek).filter(Boolean));
+    this.displayDays = this.days.filter(day => daySet.has(day));
+    if (this.displayDays.length === 0) {
+      this.displayDays = [...this.days];
+    }
+
+    const slotSet = new Set(this.lessons.map(lesson => lesson.startTime).filter(Boolean));
+    this.timeSlots = [...slotSet].sort((a, b) => a.localeCompare(b));
   }
 }

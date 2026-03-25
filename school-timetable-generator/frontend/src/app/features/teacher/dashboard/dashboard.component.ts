@@ -2,6 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CardModule, GridModule, ButtonDirective } from '@coreui/angular';
 import { AuthService } from '../../../core/services/auth.service';
 import { TranslationService } from '../../../core/services/translation.service';
@@ -28,18 +29,21 @@ import { Subscription, interval, switchMap } from 'rxjs';
       <div class="stats-grid mb-4">
         <a routerLink="../schedule" class="stat-card stat-primary">
           <div class="stat-icon-wrap bg-primary">
+            <span class="stat-icon" [innerHTML]="icons.schedule"></span>
           </div>
           <div class="stat-value">{{ totalLessons }}</div>
           <div class="stat-label">{{ t('weekly_lessons') }}</div>
         </a>
         <a routerLink="../schedule" class="stat-card stat-info">
           <div class="stat-icon-wrap bg-info">
+            <span class="stat-icon" [innerHTML]="icons.subjects"></span>
           </div>
           <div class="stat-value">{{ subjects.size }}</div>
           <div class="stat-label">{{ t('subjects') }}</div>
         </a>
         <a routerLink="../schedule" class="stat-card stat-success">
           <div class="stat-icon-wrap bg-success">
+            <span class="stat-icon" [innerHTML]="icons.classes"></span>
           </div>
           <div class="stat-value">{{ classes.size }}</div>
           <div class="stat-label">{{ t('classes') }}</div>
@@ -77,12 +81,15 @@ import { Subscription, interval, switchMap } from 'rxjs';
           </c-card-header>
           <c-card-body class="p-0">
             <a routerLink="../schedule" class="quick-link">
+              <span class="quick-link-icon" [innerHTML]="icons.schedule"></span>
               <span>{{ t('my_schedule') }}</span>
             </a>
             <a routerLink="../availability" class="quick-link">
+              <span class="quick-link-icon" [innerHTML]="icons.availability"></span>
               <span>{{ t('set_availability') }}</span>
             </a>
             <a routerLink="/profile" class="quick-link">
+              <span class="quick-link-icon" [innerHTML]="icons.profile"></span>
               <span>{{ t('my_profile') }}</span>
             </a>
           </c-card-body>
@@ -110,6 +117,8 @@ import { Subscription, interval, switchMap } from 'rxjs';
       width: 52px; height: 52px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
     }
+    .stat-icon { width: 22px; height: 22px; color: #fff; display: inline-flex; }
+    .stat-icon :global(svg) { width: 100%; height: 100%; }
     .stat-value { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; line-height: 1; }
     .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
 
@@ -123,6 +132,10 @@ import { Subscription, interval, switchMap } from 'rxjs';
       &:last-child { border-bottom: none; }
       &:hover { background: #F0F4FA; }
     }
+    .quick-link-icon {
+      width: 20px; height: 20px; color: #4A7C8A; display: inline-flex; flex-shrink: 0;
+    }
+    .quick-link-icon :global(svg) { width: 100%; height: 100%; }
   `]
 })
 export class TeacherDashboardComponent implements OnInit, OnDestroy {
@@ -133,7 +146,26 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
   loading = true;
   private pollSub?: Subscription;
 
-  constructor(private http: HttpClient, private authService: AuthService, private ts: TranslationService) {
+  private icon(d: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+    );
+  }
+
+  icons = {
+    schedule: this.icon('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+    subjects: this.icon('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'),
+    classes: this.icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    availability: this.icon('<path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/>'),
+    profile: this.icon('<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>')
+  };
+
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+    private ts: TranslationService,
+    private sanitizer: DomSanitizer
+  ) {
     this.authService.currentUser$.subscribe(u => {
       if (u) this.userName = `${u.firstName} ${u.lastName}`;
     });
