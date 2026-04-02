@@ -449,7 +449,16 @@ const translations: Record<Language, Record<string, string>> = {
     'try_different_filter': 'Essayez un filtre différent.',
 
     // Edit admin
-    'edit_admin': 'Modifier l\'admin'
+    'edit_admin': 'Modifier l\'admin',
+
+    // Dashboard extended labels
+    'active_schools': 'Écoles actives',
+    'assigned_admins': 'Admins affectés',
+    'admins_per_school': 'Admins / école',
+    'platform_control_message': 'Vous avez un contrôle complet de la plateforme. Gérez les écoles, affectez les administrateurs et suivez le système global.',
+    'school_resources_message': 'Gérez les ressources de votre école et générez des emplois du temps optimisés. Ajoutez enseignants, classes, matières et salles pour commencer.',
+    'teaching_hours': 'Heures d\'enseignement',
+    'busiest_day_load': 'Charge max / jour'
   },
   ar: {
     'save': 'حفظ',
@@ -671,9 +680,7 @@ export class TranslationService {
   lang$;
 
   readonly languages: { code: Language; label: string; dir: 'ltr' | 'rtl' }[] = [
-    { code: 'en', label: 'English', dir: 'ltr' },
-    { code: 'fr', label: 'Français', dir: 'ltr' },
-    { code: 'ar', label: 'العربية', dir: 'rtl' }
+    { code: 'fr', label: 'Français', dir: 'ltr' }
   ];
 
   constructor() {
@@ -687,20 +694,20 @@ export class TranslationService {
     return this.currentLang;
   }
 
-  setLanguage(lang: Language): void {
-    this.currentLang = lang;
-    localStorage.setItem(LANG_KEY, lang);
-    this.langSubject.next(lang);
+  setLanguage(_lang: Language): void {
+    this.currentLang = 'fr';
+    localStorage.setItem(LANG_KEY, 'fr');
+    this.langSubject.next(this.currentLang);
     this.applyDirection();
   }
 
   t(key: string): string {
-    return translations[this.currentLang]?.[key] ?? translations['en']?.[key] ?? key;
+    return translations['fr']?.[key] ?? key;
   }
 
   private applyDirection(): void {
     const info = this.languages.find(l => l.code === this.currentLang);
     document.documentElement.dir = info?.dir ?? 'ltr';
-    document.documentElement.lang = this.currentLang;
+    document.documentElement.lang = 'fr';
   }
 }

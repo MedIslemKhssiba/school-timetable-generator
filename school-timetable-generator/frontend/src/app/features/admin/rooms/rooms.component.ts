@@ -63,10 +63,9 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                       <span class="fw-semibold">{{ r.name }}</span>
                     </td>
                     <td>{{ r.capacity }} {{ t('seats') }}</td>
-                    <td><c-badge color="info" variant="outline">{{ r.type || t('general') }}</c-badge></td>
+                    <td><c-badge color="info" variant="outline">{{ getRoomTypeLabel(r.type) }}</c-badge></td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(r)">{{ t('edit') }}</button>
-                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(r)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(r)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -110,9 +109,9 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                 <label class="form-label">{{ t('type') }}</label>
                 <select class="form-select" formControlName="type">
                   <option value="">Choisir un type</option>
-                  <option value="Cours">Cours</option>
-                  <option value="Sport">Sport</option>
-                  <option value="Polyvalente">Polyvalente</option>
+                  <option value="COURS">Cours</option>
+                  <option value="SPORT">Sport</option>
+                  <option value="POLYVALENTE">Polyvalente</option>
                 </select>
               </div>
             </div>
@@ -156,7 +155,13 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .modal-panel { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(13, 27, 62,0.15); animation: scaleIn 200ms ease-out; }
     .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; }
     .modal-title { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0; color: #1A2332; }
-    .modal-close { background: none; border: none; font-size: 2rem; color: #8D99A8; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+    .modal-close {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; font-size: 2.25rem; color: #8D99A8; cursor: pointer;
+      line-height: 1; padding: 0; border-radius: 10px;
+      &:hover { background: #EAEEF6; color: #1A2332; }
+    }
     .modal-body { padding: 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -197,7 +202,7 @@ export class RoomsComponent implements OnInit {
     private ts: TranslationService
   ) {
     this.schoolId = this.authService.getSchoolId() || 1;
-    this.form = this.fb.group({ name: ['', Validators.required], capacity: [30], type: [''] });
+    this.form = this.fb.group({ name: ['', Validators.required], capacity: [30], type: ['COURS'] });
   }
 
   t(key: string): string { return this.ts.t(key); }
@@ -223,7 +228,7 @@ export class RoomsComponent implements OnInit {
   openModal(): void {
     this.editing = false;
     this.editId = null;
-    this.form.reset({ capacity: 30 });
+    this.form.reset({ capacity: 30, type: 'COURS' });
     this.showModal = true;
   }
 
@@ -232,25 +237,16 @@ export class RoomsComponent implements OnInit {
   edit(r: Room) {
     this.editing = true;
     this.editId = r.id;
-    this.form.patchValue(r);
+    this.form.patchValue({ ...r, type: (r.type || '').toUpperCase() });
     this.showModal = true;
   }
 
-  duplicate(r: Room): void {
-    const data = {
-      name: this.getDuplicateName(r.name),
-      capacity: r.capacity,
-      type: r.type || '',
-      schoolId: this.schoolId
-    };
-
-    this.svc.createRoom(data).subscribe({
-      next: () => {
-        this.load();
-        this.notify.success('Room duplicated');
-      },
-      error: () => this.notify.error('Failed to duplicate room')
-    });
+  getRoomTypeLabel(type?: string): string {
+    const normalized = (type || '').toUpperCase();
+    if (normalized === 'COURS') return 'Cours';
+    if (normalized === 'SPORT') return 'Sport';
+    if (normalized === 'POLYVALENTE') return 'Polyvalente';
+    return type || this.t('general');
   }
 
   onSubmit() {
@@ -277,19 +273,5 @@ export class RoomsComponent implements OnInit {
       next: () => { this.load(); this.showDelete = false; this.notify.success('Room deleted'); },
       error: () => this.notify.error('Failed to delete room')
     });
-  }
-
-  private getDuplicateName(baseName: string): string {
-    const usedNames = new Set(this.items.map(item => item.name.toLowerCase()));
-    const copyLabel = `${baseName} (copy)`;
-    if (!usedNames.has(copyLabel.toLowerCase())) {
-      return copyLabel;
-    }
-
-    let index = 2;
-    while (usedNames.has(`${copyLabel} ${index}`.toLowerCase())) {
-      index++;
-    }
-    return `${copyLabel} ${index}`;
   }
 }

@@ -234,7 +234,13 @@ import { TranslationService } from '../../../core/services/translation.service';
     .modal-wrapper { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 24px; }
     .modal-box { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px rgba(13, 27, 62,0.2); animation: scaleIn 200ms cubic-bezier(0.34,1.56,0.64,1); }
     .modal-header-custom { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 1.125rem; font-weight: 700; color: #1A2332; } }
-    .modal-close { background: none; border: none; cursor: pointer; color: #8D99A8; padding: 2px 6px; border-radius: 6px; font-size: 2rem; line-height: 1; &:hover { background: #EAEEF6; color: #1A2332; } }
+    .modal-close {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer; color: #8D99A8;
+      padding: 0; border-radius: 10px; font-size: 2.25rem; line-height: 1;
+      &:hover { background: #EAEEF6; color: #1A2332; }
+    }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .form-field { display: flex; flex-direction: column; flex: 1; }
     .form-row { display: flex; gap: 16px; }

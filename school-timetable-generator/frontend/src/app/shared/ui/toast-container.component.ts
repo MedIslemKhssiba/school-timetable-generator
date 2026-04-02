@@ -19,7 +19,6 @@ import { NotificationService, Toast } from '../../core/services/notification.ser
             }
           </div>
           <span class="toast-message">{{ toast.message }}</span>
-          <button class="toast-close" (click)="notif.dismiss(toast.id); $event.stopPropagation()">&times;</button>
         </div>
       }
     </div>
@@ -51,11 +50,6 @@ import { NotificationService, Toast } from '../../core/services/notification.ser
     .toast-info    .toast-icon { color: #4A7C8A; }
 
     .toast-message { flex: 1; font-size: 0.875rem; font-weight: 500; line-height: 1.4; }
-    .toast-close {
-      background: none; border: none; cursor: pointer; padding: 2px;
-      color: #8D99A8; border-radius: 4px;
-      &:hover { color: #1A2332; background: #F0F4FA; }
-    }
 
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(40px); }

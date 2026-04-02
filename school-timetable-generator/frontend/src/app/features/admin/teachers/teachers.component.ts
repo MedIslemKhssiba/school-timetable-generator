@@ -6,10 +6,11 @@ import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { Teacher, Subject } from '../../../core/models';
+import { Teacher, Subject, TeacherAvailability, Timeslot } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.component';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-teachers',
@@ -77,8 +78,8 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                       </div>
                     </td>
                     <td class="text-end">
+                      <button cButton color="success" variant="ghost" size="sm" (click)="openAvailabilityModal(teacher)">Disponibilités</button>
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(teacher)">{{ t('edit') }}</button>
-                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(teacher)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(teacher)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -103,13 +104,13 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     @if (showModal) {
       <div class="modal-backdrop" (click)="closeModal()"></div>
       <div class="modal-container">
-        <div class="modal-panel">
+        <div class="modal-panel teacher-form-panel">
           <div class="modal-header">
             <h5 class="modal-title">{{ editing ? 'Edit Teacher' : 'Add Teacher' }}</h5>
             <button class="modal-close" (click)="closeModal()">&times;</button>
           </div>
-          <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div class="modal-body">
+          <form class="teacher-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div class="modal-body teacher-form-body">
               <div class="row g-3">
                 <div class="col-md-6">
                 <label class="form-label">{{ t('first_name') }} *</label>
@@ -135,8 +136,14 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                 </div>
                 <div class="col-12">
                   <label class="form-label">{{ t('subjects') }}</label>
+                  <input
+                    class="form-control subject-search"
+                    type="text"
+                    placeholder="Rechercher une matiere..."
+                    [(ngModel)]="subjectSearchTerm"
+                    [ngModelOptions]="{ standalone: true }" />
                   <div class="subject-select-grid">
-                    @for (s of subjects; track s.id) {
+                    @for (s of getFilteredSubjects(); track s.id) {
                       <label class="subject-check" [class.checked]="isSubjectSelected(s.id)">
                         <input type="checkbox" [checked]="isSubjectSelected(s.id)" (change)="toggleSubject(s.id)" />
                         <span class="subject-dot" [style.background]="s.color || '#2563EB'"></span>
@@ -164,6 +171,64 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       type="danger"
       (confirmed)="doDelete()"
       (cancelled)="showDelete = false" />
+
+    @if (showAvailabilityModal) {
+      <div class="modal-backdrop" (click)="closeAvailabilityModal()"></div>
+      <div class="modal-container">
+        <div class="modal-panel availability-panel">
+          <div class="modal-header">
+            <h5 class="modal-title">Disponibilités - {{ selectedTeacher?.firstName }} {{ selectedTeacher?.lastName }}</h5>
+            <button class="modal-close" (click)="closeAvailabilityModal()">&times;</button>
+          </div>
+          <div class="modal-body availability-body">
+            @if (availabilityLoading) {
+              <div class="text-body-secondary">Chargement des disponibilités...</div>
+            } @else {
+              @if (timeHeaders.length === 0) {
+                <div class="text-body-secondary">Aucun créneau défini pour cette école.</div>
+              } @else {
+                <div class="availability-note">Par défaut, tous les enseignants sont disponibles sur les créneaux définis, puis ils peuvent ajuster leurs indisponibilités.</div>
+                <div class="availability-timetable-wrap">
+                  <table class="availability-timetable">
+                    <thead>
+                      <tr>
+                        <th class="time-col">Horaire</th>
+                        @for (day of days; track day) {
+                          <th>{{ t(day) }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (header of timeHeaders; track header.key) {
+                        <tr>
+                          <td class="time-cell">{{ header.startTime }}-{{ header.endTime }}</td>
+                          @for (day of days; track day) {
+                            <td>
+                              @if (getTimeslotId(day, header.key); as slotId) {
+                                <label class="cell-check" [class.unavailable]="!isAvailable(slotId)">
+                                  <span [class.available-text]="isAvailable(slotId)" [class.unavailable-text]="!isAvailable(slotId)">
+                                    {{ isAvailable(slotId) ? 'Disponible' : 'Indisponible' }}
+                                  </span>
+                                </label>
+                              } @else {
+                                <span class="cell-empty">-</span>
+                              }
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" (click)="closeAvailabilityModal()">Fermer</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
@@ -186,18 +251,62 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 6px;
       border: 1.5px solid; background: #F8FAFF; font-family: 'Montserrat', sans-serif;
     }
-
     .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); backdrop-filter: blur(4px); z-index: 1050; }
     .modal-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 20px; }
     .modal-panel { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(13, 27, 62,0.15); animation: scaleIn 200ms ease-out; }
+    .teacher-form-panel {
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .availability-panel {
+      width: min(960px, 92vw);
+      max-width: 960px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+    }
     .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; }
     .modal-title { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0; color: #1A2332; }
-    .modal-close { background: none; border: none; font-size: 2rem; color: #8D99A8; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+    .modal-close {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; font-size: 2.25rem; color: #8D99A8; cursor: pointer;
+      line-height: 1; padding: 0; border-radius: 10px;
+      &:hover { background: #EAEEF6; color: #1A2332; }
+    }
     .modal-body { padding: 24px; }
+    .teacher-form {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1;
+    }
+    .teacher-form-body {
+      flex: 1;
+      overflow: auto;
+    }
+    .availability-body {
+      padding: 14px 16px;
+      max-height: none;
+      flex: 1;
+      overflow: auto;
+    }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    .subject-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+    .subject-select-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+      max-height: 260px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .subject-search {
+      margin-bottom: 10px;
+    }
     .subject-check {
       display: flex; align-items: center; gap: 8px; padding: 8px 12px;
       border: 1.5px solid #DDE3EE; border-radius: 8px; cursor: pointer; transition: all 150ms;
@@ -214,6 +323,89 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       &.active { background: #2563EB; color: #F8FAFF; border-color: #2563EB; }
       &:hover:not(.active) { background: #EAEEF6; }
     }
+
+    .availability-note {
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.74rem;
+      color: #355070;
+      background: #EEF4FF;
+      border: 1px solid #D8E6FF;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .availability-timetable-wrap {
+      border: 1px solid #DDE3EE;
+      border-radius: 10px;
+      overflow: auto;
+      background: #FFFFFF;
+    }
+    .availability-timetable {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+    }
+    .availability-timetable th,
+    .availability-timetable td {
+      border: 1px solid #E5ECF8;
+      padding: 6px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .availability-timetable thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #EFF4FD;
+      color: #1F2937;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .time-col { min-width: 100px; }
+    .time-cell {
+      background: #F8FAFF;
+      text-align: left !important;
+      font-weight: 700;
+      color: #1A2332;
+      min-width: 100px;
+      white-space: nowrap;
+    }
+    .cell-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+      border-radius: 7px;
+      border: 1px solid #B7E4C7;
+      background: #EAFBF1;
+      color: #166534;
+      line-height: 1;
+      font-size: 0.66rem;
+      font-weight: 600;
+      min-width: 92px;
+    }
+    .cell-check.unavailable {
+      border-color: #F3B5B5;
+      background: #FFF2F2;
+      color: #991B1B;
+    }
+    .available-text { color: #15803D; font-weight: 700; }
+    .unavailable-text { color: #B91C1C; font-weight: 700; }
+    .cell-empty {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 20px;
+      border-radius: 6px;
+      border: 1px solid #D8E0EC;
+      background: #F3F6FA;
+      color: #7B8798;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
   `]
 })
 export class TeachersComponent implements OnInit {
@@ -227,11 +419,21 @@ export class TeachersComponent implements OnInit {
   loading = true;
   showModal = false;
   showDelete = false;
+  showAvailabilityModal = false;
+  availabilityLoading = false;
   deleteTarget: Teacher | null = null;
+  selectedTeacher: Teacher | null = null;
   searchTerm = '';
+  subjectSearchTerm = '';
   page = 1;
   pageSize = 10;
   private schoolId = 1;
+  timeslots: Timeslot[] = [];
+  availabilities: TeacherAvailability[] = [];
+  availabilityMap: Record<number, boolean> = {};
+  dayTimeSlotMap: Record<string, number> = {};
+  timeHeaders: { key: string; startTime: string; endTime: string }[] = [];
+  days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
   get totalPages(): number { return Math.ceil(this.filtered.length / this.pageSize); }
   get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
@@ -281,6 +483,7 @@ export class TeachersComponent implements OnInit {
   openModal(): void {
     this.editing = false;
     this.editId = null;
+    this.subjectSearchTerm = '';
     this.form.reset({ schoolId: this.schoolId, maxHoursPerWeek: 20, subjectIds: [] });
     this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
     this.form.get('password')?.updateValueAndValidity();
@@ -292,32 +495,12 @@ export class TeachersComponent implements OnInit {
   edit(t: Teacher): void {
     this.editing = true;
     this.editId = t.id;
+    this.subjectSearchTerm = '';
     const ids = t.subjectIds?.length ? t.subjectIds : (t.subjects?.map(s => s.id) || []);
     this.form.patchValue({ ...t, subjectIds: ids });
     this.form.get('password')?.clearValidators();
     this.form.get('password')?.updateValueAndValidity();
     this.showModal = true;
-  }
-
-  duplicate(t: Teacher): void {
-    const subjectIds = t.subjectIds?.length ? t.subjectIds : (t.subjects?.map(subject => subject.id) || []);
-    const data = {
-      firstName: t.firstName,
-      lastName: `${t.lastName} (copy)`,
-      email: this.getDuplicateEmail(t.email),
-      password: 'TempPass123!',
-      maxHoursPerWeek: t.maxHoursPerWeek,
-      subjectIds,
-      schoolId: this.schoolId
-    };
-
-    this.adminService.createTeacher(data).subscribe({
-      next: () => {
-        this.load();
-        this.notify.success('Teacher duplicated');
-      },
-      error: () => this.notify.error('Failed to duplicate teacher')
-    });
   }
 
   isSubjectSelected(id: number): boolean {
@@ -329,6 +512,12 @@ export class TeachersComponent implements OnInit {
     const idx = ids.indexOf(id);
     if (idx > -1) ids.splice(idx, 1); else ids.push(id);
     this.form.patchValue({ subjectIds: ids });
+  }
+
+  getFilteredSubjects(): Subject[] {
+    const term = this.subjectSearchTerm.trim().toLowerCase();
+    if (!term) return this.subjects;
+    return this.subjects.filter(s => s.name.toLowerCase().includes(term));
   }
 
   onSubmit(): void {
@@ -356,21 +545,75 @@ export class TeachersComponent implements OnInit {
     });
   }
 
-  private getDuplicateEmail(baseEmail: string): string {
-    const usedEmails = new Set(this.teachers.map(teacher => teacher.email.toLowerCase()));
-    const atIndex = baseEmail.indexOf('@');
-    const localPart = atIndex > 0 ? baseEmail.slice(0, atIndex) : baseEmail;
-    const domainPart = atIndex > 0 ? baseEmail.slice(atIndex + 1) : 'teacher.demo';
+  openAvailabilityModal(teacher: Teacher): void {
+    this.selectedTeacher = teacher;
+    this.showAvailabilityModal = true;
+    this.availabilityLoading = true;
 
-    const copyEmail = `${localPart}+copy@${domainPart}`;
-    if (!usedEmails.has(copyEmail.toLowerCase())) {
-      return copyEmail;
-    }
+    forkJoin({
+      timeslots: this.adminService.getTimeslots(),
+      availabilities: this.adminService.getTeacherAvailabilities(teacher.id)
+    }).subscribe({
+      next: ({ timeslots, availabilities }) => {
+        this.timeslots = timeslots;
+        this.availabilities = availabilities;
+        this.availabilityMap = this.availabilities.reduce((acc, a) => {
+          acc[a.timeslotId] = !!a.available;
+          return acc;
+        }, {} as Record<number, boolean>);
+        this.buildAvailabilityGrid();
+        this.availabilityLoading = false;
+      },
+      error: () => {
+        this.availabilityLoading = false;
+        this.notify.error('Impossible de charger les disponibilités');
+      }
+    });
+  }
 
-    let index = 2;
-    while (usedEmails.has(`${localPart}+copy${index}@${domainPart}`.toLowerCase())) {
-      index++;
-    }
-    return `${localPart}+copy${index}@${domainPart}`;
+  closeAvailabilityModal(): void {
+    this.showAvailabilityModal = false;
+    this.availabilityLoading = false;
+    this.selectedTeacher = null;
+    this.timeslots = [];
+    this.availabilities = [];
+    this.availabilityMap = {};
+    this.dayTimeSlotMap = {};
+    this.timeHeaders = [];
+  }
+
+  isAvailable(timeslotId: number): boolean {
+    return this.availabilityMap[timeslotId] !== false;
+  }
+
+  getTimeslotId(day: string, timeKey: string): number | null {
+    return this.dayTimeSlotMap[`${day}|${timeKey}`] || null;
+  }
+
+  private buildAvailabilityGrid(): void {
+    const headers = new Map<string, { key: string; startTime: string; endTime: string; orderInDay: number }>();
+    this.dayTimeSlotMap = {};
+
+    this.timeslots.forEach(ts => {
+      const key = `${ts.startTime}|${ts.endTime}`;
+      if (!headers.has(key)) {
+        headers.set(key, {
+          key,
+          startTime: ts.startTime,
+          endTime: ts.endTime,
+          orderInDay: ts.orderInDay ?? Number.MAX_SAFE_INTEGER
+        });
+      }
+      this.dayTimeSlotMap[`${ts.dayOfWeek}|${key}`] = ts.id;
+    });
+
+    this.timeHeaders = [...headers.values()]
+      .sort((a, b) => {
+        if (a.orderInDay !== b.orderInDay) return a.orderInDay - b.orderInDay;
+        const startCompare = a.startTime.localeCompare(b.startTime);
+        if (startCompare !== 0) return startCompare;
+        return a.endTime.localeCompare(b.endTime);
+      })
+      .map(({ key, startTime, endTime }) => ({ key, startTime, endTime }));
   }
 }

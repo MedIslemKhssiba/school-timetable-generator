@@ -18,6 +18,9 @@ import {
   ],
   template: `
     <div class="login-page">
+      <div class="bg-orb orb-one"></div>
+      <div class="bg-orb orb-two"></div>
+
       <div class="login-left">
         <div class="left-content">
           <img src="https://i.postimg.cc/9QHRyzcn/Logo-ecocode.png" alt="Logo" class="hero-logo" />
@@ -80,29 +83,62 @@ import {
     .login-page {
       min-height: 100vh;
       display: flex;
-      background: #F0F4FA;
+      background:
+        radial-gradient(circle at 84% 12%, rgba(56, 97, 251, 0.14), transparent 30%),
+        radial-gradient(circle at 18% 82%, rgba(14, 165, 233, 0.12), transparent 32%),
+        linear-gradient(180deg, #f9fbff 0%, #eef3fb 58%, #e8eff9 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bg-orb {
+      position: absolute;
+      border-radius: 999px;
+      pointer-events: none;
+      filter: blur(2px);
+    }
+
+    .orb-one {
+      width: 340px;
+      height: 340px;
+      top: -120px;
+      right: -110px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.23), rgba(37, 99, 235, 0));
+    }
+
+    .orb-two {
+      width: 280px;
+      height: 280px;
+      bottom: -130px;
+      left: -100px;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.18), rgba(14, 165, 233, 0));
     }
 
     /* ── LEFT PANEL ── */
     .login-left {
       flex: 0 0 45%;
-      background: linear-gradient(160deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(88, 124, 255, 0.24), transparent 42%),
+        linear-gradient(180deg, #0F172A 0%, #111A32 55%, #172554 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       overflow: hidden;
       padding: 3rem;
+      border-right: 1px solid rgba(148, 163, 184, 0.22);
+      z-index: 1;
     }
 
     .left-content {
       position: relative;
       z-index: 2;
       text-align: center;
+      max-width: 430px;
     }
 
     .hero-logo {
-      width: 240px; height: 240px;
+      width: 280px; height: 280px;
       object-fit: contain;
       filter: drop-shadow(0 12px 40px rgba(0,0,0,0.35));
     }
@@ -114,11 +150,18 @@ import {
       align-items: center;
       justify-content: center;
       padding: 2rem;
+      z-index: 1;
     }
 
     .login-form-wrapper {
       width: 100%;
       max-width: 420px;
+      border: 1px solid rgba(167, 183, 208, 0.45);
+      border-radius: 22px;
+      padding: 2rem;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
+      box-shadow: 0 22px 40px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+      backdrop-filter: blur(2px);
     }
 
     .form-title {
@@ -136,6 +179,13 @@ import {
       font-family: 'Montserrat', sans-serif;
     }
 
+    label[cLabel] {
+      font-weight: 600;
+      color: #3E4C5E;
+      margin-bottom: 0.35rem;
+      font-family: 'Montserrat', sans-serif;
+    }
+
     .password-wrapper {
       position: relative;
       .password-toggle {
@@ -145,6 +195,18 @@ import {
         &:hover { opacity: 1; }
       }
       input { padding-right: 40px; }
+    }
+
+    input[cFormControl] {
+      border-radius: 11px;
+      border: 1px solid #becee5;
+      background: #fdfefe;
+      min-height: 44px;
+    }
+
+    input[cFormControl]:focus {
+      border-color: #5e8ff8;
+      box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.16);
     }
 
     .login-btn {
@@ -191,9 +253,15 @@ import {
         flex: 0 0 auto;
         min-height: 200px;
         padding: 2rem;
+        border-right: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.22);
       }
-      .hero-logo { width: 120px; height: 120px; }
+      .hero-logo { width: 150px; height: 150px; }
       .login-right { padding: 1.5rem; }
+      .login-form-wrapper {
+        padding: 1.5rem;
+        border-radius: 18px;
+      }
     }
   `]
 })

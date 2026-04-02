@@ -1,12 +1,13 @@
-﻿import { Component, OnInit, OnDestroy } from '@angular/core';
+﻿import { Component, ElementRef, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { CardModule, GridModule, ButtonDirective, BadgeModule, ProgressModule } from '@coreui/angular';
+import { ActivatedRoute } from '@angular/router';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CardModule, GridModule, ButtonDirective, BadgeModule, ProgressModule, FormModule } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { Lesson, Timeslot } from '../../../core/models';
+import { Lesson, Timeslot, ClassGroup, Subject } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { forkJoin } from 'rxjs';
 import { Subscription } from 'rxjs';
@@ -15,15 +16,15 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
 @Component({
   selector: 'app-timetable',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardModule, GridModule, ButtonDirective, BadgeModule, ProgressModule, SkeletonComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CardModule, GridModule, FormModule, ButtonDirective, BadgeModule, ProgressModule, SkeletonComponent],
   template: `
     <div class="page-header mb-4">
       <div>
         <h2 class="page-title">{{ t('timetable') }}</h2>
         <p class="page-subtitle">{{ t('generate_manage_schedules') }}</p>
       </div>
+      <input #csvInput type="file" accept=".csv,text/csv" class="d-none" (change)="onCsvSelected($event)" />
       <div class="d-flex gap-2 flex-wrap">
-        <input #csvInput type="file" accept=".csv" class="d-none" (change)="onImportCsv($event)" />
         <button cButton color="primary" (click)="solve()" [disabled]="solving">
           {{ solving ? t('solving') : t('generate') }}
         </button>
@@ -35,12 +36,6 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
         </button>
         <button cButton color="light" (click)="refresh()">
           {{ t('refresh') }}
-        </button>
-        <button cButton color="secondary" variant="outline" (click)="csvInput.click()" [disabled]="solving">
-          {{ t('import_csv') }}
-        </button>
-        <button cButton color="danger" class="pdf-export-btn" (click)="exportPdf()" [disabled]="lessons.length === 0">
-          {{ t('export_pdf') }}
         </button>
         <button cButton color="danger" class="pdf-export-btn" (click)="exportExcel()" [disabled]="lessons.length === 0">
           {{ t('export') }}
@@ -59,6 +54,10 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
             </div>
             <div class="solver-bar"><div class="solver-bar-fill" [style.width.%]="solveProgress"></div></div>
             <div class="solver-dots mt-1"><span></span><span></span><span></span></div>
+            <div class="solver-stage mt-2">{{ getSolveStageDescription() }}</div>
+            @if (totalAssignments > 0) {
+              <div class="solver-assignment mt-1">Cours places: {{ assignedAssignments }} / {{ totalAssignments }}</div>
+            }
           </div>
         </c-card-body>
       </c-card>
@@ -67,6 +66,19 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     @if (loading) {
       <ui-skeleton type="table" [count]="6" />
     } @else if (lessons.length > 0) {
+      @if (integrityIssues.length > 0) {
+        <c-card class="mb-4">
+          <c-card-body>
+            <h6 class="mb-2">Incoherences detectees dans l'emploi du temps</h6>
+            <ul class="mb-0 ps-3">
+              @for (issue of integrityIssues; track issue) {
+                <li>{{ issue }}</li>
+              }
+            </ul>
+          </c-card-body>
+        </c-card>
+      }
+
       <!-- Filter bar -->
       <c-card class="mb-4">
         <c-card-body class="py-2">
@@ -96,6 +108,9 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
                 }
               </select>
             </div>
+            @if (lunchBreakLabels.length > 0) {
+              <div class="lunch-break-chip">Pause dejeuner: {{ lunchBreakLabels.join(' | ') }}</div>
+            }
             <c-badge color="primary" class="ms-auto">{{ filteredLessons.length }} {{ t('lessons') }}</c-badge>
           </div>
         </c-card-body>
@@ -109,17 +124,17 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
               <table class="timetable-grid">
                 <thead>
                   <tr>
-                    <th class="time-col">{{ t('time') }}</th>
-                    @for (day of days; track day) {
-                      <th class="day-col">{{ formatDay(day) }}</th>
+                    <th class="day-col">{{ t('day') }}</th>
+                    @for (slot of timeSlots; track slot) {
+                      <th class="time-col">{{ getTimeSlotLabel(slot) }}</th>
                     }
                   </tr>
                 </thead>
                 <tbody>
-                  @for (slot of timeSlots; track slot) {
+                  @for (day of days; track day) {
                     <tr>
-                      <td class="time-cell">{{ slot }}</td>
-                      @for (day of days; track day) {
+                      <td class="day-cell">{{ formatDay(day) }}</td>
+                      @for (slot of timeSlots; track slot) {
                         <td class="grid-cell">
                           @for (lesson of getLessonAt(day, slot); track lesson.id) {
                             <div class="grid-lesson" [style.border-left-color]="getSubjectColor(lesson.subjectName)">
@@ -177,6 +192,61 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
         </c-card-body>
       </c-card>
     }
+
+    @if (timeslotModalVisible) {
+      <div class="modal-backdrop" (click)="closeTimeslotModal()"></div>
+      <div class="modal-wrapper">
+        <div class="modal-box">
+          <div class="modal-header-custom">
+            <h3>Configurer les horaires</h3>
+            <button class="modal-close" (click)="closeTimeslotModal()">&times;</button>
+          </div>
+          <form [formGroup]="timeslotForm" (ngSubmit)="submitTimeslotConfig()">
+            <div class="modal-body-custom">
+              <div class="form-field">
+                <label cLabel>{{ t('day') }} *</label>
+                <select cFormControl formControlName="dayOfWeek">
+                  <option value="" disabled>{{ t('select_day') }}</option>
+                  @for (d of scheduleDays; track d) {
+                    <option [value]="d">{{ t(d) }}</option>
+                  }
+                </select>
+              </div>
+              <div class="copy-all-row">
+                <input id="copyAllDaysFromTimetable" type="checkbox" [(ngModel)]="copyToAllDays" [ngModelOptions]="{standalone: true}" />
+                <label for="copyAllDaysFromTimetable">Copier ces horaires sur tous les jours</label>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label cLabel>Heure de début *</label>
+                  <input cFormControl formControlName="startTime" type="time" />
+                </div>
+                <div class="form-field">
+                  <label cLabel>Heure de fin *</label>
+                  <input cFormControl formControlName="endTime" type="time" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label cLabel>Début pause déjeuner</label>
+                  <input cFormControl formControlName="breakStartTime" type="time" />
+                </div>
+                <div class="form-field">
+                  <label cLabel>Fin pause déjeuner</label>
+                  <input cFormControl formControlName="breakEndTime" type="time" />
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer-custom">
+              <button cButton color="secondary" type="button" (click)="closeTimeslotModal()">{{ t('cancel') }}</button>
+              <button cButton color="primary" type="submit" [disabled]="timeslotForm.invalid || timeslotSaving">
+                @if (timeslotSaving) { {{ t('saving') }} } @else { Générer }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
@@ -185,6 +255,8 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
 
     .solving-card { border-left: 4px solid #2563EB !important; }
     .solver-progress-text { font-size: 0.8rem; font-weight: 700; color: #2563EB; }
+    .solver-stage { font-size: 0.78rem; color: #344861; font-weight: 600; font-family: 'Montserrat', sans-serif; }
+    .solver-assignment { font-size: 0.73rem; color: #64748B; font-family: 'Montserrat', sans-serif; }
     .ai-orb {
       width: 32px; height: 32px; border-radius: 50%; position: relative; flex-shrink: 0;
       background: radial-gradient(circle at 30% 30%, rgba(37,99,235,0.35), rgba(37,99,235,0.08));
@@ -237,7 +309,57 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     .pdf-export-btn:disabled {
       opacity: 0.65;
     }
+    .btn-import-csv {
+      border: 1px solid rgba(37, 99, 235, 0.24) !important;
+      background: linear-gradient(135deg, #EEF4FF 0%, #DDF0FF 100%) !important;
+      color: #1D4ED8 !important;
+      font-weight: 700 !important;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16) !important;
+    }
+    .btn-import-csv:hover {
+      background: linear-gradient(135deg, #E0ECFF 0%, #CFE9FF 100%) !important;
+      color: #1E40AF !important;
+      border-color: rgba(37, 99, 235, 0.34) !important;
+      box-shadow: 0 14px 24px rgba(37, 99, 235, 0.22) !important;
+    }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); z-index: 1050; backdrop-filter: blur(4px); }
+    .modal-wrapper { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 24px; }
+    .modal-box { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px rgba(13, 27, 62,0.2); }
+    .modal-header-custom {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid #DDE3EE;
+      h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 1.125rem; font-weight: 700; color: #1A2332; }
+    }
+    .modal-close {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer; color: #8D99A8;
+      padding: 0; border-radius: 10px; font-size: 2.25rem; line-height: 1;
+      &:hover { background: #EAEEF6; color: #1A2332; }
+    }
+    .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .copy-all-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.84rem; color: #4A5D79; font-family: 'Montserrat', sans-serif;
+    }
+    .copy-all-row input { width: 16px; height: 16px; cursor: pointer; }
+    .copy-all-row label { cursor: pointer; }
+    .form-field { display: flex; flex-direction: column; flex: 1; }
+    .form-row { display: flex; gap: 16px; }
+    .modal-footer-custom { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 10px; }
     .filter-group { display: flex; align-items: center; gap: 6px; }
+    .lunch-break-chip {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #7C2D12;
+      background: #FFF7ED;
+      border: 1px solid #FED7AA;
+      border-radius: 999px;
+      padding: 4px 10px;
+      white-space: nowrap;
+      font-family: 'Montserrat', sans-serif;
+    }
     .filter-label { font-size: 0.8rem; font-weight: 600; color: #8D99A8; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
     .filter-select {
       font-size: 0.85rem; padding: 4px 10px; border: 1px solid #DDE3EE;
@@ -254,8 +376,9 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
         text-transform: uppercase; letter-spacing: 0.04em; color: #1A2332; text-align: center;
         font-family: 'Montserrat', sans-serif;
       }
-      .time-col { width: 100px; }
-      .time-cell { font-size: 0.75rem; font-weight: 600; color: #2563EB; white-space: nowrap; text-align: center; background: #F8FAFF; font-family: 'Montserrat', sans-serif; }
+      .time-col { min-width: 90px; }
+      .day-col { min-width: 120px; }
+      .day-cell { font-size: 0.75rem; font-weight: 700; color: #1E3A8A; white-space: nowrap; text-align: left; background: #F8FAFF; font-family: 'Montserrat', sans-serif; }
       .grid-cell { min-height: 60px; }
     }
     .grid-lesson {
@@ -295,15 +418,30 @@ export class TimetableComponent implements OnInit, OnDestroy {
   filteredLessons: Lesson[] = [];
   solving = false;
   solveProgress = 0;
+  solveStatus = 'NOT_SOLVING';
+  totalAssignments = 0;
+  assignedAssignments = 0;
   loading = true;
   viewMode: 'grid' | 'cards' = 'grid';
   filterClass = '';
   filterTeacher = '';
   days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
   timeSlots: string[] = [];
+  timeSlotEndByStart: Record<string, string> = {};
+  lunchBreakLabels: string[] = [];
   classNames: string[] = [];
   teacherNames: string[] = [];
+  classes: ClassGroup[] = [];
+  subjects: Subject[] = [];
+  integrityIssues: string[] = [];
   private schoolId = 1;
+  timeslotModalVisible = false;
+  timeslotSaving = false;
+  copyToAllDays = false;
+  timeslotForm: FormGroup;
+  scheduleDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  csvImporting = false;
+  @ViewChild('csvInput') csvInput?: ElementRef<HTMLInputElement>;
   private subjectColors: Record<string, string> = {};
   private colorPalette = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#0EA5E9', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
   private stateSubscription?: Subscription;
@@ -313,9 +451,18 @@ export class TimetableComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private notify: NotificationService,
     private ts: TranslationService,
-    private solveState: TimetableSolveStateService
+    private solveState: TimetableSolveStateService,
+    private fb: FormBuilder,
+    private route: ActivatedRoute
   ) {
     this.schoolId = this.authService.getSchoolId() || 1;
+    this.timeslotForm = this.fb.group({
+      dayOfWeek: ['', Validators.required],
+      startTime: ['', Validators.required],
+      endTime: ['', Validators.required],
+      breakStartTime: [''],
+      breakEndTime: ['']
+    });
   }
 
   t(key: string): string { return this.ts.t(key); }
@@ -326,6 +473,9 @@ export class TimetableComponent implements OnInit, OnDestroy {
     this.stateSubscription = this.solveState.state$.subscribe(state => {
       this.solving = state.solving;
       this.solveProgress = state.progressPercent;
+      this.solveStatus = state.status;
+      this.totalAssignments = state.totalAssignments;
+      this.assignedAssignments = state.assignedAssignments;
 
       if (state.lessons.length > 0) {
         this.lessons = state.lessons;
@@ -333,6 +483,10 @@ export class TimetableComponent implements OnInit, OnDestroy {
         this.applyFilter();
       }
     });
+
+    if (this.route.snapshot.queryParamMap.get('openImportCsv') === '1') {
+      setTimeout(() => this.openCsvPicker(), 0);
+    }
   }
 
   ngOnDestroy(): void {
@@ -340,12 +494,20 @@ export class TimetableComponent implements OnInit, OnDestroy {
   }
 
   solve(): void {
-    this.solveState.startSolve(this.schoolId).subscribe({
+    this.adminService.syncTeachersWithTimeslots(this.schoolId).subscribe({
       next: () => {
-        this.notify.info('Solving started! This may take a few minutes.');
+        this.solveState.startSolve(this.schoolId).subscribe({
+          next: () => {
+            this.notify.info('Solving started! This may take a few minutes.');
+          },
+          error: (err) => {
+            const msg = err?.error?.message || err?.error || 'Failed to start solving';
+            this.notify.error(msg);
+          }
+        });
       },
       error: () => {
-        this.notify.error('Failed to start solving');
+        this.notify.error('Impossible de synchroniser les disponibilites enseignants avant generation');
       }
     });
   }
@@ -362,11 +524,24 @@ export class TimetableComponent implements OnInit, OnDestroy {
   save(): void {
     this.adminService.saveTimetable(this.schoolId).subscribe({
       next: () => {
-        this.notify.success('Timetable saved!');
-        this.solveState.refreshFromServer();
-        this.refresh();
+        this.adminService.syncTeachersWithTimeslots(this.schoolId).subscribe({
+          next: () => {
+            this.notify.success('Timetable saved and teachers synchronized!');
+            this.solveState.refreshFromServer();
+            this.refresh();
+          },
+          error: () => {
+            this.notify.success('Timetable saved!');
+            this.notify.error('Timetable saved, but teacher synchronization failed');
+            this.solveState.refreshFromServer();
+            this.refresh();
+          }
+        });
       },
-      error: () => this.notify.error('Failed to save timetable')
+      error: (err) => {
+        const msg = err?.error?.message || err?.error || 'Failed to save timetable';
+        this.notify.error(msg);
+      }
     });
   }
 
@@ -374,13 +549,18 @@ export class TimetableComponent implements OnInit, OnDestroy {
     this.loading = true;
     forkJoin({
       lessons: this.adminService.getLessons(this.schoolId),
-      timeslots: this.adminService.getTimeslots()
+      timeslots: this.adminService.getTimeslots(),
+      classes: this.adminService.getClasses(this.schoolId),
+      subjects: this.adminService.getSubjects(this.schoolId)
     }).subscribe({
-      next: ({ lessons, timeslots }) => {
+      next: ({ lessons, timeslots, classes, subjects }) => {
         this.lessons = lessons;
         this.timeslots = timeslots;
+        this.classes = classes;
+        this.subjects = subjects;
         this.buildMeta();
         this.applyFilter();
+        this.runIntegrityChecks();
         this.loading = false;
       },
       error: () => this.loading = false
@@ -399,35 +579,125 @@ export class TimetableComponent implements OnInit, OnDestroy {
     });
   }
 
-  exportPdf(): void {
-    this.adminService.exportTimetablePdf(this.schoolId).subscribe(blob => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `timetable-school-${this.schoolId}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      this.notify.success('PDF exported');
-    });
+  openCsvPicker(): void {
+    if (this.csvImporting) {
+      return;
+    }
+    this.csvInput?.nativeElement.click();
   }
 
-  onImportCsv(event: Event): void {
+  onCsvSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files && input.files.length > 0 ? input.files[0] : null;
     if (!file) {
       return;
     }
 
+    this.csvImporting = true;
     this.adminService.importData(this.schoolId, file).subscribe({
-      next: (messages) => {
-        const message = messages && messages.length > 0 ? messages.join(' | ') : 'CSV imported';
-        this.notify.success(message);
+      next: warnings => {
+        this.csvImporting = false;
+        input.value = '';
+        if (warnings && warnings.length > 0) {
+          this.notify.info(`Import terminé avec ${warnings.length} avertissement(s)`);
+        } else {
+          this.notify.success('Import CSV terminé');
+        }
         this.refresh();
       },
-      error: () => this.notify.error('Failed to import CSV')
+      error: () => {
+        this.csvImporting = false;
+        input.value = '';
+        this.notify.error('Échec de l\'import CSV');
+      }
     });
+  }
 
-    input.value = '';
+  openTimeslotModal(): void {
+    this.copyToAllDays = false;
+    this.timeslotForm.reset();
+    this.timeslotModalVisible = true;
+  }
+
+  closeTimeslotModal(): void {
+    this.timeslotModalVisible = false;
+    this.copyToAllDays = false;
+  }
+
+  submitTimeslotConfig(): void {
+    if (this.timeslotForm.invalid) return;
+
+    const { dayOfWeek, startTime, endTime, breakStartTime, breakEndTime } = this.timeslotForm.value;
+    if (startTime >= endTime) {
+      this.notify.error('L\'heure de début doit être avant l\'heure de fin');
+      return;
+    }
+    if ((!!breakStartTime && !breakEndTime) || (!breakStartTime && !!breakEndTime)) {
+      this.notify.error('Veuillez renseigner début et fin de pause ensemble');
+      return;
+    }
+    if (breakStartTime && breakEndTime) {
+      if (breakStartTime >= breakEndTime) {
+        this.notify.error('Le début de la pause doit être avant la fin de la pause');
+        return;
+      }
+      if (breakStartTime < startTime || breakEndTime > endTime) {
+        this.notify.error('La pause doit être comprise dans la journée');
+        return;
+      }
+    }
+
+    this.timeslotSaving = true;
+    const payload = {
+      startTime,
+      endTime,
+      breakStartTime: breakStartTime || null,
+      breakEndTime: breakEndTime || null,
+      schoolId: this.schoolId
+    };
+
+    if (this.copyToAllDays) {
+      const requests = this.scheduleDays.map(d => this.adminService.generateDayTimeslots({ ...payload, dayOfWeek: d }));
+      forkJoin(requests).subscribe({
+        next: generatedByDay => {
+          const total = generatedByDay.reduce((sum, x) => sum + x.length, 0);
+          this.timeslotSaving = false;
+          this.closeTimeslotModal();
+          this.syncTeachersForTimeslots(`${total} créneaux générés sur toute la semaine`);
+        },
+        error: () => {
+          this.timeslotSaving = false;
+          this.notify.error('Échec de génération automatique des créneaux');
+        }
+      });
+      return;
+    }
+
+    this.adminService.generateDayTimeslots({ dayOfWeek, ...payload }).subscribe({
+      next: generated => {
+        this.timeslotSaving = false;
+        this.closeTimeslotModal();
+        this.syncTeachersForTimeslots(`${generated.length} créneaux générés automatiquement`);
+      },
+      error: () => {
+        this.timeslotSaving = false;
+        this.notify.error('Échec de génération automatique des créneaux');
+      }
+    });
+  }
+
+  private syncTeachersForTimeslots(successMessage: string): void {
+    this.adminService.syncTeachersWithTimeslots(this.schoolId).subscribe({
+      next: ({ created }) => {
+        this.notify.success(`${successMessage}. Synchronisation enseignants: ${created} disponibilité(s) ajoutée(s).`);
+        this.refresh();
+      },
+      error: () => {
+        this.notify.success(successMessage);
+        this.notify.error('Créneaux générés, mais la synchronisation enseignants a échoué');
+        this.refresh();
+      }
+    });
   }
 
   applyFilter(): void {
@@ -442,11 +712,18 @@ export class TimetableComponent implements OnInit, OnDestroy {
   }
 
   getFilteredLessonsForDay(day: string): Lesson[] {
-    return this.filteredLessons.filter(l => l.dayOfWeek === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+    return this.filteredLessons
+      .filter(l => l.dayOfWeek === day)
+      .sort((a, b) => this.normalizeTime(a.startTime).localeCompare(this.normalizeTime(b.startTime)));
   }
 
   getLessonAt(day: string, slot: string): Lesson[] {
-    return this.filteredLessons.filter(l => l.dayOfWeek === day && l.startTime === slot);
+    return this.filteredLessons.filter(l => l.dayOfWeek === day && this.normalizeTime(l.startTime) === slot);
+  }
+
+  getTimeSlotLabel(startTime: string): string {
+    const endTime = this.timeSlotEndByStart[startTime];
+    return endTime ? `${startTime}-${endTime}` : startTime;
   }
 
   getSubjectColor(name: string): string {
@@ -463,18 +740,33 @@ export class TimetableComponent implements OnInit, OnDestroy {
     const daysSet = new Set<string>();
     const classes = new Set<string>();
     const teachers = new Set<string>();
+    const lunchBreaks = new Set<string>();
+
+    this.timeSlotEndByStart = {};
+    this.lunchBreakLabels = [];
 
     this.timeslots.forEach(ts => {
       if (ts.startTime) {
-        times.add(ts.startTime);
+        const normalizedStart = this.normalizeTime(ts.startTime);
+        times.add(normalizedStart);
+        if (ts.endTime) {
+          this.timeSlotEndByStart[normalizedStart] = this.normalizeTime(ts.endTime);
+        }
       }
       if (ts.dayOfWeek) {
         daysSet.add(ts.dayOfWeek);
       }
+      if (ts.breakStartTime && ts.breakEndTime) {
+        lunchBreaks.add(`${this.normalizeTime(ts.breakStartTime)}-${this.normalizeTime(ts.breakEndTime)}`);
+      }
     });
 
     this.lessons.forEach(l => {
-      times.add(l.startTime);
+      const normalizedStart = this.normalizeTime(l.startTime);
+      times.add(normalizedStart);
+      if (l.endTime) {
+        this.timeSlotEndByStart[normalizedStart] = this.normalizeTime(l.endTime);
+      }
       if (l.dayOfWeek) {
         daysSet.add(l.dayOfWeek);
       }
@@ -487,8 +779,94 @@ export class TimetableComponent implements OnInit, OnDestroy {
       this.days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
     }
 
-    this.timeSlots = [...times].sort();
+    this.timeSlots = [...times].sort((a, b) => a.localeCompare(b));
+    this.lunchBreakLabels = [...lunchBreaks].sort((a, b) => a.localeCompare(b));
     this.classNames = [...classes].sort();
     this.teacherNames = [...teachers].sort();
+  }
+
+  private runIntegrityChecks(): void {
+    const issues: string[] = [];
+    const expectedByClass = new Map<string, number>();
+
+    this.classes.forEach(cg => {
+      const expected = this.subjects
+        .filter(s => this.subjectMatchesClassLevel(s.level, cg.level))
+        .reduce((sum, s) => sum + (s.hoursPerWeek || 0), 0);
+      expectedByClass.set(cg.name, expected);
+    });
+
+    const actualByClass = new Map<string, number>();
+    this.lessons.forEach(l => {
+      actualByClass.set(l.classGroupName, (actualByClass.get(l.classGroupName) || 0) + 1);
+    });
+
+    expectedByClass.forEach((expected, className) => {
+      const actual = actualByClass.get(className) || 0;
+      if (actual !== expected) {
+        issues.push(`Classe ${className}: attendu ${expected} cours, genere ${actual}`);
+      }
+    });
+
+    const classSlotSet = new Set<string>();
+    const teacherSlotSet = new Set<string>();
+    const roomSlotSet = new Set<string>();
+    this.lessons.forEach(l => {
+      const normalizedStart = this.normalizeTime(l.startTime);
+      const classKey = `${l.classGroupName}|${l.dayOfWeek}|${normalizedStart}`;
+      const teacherKey = `${l.teacherName}|${l.dayOfWeek}|${normalizedStart}`;
+      const roomKey = `${l.roomName}|${l.dayOfWeek}|${normalizedStart}`;
+
+      if (classSlotSet.has(classKey)) issues.push(`Conflit classe detecte: ${l.classGroupName} (${l.dayOfWeek} ${normalizedStart})`);
+      if (teacherSlotSet.has(teacherKey)) issues.push(`Conflit enseignant detecte: ${l.teacherName} (${l.dayOfWeek} ${normalizedStart})`);
+      if (roomSlotSet.has(roomKey)) issues.push(`Conflit salle detecte: ${l.roomName} (${l.dayOfWeek} ${normalizedStart})`);
+
+      classSlotSet.add(classKey);
+      teacherSlotSet.add(teacherKey);
+      roomSlotSet.add(roomKey);
+    });
+
+    this.integrityIssues = [...new Set(issues)];
+    if (this.integrityIssues.length > 0) {
+      this.notify.error(`${this.integrityIssues.length} incoherence(s) detectee(s) dans l'emploi du temps`);
+    }
+  }
+
+  private subjectMatchesClassLevel(subjectLevel?: string, classLevel?: string): boolean {
+    const normalize = (value?: string) => (value || '').trim().toUpperCase();
+    const s = normalize(subjectLevel);
+    const c = normalize(classLevel);
+    if (!s) return true;
+    if (!c) return false;
+
+    const sn = this.extractFirstNumber(s);
+    const cn = this.extractFirstNumber(c);
+    if (sn !== null && cn !== null) return sn === cn;
+    return s === c;
+  }
+
+  private extractFirstNumber(value: string): number | null {
+    const m = value.match(/\d+/);
+    if (!m) return null;
+    const parsed = Number.parseInt(m[0], 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  private normalizeTime(time?: string): string {
+    if (!time) return '';
+    const parts = time.trim().split(':');
+    if (parts.length < 2) return time.trim();
+    const hh = parts[0].padStart(2, '0');
+    const mm = parts[1].padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  getSolveStageDescription(): string {
+    if (!this.solving) return '';
+    if (this.solveProgress < 20) return 'Preparation des donnees (classes, enseignants, salles, creneaux)';
+    if (this.solveProgress < 50) return 'Affectation des cours aux creneaux compatibles';
+    if (this.solveProgress < 80) return 'Optimisation des conflits (enseignants, salles, classes)';
+    if (this.solveProgress < 100) return 'Finalisation et verification de la solution';
+    return 'Solution en cours de stabilisation';
   }
 }

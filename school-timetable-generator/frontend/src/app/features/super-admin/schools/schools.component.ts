@@ -163,11 +163,39 @@ import { TranslationService } from '../../../core/services/translation.service';
             } @else {
               <div class="stats-mini-grid">
                 @for (item of statsItems; track item.key) {
-                  <div class="stats-mini-card">
-                    <div class="smc-icon" [style.background]="item.bg" [style.color]="item.color">
-                    </div>
-                    <div class="smc-value">{{ schoolStats[item.key] ?? 0 }}</div>
+                  <button class="stats-mini-card" type="button" (click)="openStatsDetails(item)">
+                    <div class="smc-value">{{ schoolStats[item.key] }}</div>
                     <div class="smc-label">{{ item.label }}</div>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (statsDetailVisible) {
+      <div class="modal-backdrop" (click)="statsDetailVisible = false"></div>
+      <div class="modal-wrapper">
+        <div class="modal-box" style="max-width: 640px">
+          <div class="modal-header-custom">
+            <h3>{{ statsDetailTitle }} — {{ statsSchoolName }}</h3>
+            <button class="modal-close" (click)="statsDetailVisible = false">&times;</button>
+          </div>
+          <div class="modal-body-custom">
+            @if (statsDetailLoading) {
+              <div class="text-center py-4">Chargement...</div>
+            } @else if (statsDetailRows.length === 0) {
+              <div class="text-center py-4 text-muted">Aucune donnée disponible.</div>
+            } @else {
+              <div class="stats-detail-list">
+                @for (row of statsDetailRows; track row.id) {
+                  <div class="stats-detail-item">
+                    <div class="sdi-title">{{ row.title }}</div>
+                    @if (row.subtitle) {
+                      <div class="sdi-subtitle">{{ row.subtitle }}</div>
+                    }
                   </div>
                 }
               </div>
@@ -256,7 +284,10 @@ import { TranslationService } from '../../../core/services/translation.service';
       h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 1.125rem; font-weight: 700; color: #1A2332; }
     }
     .modal-close {
-      background: none; border: none; cursor: pointer; color: #8D99A8; padding: 2px 6px; border-radius: 6px; font-size: 2rem; line-height: 1;
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer; color: #8D99A8;
+      padding: 0; border-radius: 10px; font-size: 2.25rem; line-height: 1;
       &:hover { background: #EAEEF6; color: #1A2332; }
     }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
@@ -270,15 +301,47 @@ import { TranslationService } from '../../../core/services/translation.service';
 
     .stats-mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .stats-mini-card {
-      background: #F0F4FA; border-radius: 12px; padding: 20px; text-align: center;
-      border: 1px solid #DDE3EE;
+      background: linear-gradient(165deg, #ffffff 0%, #f4f8ff 100%);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: left;
+      border: 1px solid rgba(183, 200, 226, 0.5);
+      border-left: 4px solid #2563EB;
+      box-shadow: 0 10px 24px rgba(15, 23, 42,0.08);
+      transition: all 220ms ease;
+      cursor: pointer;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
     }
-    .smc-icon {
-      width: 44px; height: 44px; border-radius: 12px; margin: 0 auto 12px;
-      display: flex; align-items: center; justify-content: center;
+    .stats-mini-card::after {
+      content: '';
+      position: absolute;
+      inset: auto -30% -60% auto;
+      width: 130px;
+      height: 130px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.14) 0%, rgba(37, 99, 235, 0) 70%);
+      pointer-events: none;
+    }
+    .stats-mini-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 30px rgba(15, 23, 42,0.12);
     }
     .smc-value { font-family: 'Montserrat', sans-serif; font-size: 1.5rem; font-weight: 700; color: #1A2332; }
     .smc-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #8D99A8; margin-top: 4px; font-family: 'Montserrat', sans-serif; }
+
+    .stats-detail-list { display: flex; flex-direction: column; gap: 10px; }
+    .stats-detail-item {
+      border: 1px solid #DCE7F7;
+      border-left: 4px solid #2563EB;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+      box-shadow: 0 8px 18px rgba(13, 27, 62, 0.06);
+    }
+    .sdi-title { font-size: 0.9rem; font-weight: 700; color: #1A2332; font-family: 'Montserrat', sans-serif; }
+    .sdi-subtitle { margin-top: 4px; font-size: 0.78rem; color: #6C7D94; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class SchoolsComponent implements OnInit {
@@ -302,12 +365,18 @@ export class SchoolsComponent implements OnInit {
   statsModalVisible = false;
   statsLoading = false;
   statsSchoolName = '';
+  statsSchoolId: number | null = null;
   schoolStats: Record<string, number> = {};
+  statsDetailVisible = false;
+  statsDetailLoading = false;
+  statsDetailTitle = '';
+  statsDetailRows: Array<{ id: number; title: string; subtitle?: string }> = [];
   statsItems = [
     { key: 'teachers', label: 'Teachers', bg: 'rgba(37, 99, 235,0.1)', color: '#2563EB' },
     { key: 'classes', label: 'Classes', bg: 'rgba(107,144,128,0.1)', color: '#6B9080' },
     { key: 'subjects', label: 'Subjects', bg: 'rgba(212,160,60,0.1)', color: '#D4A03C' },
-    { key: 'rooms', label: 'Rooms', bg: 'rgba(74,124,138,0.1)', color: '#4A7C8A' }
+    { key: 'rooms', label: 'Rooms', bg: 'rgba(74,124,138,0.1)', color: '#4A7C8A' },
+    { key: 'lessons', label: 'Lessons', bg: 'rgba(139,92,246,0.12)', color: '#7C3AED' }
   ];
 
   constructor(
@@ -427,11 +496,29 @@ export class SchoolsComponent implements OnInit {
 
   viewStats(school: School): void {
     this.statsSchoolName = school.name;
+    this.statsSchoolId = school.id;
     this.statsModalVisible = true;
     this.statsLoading = true;
+    this.statsDetailVisible = false;
     this.superAdminService.getSchoolStatistics(school.id).subscribe({
       next: stats => { this.schoolStats = stats; this.statsLoading = false; },
       error: () => { this.schoolStats = {}; this.statsLoading = false; }
+    });
+  }
+
+  openStatsDetails(item: { key: string; label: string }): void {
+    if (!this.statsSchoolId) return;
+    this.statsDetailTitle = item.label;
+    this.statsDetailVisible = true;
+    this.statsDetailLoading = true;
+    this.statsDetailRows = [];
+    this.superAdminService.getSchoolStatisticsDetails(this.statsSchoolId, item.key).subscribe({
+      next: rows => { this.statsDetailRows = rows; this.statsDetailLoading = false; },
+      error: () => {
+        this.statsDetailRows = [];
+        this.statsDetailLoading = false;
+        this.notif.error('Failed to load statistics details');
+      }
     });
   }
 

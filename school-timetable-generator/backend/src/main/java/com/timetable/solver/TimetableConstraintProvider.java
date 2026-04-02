@@ -26,6 +26,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 // Soft constraints
                 teacherRoomStability(constraintFactory),
                 teacherTimeEfficiency(constraintFactory),
+                classGroupTimeEfficiency(constraintFactory),
                 subjectVarietyPerDay(constraintFactory),
                 subjectSpreadAcrossDays(constraintFactory),
                 classGroupDayBalance(constraintFactory)
@@ -133,9 +134,24 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
                         && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
                         && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
-                        && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) > 2)
-                .penalize(HardSoftScore.ONE_SOFT)
+                        && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) > 1)
+                .penalize(HardSoftScore.ofSoft(2),
+                        (l1, l2) -> Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) - 1)
                 .asConstraint("Teacher time efficiency");
+    }
+
+    // Prefer compact daily schedules for each class group (minimize idle gaps between lessons)
+    Constraint classGroupTimeEfficiency(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEachUniquePair(LessonAssignment.class,
+                        Joiners.equal(LessonAssignment::getClassGroupId))
+                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
+                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
+                        && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
+                        && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) > 1)
+                .penalize(HardSoftScore.ofSoft(3),
+                        (l1, l2) -> Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) - 1)
+                .asConstraint("Class group time efficiency");
     }
 
     // Penalize having the same subject multiple times on the same day for the same class

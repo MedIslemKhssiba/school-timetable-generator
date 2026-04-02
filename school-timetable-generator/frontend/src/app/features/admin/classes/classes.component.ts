@@ -66,7 +66,6 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                     <td>{{ c.studentCount }}</td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(c)">{{ t('edit') }}</button>
-                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(c)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(c)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -159,7 +158,13 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .modal-panel { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(13, 27, 62,0.15); animation: scaleIn 200ms ease-out; }
     .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; }
     .modal-title { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0; color: #1A2332; }
-    .modal-close { background: none; border: none; font-size: 2rem; color: #8D99A8; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+    .modal-close {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; font-size: 2.25rem; color: #8D99A8; cursor: pointer;
+      line-height: 1; padding: 0; border-radius: 10px;
+      &:hover { background: #EAEEF6; color: #1A2332; }
+    }
     .modal-body { padding: 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -239,23 +244,6 @@ export class ClassesComponent implements OnInit {
     this.showModal = true;
   }
 
-  duplicate(c: ClassGroup): void {
-    const data = {
-      name: this.getDuplicateName(c.name),
-      level: c.level || '',
-      studentCount: c.studentCount,
-      schoolId: this.schoolId
-    };
-
-    this.svc.createClass(data).subscribe({
-      next: () => {
-        this.load();
-        this.notify.success('Class duplicated');
-      },
-      error: () => this.notify.error('Failed to duplicate class')
-    });
-  }
-
   onSubmit() {
     if (this.form.invalid) return;
     const data = { ...this.form.value, schoolId: this.schoolId };
@@ -280,19 +268,5 @@ export class ClassesComponent implements OnInit {
       next: () => { this.load(); this.showDelete = false; this.notify.success('Class deleted'); },
       error: () => this.notify.error('Failed to delete class')
     });
-  }
-
-  private getDuplicateName(baseName: string): string {
-    const usedNames = new Set(this.items.map(item => item.name.toLowerCase()));
-    const copyLabel = `${baseName} (copy)`;
-    if (!usedNames.has(copyLabel.toLowerCase())) {
-      return copyLabel;
-    }
-
-    let index = 2;
-    while (usedNames.has(`${copyLabel} ${index}`.toLowerCase())) {
-      index++;
-    }
-    return `${copyLabel} ${index}`;
   }
 }

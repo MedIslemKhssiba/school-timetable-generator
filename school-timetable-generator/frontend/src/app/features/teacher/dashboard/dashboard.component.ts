@@ -24,35 +24,23 @@ import { Subscription, interval, switchMap } from 'rxjs';
     </div>
 
     @if (loading) {
-      <ui-skeleton type="cards" [count]="3" />
+      <ui-skeleton type="cards" [count]="5" />
     } @else {
       <div class="stats-grid mb-4">
-        <a routerLink="../schedule" class="stat-card stat-primary">
-          <div class="stat-icon-wrap bg-primary">
-            <span class="stat-icon" [innerHTML]="icons.schedule"></span>
-          </div>
-          <div class="stat-value">{{ totalLessons }}</div>
-          <div class="stat-label">{{ t('weekly_lessons') }}</div>
-        </a>
-        <a routerLink="../schedule" class="stat-card stat-info">
-          <div class="stat-icon-wrap bg-info">
-            <span class="stat-icon" [innerHTML]="icons.subjects"></span>
-          </div>
-          <div class="stat-value">{{ subjects.size }}</div>
-          <div class="stat-label">{{ t('subjects') }}</div>
-        </a>
-        <a routerLink="../schedule" class="stat-card stat-success">
-          <div class="stat-icon-wrap bg-success">
-            <span class="stat-icon" [innerHTML]="icons.classes"></span>
-          </div>
-          <div class="stat-value">{{ classes.size }}</div>
-          <div class="stat-label">{{ t('classes') }}</div>
-        </a>
+        @for (stat of statCards; track stat.key) {
+          <a [routerLink]="stat.route" class="stat-card" [ngClass]="'stat-' + stat.color">
+            <div class="stat-icon-wrap">
+              <span class="stat-icon" [innerHTML]="stat.icon"></span>
+            </div>
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
+          </a>
+        }
       </div>
     }
 
     <c-row>
-      <c-col lg="8" class="mb-4">
+      <c-col lg="12" class="mb-4">
         <c-card class="welcome-card h-100">
           <c-card-body>
             <div class="d-flex align-items-start gap-3 flex-wrap">
@@ -74,27 +62,6 @@ import { Subscription, interval, switchMap } from 'rxjs';
           </c-card-body>
         </c-card>
       </c-col>
-      <c-col lg="4" class="mb-4">
-        <c-card class="h-100">
-          <c-card-header class="fw-semibold">
-            {{ t('quick_links') }}
-          </c-card-header>
-          <c-card-body class="p-0">
-            <a routerLink="../schedule" class="quick-link">
-              <span class="quick-link-icon" [innerHTML]="icons.schedule"></span>
-              <span>{{ t('my_schedule') }}</span>
-            </a>
-            <a routerLink="../availability" class="quick-link">
-              <span class="quick-link-icon" [innerHTML]="icons.availability"></span>
-              <span>{{ t('set_availability') }}</span>
-            </a>
-            <a routerLink="/profile" class="quick-link">
-              <span class="quick-link-icon" [innerHTML]="icons.profile"></span>
-              <span>{{ t('my_profile') }}</span>
-            </a>
-          </c-card-body>
-        </c-card>
-      </c-col>
     </c-row>
   `,
   styles: [`
@@ -102,63 +69,78 @@ import { Subscription, interval, switchMap } from 'rxjs';
     .page-title { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; margin: 0; }
     .page-subtitle { font-size: 0.875rem; color: #8D99A8; margin: 4px 0 0; font-family: 'Montserrat', sans-serif; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 14px; }
     .stat-card {
       display: flex; flex-direction: column; align-items: center; gap: 10px;
-      padding: 24px 16px; border-radius: 14px; background: #F8FAFF; text-decoration: none;
-      border: 1px solid #DDE3EE; border-left: 4px solid transparent;
+      padding: 24px 16px; border-radius: 18px; background: linear-gradient(165deg, #ffffff 0%, #f4f8ff 100%); text-decoration: none;
+      border: 1px solid rgba(183, 200, 226, 0.5); border-left: 4px solid transparent;
       transition: transform 250ms, box-shadow 250ms; cursor: pointer;
+      box-shadow: 0 10px 24px rgba(15, 23, 42,0.08);
+      position: relative; overflow: hidden;
     }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(13, 27, 62,0.1); }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      inset: auto -30% -60% auto;
+      width: 130px;
+      height: 130px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.14) 0%, rgba(37, 99, 235, 0) 70%);
+      pointer-events: none;
+    }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 30px rgba(15, 23, 42,0.12); }
     .stat-primary { border-left-color: #2563EB; }
     .stat-info { border-left-color: #4A7C8A; }
     .stat-success { border-left-color: #6B9080; }
     .stat-icon-wrap {
       width: 52px; height: 52px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
+      display: none; align-items: center; justify-content: center;
+      background: transparent;
     }
-    .stat-icon { width: 22px; height: 22px; color: #fff; display: inline-flex; }
-    .stat-icon :global(svg) { width: 100%; height: 100%; }
+    .stat-icon { color: #2563EB; display: inline-flex; }
+    .stat-icon :deep(svg) { width: 20px; height: 20px; fill: currentColor; stroke: none; }
+    .stat-primary .stat-icon-wrap { color: #2563EB; }
+    .stat-info .stat-icon-wrap { color: #0284C7; }
+    .stat-success .stat-icon-wrap { color: #059669; }
+    .stat-warning .stat-icon-wrap { color: #D97706; }
+    .stat-dark .stat-icon-wrap { color: #334155; }
     .stat-value { font-family: 'Montserrat', sans-serif; font-size: 1.875rem; font-weight: 700; color: #1A2332; line-height: 1; }
     .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
 
-    .welcome-card { border-left: 4px solid #2563EB !important; }
+    .welcome-card {
+      border: 1px solid rgba(37, 99, 235, 0.2) !important;
+      background: linear-gradient(140deg, rgba(255,255,255,0.95), rgba(239,246,255,0.92)) !important;
+      box-shadow: 0 18px 30px rgba(37, 99, 235, 0.1) !important;
+    }
 
-    .quick-link {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 20px; text-decoration: none; color: #1A2332;
-      font-weight: 500; font-size: 0.9rem; font-family: 'Montserrat', sans-serif;
-      border-bottom: 1px solid #EAEEF6; transition: background 200ms;
-      &:last-child { border-bottom: none; }
-      &:hover { background: #F0F4FA; }
-    }
-    .quick-link-icon {
-      width: 20px; height: 20px; color: #4A7C8A; display: inline-flex; flex-shrink: 0;
-    }
-    .quick-link-icon :global(svg) { width: 100%; height: 100%; }
   `]
 })
 export class TeacherDashboardComponent implements OnInit, OnDestroy {
   totalLessons = 0;
   subjects = new Set<string>();
   classes = new Set<string>();
+  teachingHours = 0;
+  activeDays = 0;
+  busiestDayLessons = 0;
   userName = '';
   loading = true;
   private pollSub?: Subscription;
 
   private icon(d: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">${d}</svg>`
     );
   }
 
-  icons = {
-    schedule: this.icon('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
-    subjects: this.icon('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'),
-    classes: this.icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
-    availability: this.icon('<path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/>'),
-    profile: this.icon('<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>')
+  private readonly icons = {
+    lessons: this.icon('<path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Zm12 8H5v10h14V10Z"/>'),
+    subjects: this.icon('<path d="M9 2a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2H9Zm1 7h6v2h-6V9Zm0 4h6v2h-6v-2Z"/>'),
+    classes: this.icon('<path d="M6 4a3 3 0 0 0-3 3v11a2 2 0 0 0 2 2h14v-2H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h13V4H6Z"/><path d="M19 8H8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h11V8Z"/>'),
+    hours: this.icon('<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 5a1 1 0 0 0-2 0v5.586l3.707 3.707a1 1 0 0 0 1.414-1.414L13 11.586V7Z"/>'),
+    days: this.icon('<path d="M4 20h16v2H2V4h2v16Zm2-1v-6h3v6H6Zm5 0V8h3v11h-3Zm5 0V4h3v15h-3Z"/>')
   };
+
+  statCards: Array<{ key: string; value: number; label: string; color: string; route: string; icon: SafeHtml }> = [];
 
   constructor(
     private http: HttpClient,
@@ -179,10 +161,32 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
         this.totalLessons = lessons.length;
         this.subjects.clear();
         this.classes.clear();
+        this.teachingHours = 0;
+        const lessonsByDay = new Map<string, number>();
+
         lessons.forEach(l => {
           this.subjects.add(l.subjectName);
           this.classes.add(l.classGroupName);
+
+          const start = this.timeToMinutes(l.startTime);
+          const end = this.timeToMinutes(l.endTime);
+          if (start !== null && end !== null && end > start) {
+            this.teachingHours += (end - start) / 60;
+          }
+
+          const day = l.dayOfWeek || 'UNKNOWN';
+          lessonsByDay.set(day, (lessonsByDay.get(day) ?? 0) + 1);
         });
+
+        this.activeDays = lessonsByDay.size;
+        this.busiestDayLessons = Math.max(0, ...Array.from(lessonsByDay.values()));
+        this.statCards = [
+          { key: 'weeklyLessons', value: this.totalLessons, label: this.t('weekly_lessons'), color: 'primary', route: '../schedule', icon: this.icons.lessons },
+          { key: 'subjects', value: this.subjects.size, label: this.t('subjects'), color: 'info', route: '../schedule', icon: this.icons.subjects },
+          { key: 'classes', value: this.classes.size, label: this.t('classes'), color: 'success', route: '../schedule', icon: this.icons.classes },
+          { key: 'hours', value: Number(this.teachingHours.toFixed(1)), label: this.t('teaching_hours'), color: 'warning', route: '../schedule', icon: this.icons.hours },
+          { key: 'dayLoad', value: this.busiestDayLessons, label: this.t('busiest_day_load'), color: 'dark', route: '../schedule', icon: this.icons.days }
+        ];
         this.loading = false;
       },
       error: () => this.loading = false
@@ -196,5 +200,21 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
+  }
+
+  private timeToMinutes(value: string): number | null {
+    if (!value) {
+      return null;
+    }
+    const parts = value.split(':');
+    if (parts.length < 2) {
+      return null;
+    }
+    const hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) {
+      return null;
+    }
+    return hour * 60 + minute;
   }
 }

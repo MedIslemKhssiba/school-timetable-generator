@@ -62,6 +62,10 @@ export class SuperAdminService {
     return this.http.get<Record<string, number>>(`${this.apiUrl}/schools/${schoolId}/statistics`);
   }
 
+  getSchoolStatisticsDetails(schoolId: number, kind: string): Observable<Array<{ id: number; title: string; subtitle?: string }>> {
+    return this.http.get<Array<{ id: number; title: string; subtitle?: string }>>(`${this.apiUrl}/schools/${schoolId}/statistics/${kind}`);
+  }
+
   // Change user password
   changeUserPassword(userId: number, newPassword: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/users/${userId}/password`, { newPassword }, { responseType: 'text' });

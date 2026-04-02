@@ -6,6 +6,11 @@ import com.timetable.exception.ResourceNotFoundException;
 import com.timetable.model.Role;
 import com.timetable.model.School;
 import com.timetable.model.User;
+import com.timetable.repository.ClassGroupRepository;
+import com.timetable.repository.LessonRepository;
+import com.timetable.repository.RoomRepository;
+import com.timetable.repository.SubjectRepository;
+import com.timetable.repository.TeacherRepository;
 import com.timetable.repository.UserRepository;
 import com.timetable.service.SchoolService;
 import jakarta.validation.Valid;
@@ -29,6 +34,11 @@ public class SuperAdminController {
     private final SchoolService schoolService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TeacherRepository teacherRepository;
+    private final ClassGroupRepository classGroupRepository;
+    private final SubjectRepository subjectRepository;
+    private final RoomRepository roomRepository;
+    private final LessonRepository lessonRepository;
 
     // --- Dashboard ---
 
@@ -38,6 +48,11 @@ public class SuperAdminController {
         stats.put("totalSchools", schoolService.getAllSchools().size());
         stats.put("totalAdmins", userRepository.countByRole(Role.ROLE_ADMIN));
         stats.put("totalUsers", userRepository.count());
+        stats.put("totalTeachers", teacherRepository.count());
+        stats.put("totalClasses", classGroupRepository.count());
+        stats.put("totalSubjects", subjectRepository.count());
+        stats.put("totalRooms", roomRepository.count());
+        stats.put("totalLessons", lessonRepository.count());
         return ResponseEntity.ok(stats);
     }
 

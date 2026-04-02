@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AdminDashboardStats, ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability, Timeslot, TimetableSolveStatus } from '../models';
+import { ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability, Timeslot, TimetableSolveStatus } from '../models';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -10,8 +10,8 @@ export class AdminService {
 
   constructor(private http: HttpClient) {}
 
-  getDashboard(schoolId: number): Observable<AdminDashboardStats> {
-    return this.http.get<AdminDashboardStats>(`${this.apiUrl}/dashboard/${schoolId}`);
+  getDashboard(schoolId: number): Observable<Record<string, number>> {
+    return this.http.get<Record<string, number>>(`${this.apiUrl}/dashboard/${schoolId}`);
   }
 
   // Teachers
@@ -131,10 +131,6 @@ export class AdminService {
     return this.http.post<Lesson[]>(`${this.apiUrl}/timetable/save/${schoolId}`, null);
   }
 
-  sendTimetableToTeachers(schoolId: number): Observable<string> {
-    return this.http.post(`${this.apiUrl}/timetable/send/${schoolId}`, null, { responseType: 'text' });
-  }
-
   // Lessons
   getLessons(schoolId: number): Observable<Lesson[]> {
     return this.http.get<Lesson[]>(`${this.apiUrl}/timetable/lessons/${schoolId}`);
@@ -152,10 +148,6 @@ export class AdminService {
     return this.http.get(`${this.apiUrl}/timetable/export/${schoolId}`, { responseType: 'blob' });
   }
 
-  exportTimetablePdf(schoolId: number): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/timetable/export/pdf/${schoolId}`, { responseType: 'blob' });
-  }
-
   // Teacher Availability
   getTeacherAvailabilities(teacherId: number): Observable<TeacherAvailability[]> {
     return this.http.get<TeacherAvailability[]>(`${this.apiUrl}/teachers/${teacherId}/availabilities`);
@@ -163,6 +155,10 @@ export class AdminService {
 
   updateTeacherAvailabilities(teacherId: number, availabilities: { timeslotId: number; available: boolean }[]): Observable<TeacherAvailability[]> {
     return this.http.put<TeacherAvailability[]>(`${this.apiUrl}/teachers/${teacherId}/availabilities`, availabilities);
+  }
+
+  syncTeachersWithTimeslots(schoolId: number): Observable<{ created: number; schoolId: number }> {
+    return this.http.post<{ created: number; schoolId: number }>(`${this.apiUrl}/timetable/timeslots/sync-teachers/${schoolId}`, null);
   }
 
   // Import

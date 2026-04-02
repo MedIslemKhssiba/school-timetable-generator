@@ -71,7 +71,6 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                     <td><c-badge color="info" variant="outline">{{ s.sessionDuration }} min</c-badge></td>
                     <td class="text-end">
                       <button cButton color="info" variant="ghost" size="sm" (click)="edit(s)">{{ t('edit') }}</button>
-                      <button cButton color="secondary" variant="ghost" size="sm" (click)="duplicate(s)">{{ t('duplicate') }}</button>
                       <button cButton color="danger" variant="ghost" size="sm" (click)="confirmDelete(s)">{{ t('delete') }}</button>
                     </td>
                   </tr>
@@ -112,9 +111,12 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
                   <label class="form-label">{{ t('level') }}</label>
                   <select class="form-control" formControlName="level">
                     <option value="">{{ t('select_level') }}</option>
-                    <option value="1AS">1AS</option>
-                    <option value="2AS">2AS</option>
-                    <option value="3AS">3AS</option>
+                    <option value="1">{{ t('level_n') }} 1</option>
+                    <option value="2">{{ t('level_n') }} 2</option>
+                    <option value="3">{{ t('level_n') }} 3</option>
+                    <option value="4">{{ t('level_n') }} 4</option>
+                    <option value="5">{{ t('level_n') }} 5</option>
+                    <option value="6">{{ t('level_n') }} 6</option>
                   </select>
                 </div>
                 <div class="col-6">
@@ -175,7 +177,13 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     .modal-panel { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(13, 27, 62,0.15); animation: scaleIn 200ms ease-out; }
     .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #DDE3EE; }
     .modal-title { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0; color: #1A2332; }
-    .modal-close { background: none; border: none; font-size: 2rem; color: #8D99A8; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+    .modal-close {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: none; font-size: 2.25rem; color: #8D99A8; cursor: pointer;
+      line-height: 1; padding: 0; border-radius: 10px;
+      &:hover { background: #EAEEF6; color: #1A2332; }
+    }
     .modal-body { padding: 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #DDE3EE; display: flex; justify-content: flex-end; gap: 8px; }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -229,7 +237,7 @@ export class SubjectsComponent implements OnInit {
     this.form = this.fb.group({
       name: ['', Validators.required],
       level: [''],
-      requiredRoomType: [''],
+      requiredRoomType: ['COURS'],
       color: [''],
       hoursPerWeek: [2, [Validators.required, Validators.min(1)]],
       sessionDuration: [60, [Validators.required, Validators.min(30)]]
@@ -257,7 +265,7 @@ export class SubjectsComponent implements OnInit {
   openModal(): void {
     this.editing = false;
     this.editId = null;
-    this.form.reset({ level: '', requiredRoomType: '', color: '', hoursPerWeek: 2, sessionDuration: 60 });
+    this.form.reset({ level: '', requiredRoomType: 'COURS', color: '', hoursPerWeek: 2, sessionDuration: 60 });
     this.showModal = true;
   }
 
@@ -266,28 +274,8 @@ export class SubjectsComponent implements OnInit {
   edit(s: Subject) {
     this.editing = true;
     this.editId = s.id;
-    this.form.patchValue(s);
+    this.form.patchValue({ ...s, requiredRoomType: (s.requiredRoomType || '').toUpperCase() });
     this.showModal = true;
-  }
-
-  duplicate(s: Subject): void {
-    const data = {
-      name: this.getDuplicateName(s.name),
-      level: s.level || '',
-      requiredRoomType: s.requiredRoomType || '',
-      color: s.color || this.getAutoColor(),
-      hoursPerWeek: s.hoursPerWeek,
-      sessionDuration: s.sessionDuration,
-      schoolId: this.schoolId
-    };
-
-    this.svc.createSubject(data).subscribe({
-      next: () => {
-        this.load();
-        this.notify.success('Subject duplicated');
-      },
-      error: () => this.notify.error('Failed to duplicate subject')
-    });
   }
 
   onSubmit() {
@@ -316,20 +304,6 @@ export class SubjectsComponent implements OnInit {
     const available = this.colorPresets.filter(c => !usedColors.includes(c));
     if (available.length > 0) return available[0];
     return this.colorPresets[this.items.length % this.colorPresets.length];
-  }
-
-  private getDuplicateName(baseName: string): string {
-    const usedNames = new Set(this.items.map(s => s.name.toLowerCase()));
-    const copyLabel = `${baseName} (copy)`;
-    if (!usedNames.has(copyLabel.toLowerCase())) {
-      return copyLabel;
-    }
-
-    let index = 2;
-    while (usedNames.has(`${copyLabel} ${index}`.toLowerCase())) {
-      index++;
-    }
-    return `${copyLabel} ${index}`;
   }
 
   doDelete(): void {

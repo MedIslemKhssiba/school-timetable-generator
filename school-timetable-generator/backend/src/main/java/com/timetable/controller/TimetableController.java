@@ -165,6 +165,16 @@ public class TimetableController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/timeslots/sync-teachers/{schoolId}")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> syncTeachersWithTimeslots(@PathVariable Long schoolId) {
+        int created = syncTeachersWithAllTimeslots(schoolId);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("created", created);
+        payload.put("schoolId", schoolId);
+        return ResponseEntity.ok(payload);
+    }
+
     private void validateTimeslotRange(LocalTime startTime, LocalTime endTime, LocalTime breakStart, LocalTime breakEnd) {
         if (!startTime.isBefore(endTime)) {
             throw new IllegalArgumentException("Start time must be before end time");
@@ -196,6 +206,26 @@ public class TimetableController {
                 teacherAvailabilityRepository.save(ta);
             }
         }
+    }
+
+    private int syncTeachersWithAllTimeslots(Long schoolId) {
+        List<Teacher> teachers = teacherRepository.findBySchoolId(schoolId);
+        List<Timeslot> timeslots = timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc();
+
+        int created = 0;
+        for (Teacher teacher : teachers) {
+            for (Timeslot timeslot : timeslots) {
+                if (!teacherAvailabilityRepository.existsByTeacherIdAndTimeslotId(teacher.getId(), timeslot.getId())) {
+                    teacherAvailabilityRepository.save(TeacherAvailability.builder()
+                            .teacher(teacher)
+                            .timeslot(timeslot)
+                            .available(true)
+                            .build());
+                    created++;
+                }
+            }
+        }
+        return created;
     }
 
     private int appendGeneratedSlots(List<Timeslot> created,
@@ -315,11 +345,6 @@ public class TimetableController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PostMapping("/send/{schoolId}")
-    public ResponseEntity<String> sendToTeachers(@PathVariable Long schoolId) {
-        return ResponseEntity.ok(timetableService.sendToTeachers(schoolId));
-    }
-
     @GetMapping("/lessons/{schoolId}")
     public ResponseEntity<List<LessonDTO>> getLessons(@PathVariable Long schoolId) {
         List<Lesson> lessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
@@ -348,15 +373,6 @@ public class TimetableController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable.xlsx")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(excelData);
-    }
-
-    @GetMapping("/export/pdf/{schoolId}")
-    public ResponseEntity<byte[]> exportTimetablePdf(@PathVariable Long schoolId) throws IOException {
-        byte[] pdfData = importExportService.exportTimetablePdf(schoolId);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable.pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdfData);
     }
 
     private LessonDTO toLessonDTO(Lesson lesson) {

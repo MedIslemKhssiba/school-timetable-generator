@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +32,6 @@ public class TimetableService {
     private final RoomRepository roomRepository;
     private final TimeslotRepository timeslotRepository;
     private final TeacherAvailabilityRepository availabilityRepository;
-    private final SchoolRepository schoolRepository;
     private final SolverManager<TimetableSolution, Long> solverManager;
 
     private final Map<Long, TimetableSolution> solutionMap = new ConcurrentHashMap<>();
@@ -70,6 +68,7 @@ public class TimetableService {
 
         // Build lesson assignments from subjects and class groups
         List<LessonAssignment> assignments = new ArrayList<>();
+        List<String> missingCoverage = new ArrayList<>();
         long assignmentId = 1;
         for (ClassGroup cg : classGroups) {
             for (Subject subject : subjects) {
@@ -94,10 +93,20 @@ public class TimetableService {
                         assignments.add(la);
                         teacherLoad.merge(assignedTeacher.getId(), 1, Integer::sum);
                     } else {
-                        log.warn("No teacher found for subject '{}' in school {}", subject.getName(), schoolId);
+                        String missing = String.format("Classe '%s' / Matiere '%s'", cg.getName(), subject.getName());
+                        missingCoverage.add(missing);
+                        log.warn("No teacher found for {} in school {}", missing, schoolId);
                     }
                 }
             }
+        }
+
+        if (!missingCoverage.isEmpty()) {
+            String details = missingCoverage.stream()
+                    .limit(10)
+                    .collect(Collectors.joining(", "));
+            throw new IllegalStateException("Generation impossible: enseignants manquants pour "
+                    + missingCoverage.size() + " affectation(s). Exemples: " + details);
         }
 
         // Load teacher availabilities
@@ -184,19 +193,15 @@ public class TimetableService {
     public List<Lesson> saveSolution(Long schoolId) {
         TimetableSolution solution = solutionMap.get(schoolId);
         if (solution == null) {
-            List<Lesson> existingLessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
-            if (!existingLessons.isEmpty()) {
-                School school = schoolRepository.findById(schoolId)
-                        .orElseThrow(() -> new ResourceNotFoundException("School not found with id: " + schoolId));
-                school.setTimetableSavedAt(resolveSaveTimestamp());
-                school.setTimetableSent(false);
-                school.setTimetableSentAt(null);
-                schoolRepository.save(school);
+            throw new ResourceNotFoundException("No solution found for school " + schoolId);
+        }
 
-                log.info("No in-memory solution for school {}. Returning {} already-saved lessons.", schoolId, existingLessons.size());
-                return existingLessons;
-            }
-            throw new IllegalStateException("No generated timetable available to save. Please run generation first.");
+        long unassigned = solution.getLessonAssignments().stream()
+                .filter(la -> la.getTimeslot() == null || la.getRoom() == null)
+                .count();
+        if (unassigned > 0) {
+            throw new IllegalStateException("Le planning est incomplet: " + unassigned + " cours non assignes."
+                    + " Veuillez relancer la generation avant sauvegarde.");
         }
 
         // Efficiently delete existing lessons
@@ -217,44 +222,11 @@ public class TimetableService {
                 saved.add(lessonRepository.save(lesson));
             }
         }
-
-        School school = schoolRepository.findById(schoolId)
-                .orElseThrow(() -> new ResourceNotFoundException("School not found with id: " + schoolId));
-        school.setTimetableSavedAt(resolveSaveTimestamp());
-        school.setTimetableSent(false);
-        school.setTimetableSentAt(null);
-        schoolRepository.save(school);
-
         log.info("Saved {} lessons for school {}", saved.size(), schoolId);
         return saved;
     }
 
-    @Transactional
-    public String sendToTeachers(Long schoolId) {
-        long lessonCount = lessonRepository.countBySchoolId(schoolId);
-        if (lessonCount == 0) {
-            throw new IllegalStateException("No saved timetable to send. Save the timetable first.");
-        }
-
-        School school = schoolRepository.findById(schoolId)
-                .orElseThrow(() -> new ResourceNotFoundException("School not found with id: " + schoolId));
-        school.setTimetableSent(true);
-        school.setTimetableSentAt(resolveSentTimestamp());
-        schoolRepository.save(school);
-
-        log.info("Timetable sent to teachers for school {} ({} lessons)", schoolId, lessonCount);
-        return "Timetable sent to teachers for school " + schoolId;
-    }
-
     public SolverStatus getStatus(Long schoolId) {
         return solverManager.getSolverStatus(schoolId);
-    }
-
-    private LocalDateTime resolveSaveTimestamp() {
-        return LocalDateTime.now().plusHours(1);
-    }
-
-    private LocalDateTime resolveSentTimestamp() {
-        return LocalDateTime.now().plusHours(1);
     }
 }

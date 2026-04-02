@@ -56,7 +56,8 @@ import { CommonModule } from '@angular/common';
 
     .modal-actions { display: flex; gap: 12px; justify-content: center; }
     .modal-actions button {
-      padding: 10px 24px; border-radius: 10px; font-weight: 600; font-size: 0.875rem;
+      min-height: 44px;
+      padding: 12px 28px; border-radius: 12px; font-weight: 700; font-size: 0.92rem;
       cursor: pointer; transition: all 250ms; border: none; font-family: 'Montserrat', sans-serif;
     }
     .btn-cancel {
