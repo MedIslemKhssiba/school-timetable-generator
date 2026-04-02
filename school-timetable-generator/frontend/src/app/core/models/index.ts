@@ -101,6 +101,8 @@ export interface Lesson {
   dayOfWeek: string;
   startTime: string;
   endTime: string;
+  sessionDurationMinutes?: number;
+  timeslotDurationMinutes?: number;
 }
 
 export interface Timeslot {
@@ -126,17 +128,58 @@ export interface TimetableSolveStatus {
   totalAssignments: number;
   assignedAssignments: number;
   progressPercent: number;
+  completionPercent?: number;
+  qualityPercent?: number;
+  solverCompleted?: boolean;
+  solverFeasible?: boolean;
+  solverOptimal?: boolean;
+  hardScore?: number;
+  softScore?: number;
+  score?: string | null;
+  conflicts?: Record<string, number>;
+  solvingTimeMs?: number;
+  scoreHistory?: Array<{ timestampMs: number; hardScore: number; softScore: number; score: string }>;
+  roomUsage?: Record<string, number>;
+  teacherLoad?: Record<string, number>;
+  classLoad?: Record<string, number>;
+  expectedClassHours?: Record<string, number>;
+  classHourDiff?: Record<string, number>;
+  teacherLoadRatio?: Record<string, { planned: number; maxHours: number; ratioPercent: number }>;
+  subjectDistribution?: Record<string, number>;
+  levelDistribution?: Record<string, number>;
+  topSoftConstraints?: Array<{ constraint: string; softScore: number; impact: number }>;
+  iterationComparison?: Record<string, any>;
+  softBreakdown?: Record<string, { hard: number; soft: number }>;
+  classWeaknesses?: Array<Record<string, any>>;
+  teacherWeaknesses?: Array<Record<string, any>>;
 }
 
-export interface AdminDashboardStats {
-  totalTeachers: number;
-  totalClasses: number;
-  totalSubjects: number;
-  totalRooms: number;
+export interface TimetablePreSolveDiagnostics {
+  schoolId: number;
+  ready: boolean;
+  blockingIssues: string[];
+  warnings: string[];
+  suggestions: string[];
+  summary: Record<string, number>;
+}
+
+export interface TeacherDispatchSummary {
+  teacherId: number;
+  teacherName: string;
+  lessonCount: number;
+  status: string;
+  dispatchedAt: string;
+}
+
+export interface TimetableHistoryItem {
+  id: number;
+  generatedAt: string;
   totalLessons: number;
-  timetableSavedAt?: string | null;
-  timetableSent: boolean;
-  timetableSentAt?: string | null;
+  hardScore?: number;
+  softScore?: number;
+  score?: string;
+  teacherDispatchCount: number;
+  teachers: TeacherDispatchSummary[];
 }
 
 export interface ChangePasswordRequest {

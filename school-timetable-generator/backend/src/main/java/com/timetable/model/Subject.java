@@ -29,7 +29,7 @@ public class Subject {
     private String requiredRoomType;
 
     @Builder.Default
-    private int sessionDuration = 1;
+    private int sessionDuration = 60;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id", nullable = false)

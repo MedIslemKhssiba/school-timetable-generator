@@ -16,7 +16,11 @@ import com.timetable.repository.TeacherAvailabilityRepository;
 import com.timetable.repository.TeacherRepository;
 import com.timetable.repository.TimeslotRepository;
 import com.timetable.service.ImportExportService;
+import com.timetable.service.TimetableDiagnosticsService;
+import com.timetable.service.TimetableHistoryService;
+import com.timetable.service.TimetableStatisticsService;
 import com.timetable.service.TimetableService;
+import com.timetable.solver.LessonAssignment;
 import com.timetable.solver.TimetableSolution;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +56,9 @@ public class TimetableController {
     private final SubjectRepository subjectRepository;
     private final TeacherRepository teacherRepository;
     private final TeacherAvailabilityRepository teacherAvailabilityRepository;
+    private final TimetableStatisticsService timetableStatisticsService;
+    private final TimetableDiagnosticsService timetableDiagnosticsService;
+    private final TimetableHistoryService timetableHistoryService;
 
     @GetMapping("/timeslots")
     public ResponseEntity<List<Timeslot>> getTimeslots() {
@@ -305,32 +313,37 @@ public class TimetableController {
     public ResponseEntity<Map<String, Object>> getSolveStatus(@PathVariable Long schoolId) {
         SolverStatus status = timetableService.getStatus(schoolId);
         TimetableSolution solution = timetableService.getSolution(schoolId);
+        return ResponseEntity.ok(timetableStatisticsService.buildStatistics(schoolId, status, solution));
+    }
 
-        int totalAssignments = 0;
-        int assignedAssignments = 0;
+    @GetMapping("/statistics/{schoolId}")
+    public ResponseEntity<Map<String, Object>> getSolverStatistics(@PathVariable Long schoolId) {
+        SolverStatus status = timetableService.getStatus(schoolId);
+        TimetableSolution solution = timetableService.getSolution(schoolId);
+        return ResponseEntity.ok(timetableStatisticsService.buildStatistics(schoolId, status, solution));
+    }
 
-        if (solution != null && solution.getLessonAssignments() != null) {
-            totalAssignments = solution.getLessonAssignments().size();
-            assignedAssignments = (int) solution.getLessonAssignments().stream()
-                    .filter(assignment -> assignment.getTimeslot() != null && assignment.getRoom() != null)
-                    .count();
-        }
+    @GetMapping("/statistics/{schoolId}/export/csv")
+    public ResponseEntity<byte[]> exportSolverStatisticsCsv(@PathVariable Long schoolId) {
+        SolverStatus status = timetableService.getStatus(schoolId);
+        TimetableSolution solution = timetableService.getSolution(schoolId);
+        Map<String, Object> statistics = timetableStatisticsService.buildStatistics(schoolId, status, solution);
+        String csv = timetableStatisticsService.buildStatisticsCsv(statistics);
 
-        int progressPercent;
-        if (totalAssignments > 0) {
-            progressPercent = Math.round((assignedAssignments * 100.0f) / totalAssignments);
-        } else {
-            progressPercent = status == SolverStatus.NOT_SOLVING ? 100 : 0;
-        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable-statistics.csv")
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
 
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("status", status.name());
-        payload.put("solving", status != SolverStatus.NOT_SOLVING);
-        payload.put("totalAssignments", totalAssignments);
-        payload.put("assignedAssignments", assignedAssignments);
-        payload.put("progressPercent", Math.min(100, Math.max(0, progressPercent)));
+    @GetMapping("/history/{schoolId}")
+    public ResponseEntity<List<Map<String, Object>>> getTimetableHistory(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(timetableHistoryService.getSchoolHistory(schoolId));
+    }
 
-        return ResponseEntity.ok(payload);
+    @GetMapping("/diagnostics/{schoolId}")
+    public ResponseEntity<Map<String, Object>> getPreSolveDiagnostics(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(timetableDiagnosticsService.buildDiagnostics(schoolId));
     }
 
     @PostMapping("/stop/{schoolId}")
@@ -368,7 +381,17 @@ public class TimetableController {
 
     @GetMapping("/export/{schoolId}")
     public ResponseEntity<byte[]> exportTimetable(@PathVariable Long schoolId) throws IOException {
-        byte[] excelData = importExportService.exportTimetableExcel(schoolId);
+        TimetableSolution solution = timetableService.getSolution(schoolId);
+        List<LessonAssignment> fallbackAssignments = solution != null && solution.getLessonAssignments() != null
+            ? solution.getLessonAssignments().stream()
+            .filter(assignment -> assignment.getTimeslot() != null && assignment.getRoom() != null)
+            .sorted(Comparator
+                .comparing((LessonAssignment la) -> la.getTimeslot().getDayOfWeek().ordinal())
+                .thenComparing(la -> la.getTimeslot().getStartTime()))
+            .toList()
+            : List.of();
+
+        byte[] excelData = importExportService.exportTimetableExcel(schoolId, fallbackAssignments);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable.xlsx")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -390,6 +413,10 @@ public class TimetableController {
         dto.setDayOfWeek(lesson.getTimeslot() != null ? lesson.getTimeslot().getDayOfWeek().name() : "");
         dto.setStartTime(lesson.getTimeslot() != null ? lesson.getTimeslot().getStartTime().toString() : "");
         dto.setEndTime(lesson.getTimeslot() != null ? lesson.getTimeslot().getEndTime().toString() : "");
+        dto.setSessionDurationMinutes(lesson.getSubject() != null ? lesson.getSubject().getSessionDuration() : null);
+        dto.setTimeslotDurationMinutes(lesson.getTimeslot() != null
+            ? (int) java.time.Duration.between(lesson.getTimeslot().getStartTime(), lesson.getTimeslot().getEndTime()).toMinutes()
+            : null);
         return dto;
     }
 }

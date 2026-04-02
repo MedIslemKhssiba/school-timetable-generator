@@ -8,13 +8,13 @@
         <constraintStreamImplType>BAVET</constraintStreamImplType>
     </scoreDirectorFactory>
     <termination>
-        <bestScoreFeasible>true</bestScoreFeasible>
-        <minutesSpentLimit>5</minutesSpentLimit>
+        <minutesSpentLimit>8</minutesSpentLimit>
+        <unimprovedSecondsSpentLimit>90</unimprovedSecondsSpentLimit>
     </termination>
     <constructionHeuristic>
         <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
     </constructionHeuristic>
     <localSearch>
-        <localSearchType>LATE_ACCEPTANCE</localSearchType>
+        <localSearchType>TABU_SEARCH</localSearchType>
     </localSearch>
 </solver>

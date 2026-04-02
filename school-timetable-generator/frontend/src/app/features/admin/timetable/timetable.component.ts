@@ -7,7 +7,8 @@ import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { Lesson, Timeslot, ClassGroup, Subject } from '../../../core/models';
+import { Lesson, Timeslot, ClassGroup, Subject, Teacher, Room, TimetableHistoryItem } from '../../../core/models';
+import { HttpErrorResponse } from '@angular/common/http';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { forkJoin } from 'rxjs';
 import { Subscription } from 'rxjs';
@@ -57,6 +58,108 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
             <div class="solver-stage mt-2">{{ getSolveStageDescription() }}</div>
             @if (totalAssignments > 0) {
               <div class="solver-assignment mt-1">Cours places: {{ assignedAssignments }} / {{ totalAssignments }}</div>
+            }
+            <div class="solver-assignment mt-1">Qualite actuelle: {{ qualityPercent }}% | Score: {{ scoreLabel || 'N/A' }}</div>
+            @if (solverCompleted) {
+              <div class="solver-assignment mt-1 fw-semibold">Solveur termine. Faisabilite: {{ solverFeasible ? 'OK' : 'NON' }} | Optimal: {{ solverOptimal ? 'OUI' : 'EN COURS' }}</div>
+            }
+          </div>
+        </c-card-body>
+      </c-card>
+    }
+
+    @if (hasSolverSnapshot()) {
+      <c-card class="mb-4">
+        <c-card-body class="py-2">
+          <div class="filter-bar">
+            <c-badge [color]="solverCompleted ? 'success' : (solving ? 'warning' : 'secondary')">
+              {{ solverCompleted ? 'Termine' : (solving ? 'En cours' : 'En attente') }}
+            </c-badge>
+            <span class="filter-label">Progression: <strong>{{ solveProgress }}%</strong></span>
+            <span class="filter-label">Completion: <strong>{{ completionPercent }}%</strong></span>
+            <span class="filter-label">Qualite emploi: <strong>{{ qualityPercent }}%</strong></span>
+            <span class="filter-label">Hard: <strong>{{ hardScore }}</strong></span>
+            <span class="filter-label">Soft: <strong>{{ softScore }}</strong></span>
+            <span class="filter-label">Temps solveur: <strong>{{ formatSolvingTime(solvingTimeMs) }}</strong></span>
+            <span class="filter-label">Conflits: <strong>{{ conflictsSummary['total'] || 0 }}</strong></span>
+          </div>
+        </c-card-body>
+      </c-card>
+    }
+
+    @if (hasSolverSnapshot() && hasConflictDetails()) {
+      <c-card class="mb-4">
+        <c-card-body class="py-2">
+          <div class="filter-bar">
+            <span class="filter-label">Teacher: <strong>{{ conflictsSummary['teacher'] || 0 }}</strong></span>
+            <span class="filter-label">Room: <strong>{{ conflictsSummary['room'] || 0 }}</strong></span>
+            <span class="filter-label">Class: <strong>{{ conflictsSummary['class'] || 0 }}</strong></span>
+            <span class="filter-label">Duplicates: <strong>{{ conflictsSummary['duplicates'] || 0 }}</strong></span>
+            <span class="filter-label">Invalid: <strong>{{ conflictsSummary['invalidAssignments'] || 0 }}</strong></span>
+          </div>
+        </c-card-body>
+      </c-card>
+    }
+
+    @if (hasSolverSnapshot() && (teacherLoadTop.length > 0 || roomUsageTop.length > 0 || classLoadTop.length > 0)) {
+      <c-card class="mb-4">
+        <c-card-body>
+          <h6 class="mb-2">Charges et usage (Top 5)</h6>
+          <div class="filter-bar mb-2">
+            <span class="filter-label">Teachers: {{ teacherLoadTop.join(' | ') }}</span>
+          </div>
+          <div class="filter-bar mb-2">
+            <span class="filter-label">Rooms: {{ roomUsageTop.join(' | ') }}</span>
+          </div>
+          <div class="filter-bar">
+            <span class="filter-label">Classes: {{ classLoadTop.join(' | ') }}</span>
+          </div>
+        </c-card-body>
+      </c-card>
+    }
+
+    @if (dataReadinessIssues.length > 0 || dataReadinessSuggestions.length > 0) {
+      <c-card class="mb-4">
+        <c-card-body>
+          <h6 class="mb-2">Validation des donnees pour la generation</h6>
+          @if (dataReadinessIssues.length > 0) {
+            <div class="mb-2 fw-semibold text-danger">Points bloquants</div>
+            <ul class="mb-3 ps-3">
+              @for (issue of dataReadinessIssues; track issue) {
+                <li>{{ issue }}</li>
+              }
+            </ul>
+          }
+          @if (dataReadinessSuggestions.length > 0) {
+            <div class="mb-2 fw-semibold">Actions recommandees</div>
+            <ul class="mb-0 ps-3">
+              @for (tip of dataReadinessSuggestions; track tip) {
+                <li>{{ tip }}</li>
+              }
+            </ul>
+          }
+        </c-card-body>
+      </c-card>
+    }
+
+    @if (!historyLoading && generationHistory.length > 0) {
+      <c-card class="mb-4">
+        <c-card-body>
+          <h6 class="mb-2">Historique des emplois du temps generes</h6>
+          <div class="history-list">
+            @for (item of generationHistory; track item.id) {
+              <div class="history-item">
+                <div class="history-head">
+                  <span class="history-id">Generation #{{ item.id }}</span>
+                  <span class="history-date">{{ formatHistoryDate(item.generatedAt) }}</span>
+                </div>
+                <div class="history-meta">
+                  <span>Cours: <strong>{{ item.totalLessons }}</strong></span>
+                  <span>Hard: <strong>{{ item.hardScore ?? 'N/A' }}</strong></span>
+                  <span>Soft: <strong>{{ item.softScore ?? 'N/A' }}</strong></span>
+                  <span>Dispatch enseignants: <strong>{{ item.teacherDispatchCount }}</strong></span>
+                </div>
+              </div>
             }
           </div>
         </c-card-body>
@@ -139,6 +242,7 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
                           @for (lesson of getLessonAt(day, slot); track lesson.id) {
                             <div class="grid-lesson" [style.border-left-color]="getSubjectColor(lesson.subjectName)">
                               <div class="grid-subject">{{ lesson.subjectName }}</div>
+                              <div class="lesson-duration-chip">{{ formatLessonDuration(lesson) }}</div>
                               <div class="grid-meta">{{ lesson.classGroupName }}</div>
                               <div class="grid-meta">{{ lesson.teacherName }} &bull; {{ lesson.roomName }}</div>
                             </div>
@@ -169,6 +273,7 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
                         {{ lesson.startTime }} - {{ lesson.endTime }}
                       </div>
                       <div class="lesson-subject">{{ lesson.subjectName }}</div>
+                      <div class="lesson-duration-chip mb-1">{{ formatLessonDuration(lesson) }}</div>
                       <div class="lesson-details">
                         <span>{{ lesson.teacherName }}</span>
                         <span>{{ lesson.roomName }}</span>
@@ -390,6 +495,19 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     }
     .grid-subject { font-weight: 700; color: #1A2332; margin-bottom: 2px; font-family: 'Montserrat', sans-serif; }
     .grid-meta { color: #8D99A8; font-family: 'Montserrat', sans-serif; }
+    .lesson-duration-chip {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #1E3A8A;
+      background: #DBEAFE;
+      border: 1px solid #93C5FD;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-bottom: 4px;
+      font-family: 'Montserrat', sans-serif;
+    }
 
     .day-header {
       display: flex; align-items: center;
@@ -410,6 +528,17 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .lesson-details { display: flex; flex-direction: column; gap: 2px; }
     .lesson-details span { font-size: 0.78rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
+    .history-list { display: grid; gap: 10px; }
+    .history-item {
+      border: 1px solid #DDE3EE;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #F8FAFF;
+    }
+    .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .history-id { font-weight: 700; color: #1E3A8A; font-family: 'Montserrat', sans-serif; font-size: 0.82rem; }
+    .history-date { color: #64748B; font-size: 0.75rem; font-family: 'Montserrat', sans-serif; }
+    .history-meta { display: flex; gap: 14px; flex-wrap: wrap; color: #334155; font-size: 0.77rem; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class TimetableComponent implements OnInit, OnDestroy {
@@ -433,7 +562,29 @@ export class TimetableComponent implements OnInit, OnDestroy {
   teacherNames: string[] = [];
   classes: ClassGroup[] = [];
   subjects: Subject[] = [];
+  teachers: Teacher[] = [];
+  rooms: Room[] = [];
   integrityIssues: string[] = [];
+  dataReadinessIssues: string[] = [];
+  dataReadinessSuggestions: string[] = [];
+  completionPercent = 0;
+  qualityPercent = 0;
+  solverCompleted = false;
+  solverFeasible = false;
+  solverOptimal = false;
+  hardScore = 0;
+  softScore = 0;
+  scoreLabel = '';
+  solvingTimeMs = 0;
+  conflictsSummary: Record<string, number> = {};
+  scoreHistory: Array<{ timestampMs: number; hardScore: number; softScore: number; score: string }> = [];
+  roomUsageTop: string[] = [];
+  teacherLoadTop: string[] = [];
+  classLoadTop: string[] = [];
+  classLoadStats: Record<string, number> = {};
+  expectedClassHoursStats: Record<string, number> = {};
+  generationHistory: TimetableHistoryItem[] = [];
+  historyLoading = false;
   private schoolId = 1;
   timeslotModalVisible = false;
   timeslotSaving = false;
@@ -473,14 +624,31 @@ export class TimetableComponent implements OnInit, OnDestroy {
     this.stateSubscription = this.solveState.state$.subscribe(state => {
       this.solving = state.solving;
       this.solveProgress = state.progressPercent;
+      this.completionPercent = state.completionPercent;
+      this.qualityPercent = state.qualityPercent;
       this.solveStatus = state.status;
       this.totalAssignments = state.totalAssignments;
       this.assignedAssignments = state.assignedAssignments;
+      this.solverCompleted = state.solverCompleted;
+      this.solverFeasible = state.solverFeasible;
+      this.solverOptimal = state.solverOptimal;
+      this.hardScore = state.hardScore;
+      this.softScore = state.softScore;
+      this.scoreLabel = state.scoreLabel;
+      this.solvingTimeMs = state.solvingTimeMs;
+      this.conflictsSummary = state.conflicts;
+      this.scoreHistory = state.scoreHistory;
+      this.roomUsageTop = this.toTopList(state.roomUsage);
+      this.teacherLoadTop = this.toTopList(state.teacherLoad);
+      this.classLoadTop = this.toTopList(state.classLoad);
+      this.classLoadStats = state.classLoad || {};
+      this.expectedClassHoursStats = state.expectedClassHours || {};
 
       if (state.lessons.length > 0) {
         this.lessons = state.lessons;
         this.buildMeta();
         this.applyFilter();
+        this.runIntegrityChecks();
       }
     });
 
@@ -494,20 +662,43 @@ export class TimetableComponent implements OnInit, OnDestroy {
   }
 
   solve(): void {
-    this.adminService.syncTeachersWithTimeslots(this.schoolId).subscribe({
-      next: () => {
-        this.solveState.startSolve(this.schoolId).subscribe({
+    this.runDataReadinessChecks();
+    if (this.dataReadinessIssues.length > 0) {
+      this.notify.error('Generation bloquee: corrigez les donnees signalees dans la validation');
+      return;
+    }
+
+    this.adminService.getSolveDiagnostics(this.schoolId).subscribe({
+      next: (diagnostics) => {
+        this.dataReadinessIssues = diagnostics.blockingIssues || [];
+        const warningTips = diagnostics.warnings || [];
+        const serverTips = diagnostics.suggestions || [];
+        this.dataReadinessSuggestions = [...new Set([...(this.dataReadinessSuggestions || []), ...warningTips, ...serverTips])];
+
+        if (!diagnostics.ready) {
+          this.notify.error('Generation bloquee: le diagnostic backend a detecte des blocages');
+          return;
+        }
+
+        this.adminService.syncTeachersWithTimeslots(this.schoolId).subscribe({
           next: () => {
-            this.notify.info('Solving started! This may take a few minutes.');
+            this.solveState.startSolve(this.schoolId).subscribe({
+              next: () => {
+                this.notify.info('Solving started! This may take a few minutes.');
+              },
+              error: (err) => {
+                const msg = this.extractApiErrorMessage(err, 'Failed to start solving');
+                this.notify.error(msg);
+              }
+            });
           },
-          error: (err) => {
-            const msg = err?.error?.message || err?.error || 'Failed to start solving';
-            this.notify.error(msg);
+          error: () => {
+            this.notify.error('Impossible de synchroniser les disponibilites enseignants avant generation');
           }
         });
       },
       error: () => {
-        this.notify.error('Impossible de synchroniser les disponibilites enseignants avant generation');
+        this.notify.error('Diagnostic pre-solve indisponible. Reessayez.');
       }
     });
   }
@@ -524,22 +715,12 @@ export class TimetableComponent implements OnInit, OnDestroy {
   save(): void {
     this.adminService.saveTimetable(this.schoolId).subscribe({
       next: () => {
-        this.adminService.syncTeachersWithTimeslots(this.schoolId).subscribe({
-          next: () => {
-            this.notify.success('Timetable saved and teachers synchronized!');
-            this.solveState.refreshFromServer();
-            this.refresh();
-          },
-          error: () => {
-            this.notify.success('Timetable saved!');
-            this.notify.error('Timetable saved, but teacher synchronization failed');
-            this.solveState.refreshFromServer();
-            this.refresh();
-          }
-        });
+        this.notify.success('Timetable saved and teachers synchronized!');
+        this.solveState.refreshFromServer();
+        this.refresh();
       },
       error: (err) => {
-        const msg = err?.error?.message || err?.error || 'Failed to save timetable';
+        const msg = this.extractApiErrorMessage(err, 'Failed to save timetable');
         this.notify.error(msg);
       }
     });
@@ -547,35 +728,65 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.loading = true;
+    this.historyLoading = true;
     forkJoin({
       lessons: this.adminService.getLessons(this.schoolId),
       timeslots: this.adminService.getTimeslots(),
       classes: this.adminService.getClasses(this.schoolId),
-      subjects: this.adminService.getSubjects(this.schoolId)
+      subjects: this.adminService.getSubjects(this.schoolId),
+      rooms: this.adminService.getRooms(this.schoolId),
+      teachers: this.adminService.getTeachers(this.schoolId),
+      history: this.adminService.getTimetableHistory(this.schoolId)
     }).subscribe({
-      next: ({ lessons, timeslots, classes, subjects }) => {
+      next: ({ lessons, timeslots, classes, subjects, rooms, teachers, history }) => {
         this.lessons = lessons;
         this.timeslots = timeslots;
         this.classes = classes;
         this.subjects = subjects;
+        this.rooms = rooms;
+        this.teachers = teachers;
+        this.generationHistory = history || [];
         this.buildMeta();
         this.applyFilter();
+        this.runDataReadinessChecks();
         this.runIntegrityChecks();
         this.loading = false;
+        this.historyLoading = false;
       },
-      error: () => this.loading = false
+      error: () => {
+        this.loading = false;
+        this.historyLoading = false;
+      }
     });
   }
 
   exportExcel(): void {
-    this.adminService.exportTimetable(this.schoolId).subscribe(blob => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `timetable-school-${this.schoolId}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      this.notify.success('Excel exported');
+    this.adminService.exportTimetable(this.schoolId).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (!blob || blob.size === 0) {
+          this.notify.error('Export vide. Generez puis sauvegardez un emploi du temps valide.');
+          return;
+        }
+
+        const disposition = response.headers.get('content-disposition') || '';
+        const fileNameMatch = disposition.match(/filename="?([^\";]+)"?/i);
+        const fileName = fileNameMatch?.[1] || `timetable-school-${this.schoolId}.xlsx`;
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        this.notify.success('Export Excel reussi');
+      },
+      error: (err) => {
+        const msg = this.extractApiErrorMessage(err, 'Echec export. Verifiez que le solveur a produit une solution.');
+        this.notify.error(msg);
+      }
     });
   }
 
@@ -788,18 +999,32 @@ export class TimetableComponent implements OnInit, OnDestroy {
   private runIntegrityChecks(): void {
     const issues: string[] = [];
     const expectedByClass = new Map<string, number>();
+    const hasBackendExpected = Object.keys(this.expectedClassHoursStats || {}).length > 0;
 
-    this.classes.forEach(cg => {
-      const expected = this.subjects
-        .filter(s => this.subjectMatchesClassLevel(s.level, cg.level))
-        .reduce((sum, s) => sum + (s.hoursPerWeek || 0), 0);
-      expectedByClass.set(cg.name, expected);
-    });
+    if (hasBackendExpected) {
+      Object.entries(this.expectedClassHoursStats).forEach(([className, expected]) => {
+        expectedByClass.set(className, expected);
+      });
+    } else {
+      this.classes.forEach(cg => {
+        const expected = this.subjects
+          .filter(s => this.subjectMatchesClassLevel(s.level, cg.level))
+          .reduce((sum, s) => sum + (s.hoursPerWeek || 0), 0);
+        expectedByClass.set(cg.name, expected);
+      });
+    }
 
     const actualByClass = new Map<string, number>();
-    this.lessons.forEach(l => {
-      actualByClass.set(l.classGroupName, (actualByClass.get(l.classGroupName) || 0) + 1);
-    });
+    const hasBackendActual = Object.keys(this.classLoadStats || {}).length > 0;
+    if (hasBackendActual) {
+      Object.entries(this.classLoadStats).forEach(([className, load]) => {
+        actualByClass.set(className, load);
+      });
+    } else {
+      this.lessons.forEach(l => {
+        actualByClass.set(l.classGroupName, (actualByClass.get(l.classGroupName) || 0) + 1);
+      });
+    }
 
     expectedByClass.forEach((expected, className) => {
       const actual = actualByClass.get(className) || 0;
@@ -832,6 +1057,77 @@ export class TimetableComponent implements OnInit, OnDestroy {
     }
   }
 
+  private runDataReadinessChecks(): void {
+    const issues: string[] = [];
+    const tips: string[] = [];
+
+    if (this.classes.length === 0) {
+      issues.push('Aucune classe configuree');
+      tips.push('Ajoutez au moins une classe avec un niveau et un effectif.');
+    }
+    if (this.subjects.length === 0) {
+      issues.push('Aucune matiere configuree');
+      tips.push('Ajoutez des matieres avec heures par semaine.');
+    }
+    if (this.rooms.length === 0) {
+      issues.push('Aucune salle configuree');
+      tips.push('Ajoutez au moins une salle avec capacite/type.');
+    }
+    if (this.timeslots.length === 0) {
+      issues.push('Aucun creneau configure');
+      tips.push('Generez les creneaux avant de lancer le solveur.');
+    }
+
+    const invalidSubjects = this.subjects.filter(s => !s.hoursPerWeek || s.hoursPerWeek <= 0);
+    if (invalidSubjects.length > 0) {
+      issues.push(`${invalidSubjects.length} matiere(s) sans heures par semaine valides`);
+      tips.push('Renseignez hoursPerWeek > 0 pour toutes les matieres.');
+    }
+
+    const subjectsWithNoTeacher = this.subjects.filter(subject => {
+      const sid = subject.id;
+      return !this.teachers.some(t => (t.subjectIds || []).includes(sid));
+    });
+    if (subjectsWithNoTeacher.length > 0) {
+      issues.push(`${subjectsWithNoTeacher.length} matiere(s) sans enseignant qualifie`);
+      tips.push('Associez chaque matiere a au moins un enseignant.');
+    }
+
+    if (this.timeslots.length > 0) {
+      for (const classGroup of this.classes) {
+        const expectedHours = this.subjects
+          .filter(s => this.subjectMatchesClassLevel(s.level, classGroup.level))
+          .reduce((sum, s) => sum + (s.hoursPerWeek || 0), 0);
+
+        if (expectedHours > this.timeslots.length) {
+          issues.push(`Classe ${classGroup.name}: ${expectedHours} cours prevus > ${this.timeslots.length} creneaux disponibles`);
+          tips.push(`Ajoutez des creneaux ou reduisez les heures hebdo pour ${classGroup.name}.`);
+        }
+      }
+    }
+
+    for (const classGroup of this.classes) {
+      const hasCapacity = this.rooms.some(room => room.capacity >= classGroup.studentCount);
+      if (!hasCapacity) {
+        issues.push(`Classe ${classGroup.name}: aucune salle ne supporte ${classGroup.studentCount} eleves`);
+        tips.push(`Augmentez la capacite d'une salle ou ajustez l'effectif de ${classGroup.name}.`);
+      }
+    }
+
+    const subjectsWithRequiredRoomType = this.subjects.filter(s => (s.requiredRoomType || '').trim().length > 0);
+    for (const subject of subjectsWithRequiredRoomType) {
+      const requiredType = (subject.requiredRoomType || '').trim().toUpperCase();
+      const hasMatchingRoom = this.rooms.some(r => (r.type || '').trim().toUpperCase() === requiredType);
+      if (!hasMatchingRoom) {
+        issues.push(`Matiere ${subject.name}: aucune salle de type requis (${subject.requiredRoomType})`);
+        tips.push(`Ajoutez une salle de type ${subject.requiredRoomType} ou modifiez le type requis de ${subject.name}.`);
+      }
+    }
+
+    this.dataReadinessIssues = [...new Set(issues)];
+    this.dataReadinessSuggestions = [...new Set(tips)];
+  }
+
   private subjectMatchesClassLevel(subjectLevel?: string, classLevel?: string): boolean {
     const normalize = (value?: string) => (value || '').trim().toUpperCase();
     const s = normalize(subjectLevel);
@@ -861,12 +1157,107 @@ export class TimetableComponent implements OnInit, OnDestroy {
     return `${hh}:${mm}`;
   }
 
+  formatLessonDuration(lesson: Lesson): string {
+    if (lesson.sessionDurationMinutes && lesson.sessionDurationMinutes > 0) {
+      return `${lesson.sessionDurationMinutes} min`;
+    }
+
+    const start = this.parseTimeToMinutes(lesson.startTime);
+    const end = this.parseTimeToMinutes(lesson.endTime);
+    if (start !== null && end !== null && end > start) {
+      return `${end - start} min`;
+    }
+
+    return 'N/A';
+  }
+
+  private parseTimeToMinutes(value?: string): number | null {
+    if (!value) {
+      return null;
+    }
+    const parts = value.split(':');
+    if (parts.length < 2) {
+      return null;
+    }
+    const h = Number.parseInt(parts[0], 10);
+    const m = Number.parseInt(parts[1], 10);
+    if (Number.isNaN(h) || Number.isNaN(m)) {
+      return null;
+    }
+    return h * 60 + m;
+  }
+
+  formatHistoryDate(value?: string): string {
+    if (!value) {
+      return 'N/A';
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return value;
+    }
+    return parsed.toLocaleString();
+  }
+
   getSolveStageDescription(): string {
+    if (this.solverCompleted) return 'Solveur termine: solution finale disponible';
     if (!this.solving) return '';
     if (this.solveProgress < 20) return 'Preparation des donnees (classes, enseignants, salles, creneaux)';
     if (this.solveProgress < 50) return 'Affectation des cours aux creneaux compatibles';
     if (this.solveProgress < 80) return 'Optimisation des conflits (enseignants, salles, classes)';
     if (this.solveProgress < 100) return 'Finalisation et verification de la solution';
     return 'Solution en cours de stabilisation';
+  }
+
+  hasSolverSnapshot(): boolean {
+    return this.totalAssignments > 0 || !!this.scoreLabel || this.solverCompleted || this.solving;
+  }
+
+  hasConflictDetails(): boolean {
+    return Object.keys(this.conflictsSummary || {}).length > 0;
+  }
+
+  formatSolvingTime(ms: number): string {
+    const safe = Math.max(0, ms || 0);
+    const seconds = Math.floor(safe / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainSeconds = seconds % 60;
+    return `${minutes}m ${remainSeconds}s`;
+  }
+
+  private toTopList(map: Record<string, number>): string[] {
+    return Object.entries(map || {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, value]) => `${name}: ${value}`);
+  }
+
+  private extractApiErrorMessage(error: unknown, fallback: string): string {
+    const httpError = error as HttpErrorResponse;
+    const payload = httpError?.error;
+
+    if (typeof payload === 'string') {
+      try {
+        const parsed = JSON.parse(payload);
+        if (parsed?.message) {
+          return parsed.message;
+        }
+      } catch {
+        return payload;
+      }
+      return payload;
+    }
+
+    if (payload && typeof payload === 'object' && 'message' in payload) {
+      const message = (payload as { message?: string }).message;
+      if (message && message.trim().length > 0) {
+        return message;
+      }
+    }
+
+    if (httpError?.message) {
+      return httpError.message;
+    }
+
+    return fallback;
   }
 }

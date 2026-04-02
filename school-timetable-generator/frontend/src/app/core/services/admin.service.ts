@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability, Timeslot, TimetableSolveStatus } from '../models';
+import { ClassGroup, Subject, Room, Teacher, Lesson, TeacherAvailability, Timeslot, TimetableSolveStatus, TimetablePreSolveDiagnostics, TimetableHistoryItem } from '../models';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -123,6 +123,25 @@ export class AdminService {
     return this.http.get<TimetableSolveStatus>(`${this.apiUrl}/timetable/status/${schoolId}`);
   }
 
+  getSolveStatistics(schoolId: number): Observable<TimetableSolveStatus> {
+    return this.http.get<TimetableSolveStatus>(`${this.apiUrl}/timetable/statistics/${schoolId}`);
+  }
+
+  getTimetableHistory(schoolId: number): Observable<TimetableHistoryItem[]> {
+    return this.http.get<TimetableHistoryItem[]>(`${this.apiUrl}/timetable/history/${schoolId}`);
+  }
+
+  exportSolveStatisticsCsv(schoolId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.apiUrl}/timetable/statistics/${schoolId}/export/csv`, {
+      responseType: 'blob',
+      observe: 'response'
+    });
+  }
+
+  getSolveDiagnostics(schoolId: number): Observable<TimetablePreSolveDiagnostics> {
+    return this.http.get<TimetablePreSolveDiagnostics>(`${this.apiUrl}/timetable/diagnostics/${schoolId}`);
+  }
+
   stopSolving(schoolId: number): Observable<string> {
     return this.http.post(`${this.apiUrl}/timetable/stop/${schoolId}`, null, { responseType: 'text' });
   }
@@ -144,8 +163,11 @@ export class AdminService {
     return this.http.get<Lesson[]>(`${this.apiUrl}/timetable/lessons/teacher/${teacherId}`);
   }
 
-  exportTimetable(schoolId: number): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/timetable/export/${schoolId}`, { responseType: 'blob' });
+  exportTimetable(schoolId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.apiUrl}/timetable/export/${schoolId}`, {
+      responseType: 'blob',
+      observe: 'response'
+    });
   }
 
   // Teacher Availability

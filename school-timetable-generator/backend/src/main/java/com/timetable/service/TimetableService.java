@@ -33,11 +33,20 @@ public class TimetableService {
     private final TimeslotRepository timeslotRepository;
     private final TeacherAvailabilityRepository availabilityRepository;
     private final SolverManager<TimetableSolution, Long> solverManager;
+    private final TimetableStatisticsService timetableStatisticsService;
+    private final TimetableDiagnosticsService timetableDiagnosticsService;
+    private final TimetableHistoryService timetableHistoryService;
 
     private final Map<Long, TimetableSolution> solutionMap = new ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
     public String solve(Long schoolId) {
+        solverManager.terminateEarly(schoolId);
+        solutionMap.remove(schoolId);
+        timetableStatisticsService.resetSchoolRun(schoolId);
+
+        timetableDiagnosticsService.assertReadyForSolve(schoolId);
+
         List<Teacher> teachers = teacherRepository.findWithSubjectsBySchoolId(schoolId);
         List<ClassGroup> classGroups = classGroupRepository.findBySchoolId(schoolId);
         List<Subject> subjects = subjectRepository.findBySchoolId(schoolId);
@@ -62,7 +71,7 @@ public class TimetableService {
             }
         }
 
-        // Track assigned hours per teacher for load balancing
+        // Track assigned minutes per teacher for load balancing
         Map<Long, Integer> teacherLoad = new HashMap<>();
         teachers.forEach(t -> teacherLoad.put(t.getId(), 0));
 
@@ -75,11 +84,15 @@ public class TimetableService {
                 if (!subjectMatchesClassLevel(subject, cg)) {
                     continue;
                 }
-                for (int i = 0; i < subject.getHoursPerWeek(); i++) {
+                int sessionMinutes = normalizeSessionDurationMinutes(subject.getSessionDuration());
+                int requiredSessions = computeRequiredSessions(subject, sessionMinutes);
+
+                for (int i = 0; i < requiredSessions; i++) {
                     List<Teacher> qualified = teachersBySubject.getOrDefault(subject.getId(), List.of());
 
-                    // Pick the teacher with the least load (round-robin balancing)
+                    // Pick the teacher with the least load while respecting max weekly minutes
                     Teacher assignedTeacher = qualified.stream()
+                        .filter(t -> teacherLoad.getOrDefault(t.getId(), 0) + sessionMinutes <= t.getMaxHoursPerWeek() * 60)
                             .min(Comparator.comparingInt(t -> teacherLoad.getOrDefault(t.getId(), 0)))
                             .orElse(null);
 
@@ -91,11 +104,11 @@ public class TimetableService {
                         la.setClassGroup(cg);
                         la.setSchoolId(schoolId);
                         assignments.add(la);
-                        teacherLoad.merge(assignedTeacher.getId(), 1, Integer::sum);
+                        teacherLoad.merge(assignedTeacher.getId(), sessionMinutes, Integer::sum);
                     } else {
                         String missing = String.format("Classe '%s' / Matiere '%s'", cg.getName(), subject.getName());
                         missingCoverage.add(missing);
-                        log.warn("No teacher found for {} in school {}", missing, schoolId);
+                        log.warn("No eligible teacher found for {} in school {}", missing, schoolId);
                     }
                 }
             }
@@ -105,8 +118,43 @@ public class TimetableService {
             String details = missingCoverage.stream()
                     .limit(10)
                     .collect(Collectors.joining(", "));
-            throw new IllegalStateException("Generation impossible: enseignants manquants pour "
+            throw new IllegalStateException("Generation impossible: enseignants manquants ou surcharge hebdomadaire pour "
                     + missingCoverage.size() + " affectation(s). Exemples: " + details);
+        }
+
+        List<String> roomIncompatibilities = new ArrayList<>();
+        for (LessonAssignment assignment : assignments) {
+            boolean hasCompatibleRoom = rooms.stream().anyMatch(room -> {
+                boolean capacityOk = room.getCapacity() >= assignment.getClassGroupStudentCount();
+                boolean typeOk = assignment.getRequiredRoomType() == null || assignment.getRequiredRoomType().isBlank()
+                        || (room.getType() != null && room.getType().trim().equalsIgnoreCase(assignment.getRequiredRoomType().trim()));
+                return capacityOk && typeOk;
+            });
+            if (!hasCompatibleRoom) {
+                roomIncompatibilities.add(String.format("Classe '%s' / Matiere '%s'", assignment.getClassGroup().getName(), assignment.getSubject().getName()));
+            }
+        }
+        if (!roomIncompatibilities.isEmpty()) {
+            String details = roomIncompatibilities.stream().limit(10).collect(Collectors.joining(", "));
+            throw new IllegalStateException("Generation impossible: salles incompatibles pour "
+                    + roomIncompatibilities.size() + " affectation(s). Exemples: " + details);
+        }
+
+        List<String> sessionDurationIssues = new ArrayList<>();
+        for (LessonAssignment assignment : assignments) {
+            int sessionMinutes = assignment.getSubjectSessionDuration();
+            boolean hasCompatibleTimeslot = timeslots.stream().anyMatch(ts -> {
+                int duration = (int) java.time.Duration.between(ts.getStartTime(), ts.getEndTime()).toMinutes();
+                return duration >= sessionMinutes;
+            });
+            if (!hasCompatibleTimeslot) {
+                sessionDurationIssues.add(String.format("Classe '%s' / Matiere '%s' (%d min)",
+                        assignment.getClassGroup().getName(), assignment.getSubject().getName(), sessionMinutes));
+            }
+        }
+        if (!sessionDurationIssues.isEmpty()) {
+            String details = sessionDurationIssues.stream().limit(10).collect(Collectors.joining(", "));
+            throw new IllegalStateException("Generation impossible: aucun creneau compatible avec la duree de certaines matieres. Exemples: " + details);
         }
 
         // Load teacher availabilities
@@ -124,12 +172,19 @@ public class TimetableService {
 
         if (assignments.isEmpty()) {
             solutionMap.put(schoolId, problem);
+            timetableStatisticsService.onSolvingStarted(schoolId);
+            timetableStatisticsService.onBestSolution(schoolId, problem);
+            timetableStatisticsService.onSolvingStopped(schoolId);
             log.warn("No lesson assignments generated for school {}. Returning empty timetable.", schoolId);
             return "No lesson assignments generated for school " + schoolId + ". Timetable is empty.";
         }
 
+        timetableStatisticsService.onSolvingStarted(schoolId);
         solverManager.solveAndListen(schoolId, id -> problem,
-                solution -> solutionMap.put(schoolId, solution));
+                solution -> {
+                    solutionMap.put(schoolId, solution);
+                    timetableStatisticsService.onBestSolution(schoolId, solution);
+                });
 
         log.info("Solving started for school {} with {} assignments, {} timeslots, {} rooms",
                 schoolId, assignments.size(), timeslots.size(), rooms.size());
@@ -186,6 +241,7 @@ public class TimetableService {
 
     public String stopSolving(Long schoolId) {
         solverManager.terminateEarly(schoolId);
+        timetableStatisticsService.onSolvingStopped(schoolId);
         return "Solving stopped for school " + schoolId;
     }
 
@@ -193,7 +249,13 @@ public class TimetableService {
     public List<Lesson> saveSolution(Long schoolId) {
         TimetableSolution solution = solutionMap.get(schoolId);
         if (solution == null) {
-            throw new ResourceNotFoundException("No solution found for school " + schoolId);
+            List<Lesson> existingLessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
+            if (!existingLessons.isEmpty()) {
+                log.info("No in-memory solution for school {}, returning existing persisted lessons", schoolId);
+                return existingLessons;
+            }
+            throw new ResourceNotFoundException("No solution found for school " + schoolId
+                    + ". Please generate a timetable before saving.");
         }
 
         long unassigned = solution.getLessonAssignments().stream()
@@ -203,6 +265,8 @@ public class TimetableService {
             throw new IllegalStateException("Le planning est incomplet: " + unassigned + " cours non assignes."
                     + " Veuillez relancer la generation avant sauvegarde.");
         }
+
+        validateExactHoursPerClassAndSubject(schoolId, solution.getLessonAssignments());
 
         // Efficiently delete existing lessons
         lessonRepository.deleteBySchoolId(schoolId);
@@ -222,8 +286,123 @@ public class TimetableService {
                 saved.add(lessonRepository.save(lesson));
             }
         }
+        int syncedAvailabilities = syncTeachersWithAllTimeslots(schoolId);
+        Map<String, Object> historyResult = timetableHistoryService.archiveAndDispatchToTeachers(schoolId, saved, solution);
         log.info("Saved {} lessons for school {}", saved.size(), schoolId);
+        log.info("Teacher availability synchronization after save for school {}: {} availability entries created",
+                schoolId, syncedAvailabilities);
+        log.info("Timetable history saved for school {} with history id {} and {} teacher dispatch(es)",
+            schoolId, historyResult.get("historyId"), historyResult.get("teacherDispatchCount"));
         return saved;
+    }
+
+    private void validateExactHoursPerClassAndSubject(Long schoolId, List<LessonAssignment> assignments) {
+        List<ClassGroup> classGroups = classGroupRepository.findBySchoolId(schoolId);
+        List<Subject> subjects = subjectRepository.findBySchoolId(schoolId);
+
+        Map<String, Integer> expectedMinutesByClassAndSubject = new HashMap<>();
+        for (ClassGroup classGroup : classGroups) {
+            for (Subject subject : subjects) {
+                if (!subjectMatchesClassLevel(subject, classGroup)) {
+                    continue;
+                }
+                int expectedMinutes = Math.max(0, subject.getHoursPerWeek()) * 60;
+                expectedMinutesByClassAndSubject.put(key(classGroup.getId(), subject.getId()), expectedMinutes);
+            }
+        }
+
+        Map<String, Integer> actualMinutesByClassAndSubject = assignments.stream()
+                .collect(Collectors.groupingBy(
+                        la -> key(la.getClassGroupId(), la.getSubjectId()),
+                        Collectors.summingInt(LessonAssignment::getSubjectSessionDuration)
+                ));
+
+        List<String> mismatches = new ArrayList<>();
+        for (Map.Entry<String, Integer> expectedEntry : expectedMinutesByClassAndSubject.entrySet()) {
+            int actual = actualMinutesByClassAndSubject.getOrDefault(expectedEntry.getKey(), 0);
+            if (actual != expectedEntry.getValue()) {
+                mismatches.add(formatHoursMismatch(expectedEntry.getKey(), expectedEntry.getValue(), actual, classGroups, subjects));
+            }
+        }
+
+        for (Map.Entry<String, Integer> actualEntry : actualMinutesByClassAndSubject.entrySet()) {
+            if (!expectedMinutesByClassAndSubject.containsKey(actualEntry.getKey())) {
+                mismatches.add(formatHoursMismatch(actualEntry.getKey(), 0, actualEntry.getValue(), classGroups, subjects));
+            }
+        }
+
+        if (!mismatches.isEmpty()) {
+            String details = mismatches.stream().limit(10).collect(Collectors.joining(" | "));
+            throw new IllegalStateException("Le planning ne respecte pas exactement les heures par niveau/matiere. "
+                    + mismatches.size() + " ecart(s) detecte(s). Exemples: " + details);
+        }
+    }
+
+    private int syncTeachersWithAllTimeslots(Long schoolId) {
+        List<Teacher> teachers = teacherRepository.findBySchoolId(schoolId);
+        List<Timeslot> timeslots = timeslotRepository.findAllByOrderByDayOfWeekAscOrderInDayAsc();
+
+        int created = 0;
+        for (Teacher teacher : teachers) {
+            for (Timeslot timeslot : timeslots) {
+                if (!availabilityRepository.existsByTeacherIdAndTimeslotId(teacher.getId(), timeslot.getId())) {
+                    availabilityRepository.save(TeacherAvailability.builder()
+                            .teacher(teacher)
+                            .timeslot(timeslot)
+                            .available(true)
+                            .build());
+                    created++;
+                }
+            }
+        }
+        return created;
+    }
+
+    private String key(Long classGroupId, Long subjectId) {
+        return classGroupId + ":" + subjectId;
+    }
+
+    private String formatHoursMismatch(String key,
+                                       int expectedMinutes,
+                                       int actualMinutes,
+                                       List<ClassGroup> classGroups,
+                                       List<Subject> subjects) {
+        String[] parts = key.split(":");
+        Long classGroupId = Long.parseLong(parts[0]);
+        Long subjectId = Long.parseLong(parts[1]);
+
+        String className = classGroups.stream()
+                .filter(cg -> Objects.equals(cg.getId(), classGroupId))
+                .map(ClassGroup::getName)
+                .findFirst()
+                .orElse("Classe#" + classGroupId);
+        String subjectName = subjects.stream()
+                .filter(s -> Objects.equals(s.getId(), subjectId))
+                .map(Subject::getName)
+                .findFirst()
+                .orElse("Matiere#" + subjectId);
+
+        return className + " / " + subjectName + " (attendu=" + expectedMinutes + " min, actuel=" + actualMinutes + " min)";
+    }
+
+    private int normalizeSessionDurationMinutes(Integer value) {
+        if (value == null || value <= 0) {
+            return 60;
+        }
+        return value;
+    }
+
+    private int computeRequiredSessions(Subject subject, int sessionMinutes) {
+        int weeklyMinutes = Math.max(0, subject.getHoursPerWeek()) * 60;
+        if (weeklyMinutes == 0) {
+            return 0;
+        }
+        if (weeklyMinutes % sessionMinutes != 0) {
+            throw new IllegalStateException("Matiere '" + subject.getName() + "': " + weeklyMinutes
+                    + " min/semaine ne sont pas divisibles par une seance de " + sessionMinutes
+                    + " min. Ajustez hoursPerWeek ou sessionDuration.");
+        }
+        return weeklyMinutes / sessionMinutes;
     }
 
     public SolverStatus getStatus(Long schoolId) {

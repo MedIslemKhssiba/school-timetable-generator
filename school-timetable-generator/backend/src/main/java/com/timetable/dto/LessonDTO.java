@@ -17,4 +17,6 @@ public class LessonDTO {
     private String dayOfWeek;
     private String startTime;
     private String endTime;
+    private Integer sessionDurationMinutes;
+    private Integer timeslotDurationMinutes;
 }

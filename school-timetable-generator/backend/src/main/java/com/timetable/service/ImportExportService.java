@@ -2,6 +2,7 @@ package com.timetable.service;
 
 import com.timetable.model.*;
 import com.timetable.repository.*;
+import com.timetable.solver.LessonAssignment;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.FontFactory;
@@ -178,7 +179,17 @@ public class ImportExportService {
     }
 
     public byte[] exportTimetableExcel(Long schoolId) throws IOException {
-        List<Lesson> lessons = lessonRepository.findBySchoolId(schoolId);
+        return exportTimetableExcel(schoolId, List.of());
+    }
+
+    public byte[] exportTimetableExcel(Long schoolId, List<LessonAssignment> fallbackAssignments) throws IOException {
+        List<Lesson> lessons = lessonRepository.findBySchoolIdWithDetails(schoolId).stream()
+            .sorted(Comparator
+                .comparing((Lesson l) -> l.getTimeslot() != null && l.getTimeslot().getDayOfWeek() != null
+                    ? l.getTimeslot().getDayOfWeek().ordinal() : Integer.MAX_VALUE)
+                .thenComparing(l -> l.getTimeslot() != null && l.getTimeslot().getStartTime() != null
+                    ? l.getTimeslot().getStartTime() : java.time.LocalTime.MAX))
+            .toList();
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -199,17 +210,31 @@ public class ImportExportService {
                 cell.setCellStyle(headerStyle);
             }
 
-            // Data rows
             int rowNum = 1;
-            for (Lesson lesson : lessons) {
-                Row row = sheet.createRow(rowNum++);
-                row.createCell(0).setCellValue(lesson.getTimeslot() != null ? lesson.getTimeslot().getDayOfWeek().name() : "");
-                row.createCell(1).setCellValue(lesson.getTimeslot() != null ? lesson.getTimeslot().getStartTime().toString() : "");
-                row.createCell(2).setCellValue(lesson.getTimeslot() != null ? lesson.getTimeslot().getEndTime().toString() : "");
-                row.createCell(3).setCellValue(lesson.getSubject() != null ? lesson.getSubject().getName() : "");
-                row.createCell(4).setCellValue(lesson.getTeacher() != null ? lesson.getTeacher().getFirstName() + " " + lesson.getTeacher().getLastName() : "");
-                row.createCell(5).setCellValue(lesson.getClassGroup() != null ? lesson.getClassGroup().getName() : "");
-                row.createCell(6).setCellValue(lesson.getRoom() != null ? lesson.getRoom().getName() : "");
+
+            if (!lessons.isEmpty()) {
+                for (Lesson lesson : lessons) {
+                    Row row = sheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(lesson.getTimeslot() != null ? lesson.getTimeslot().getDayOfWeek().name() : "");
+                    row.createCell(1).setCellValue(lesson.getTimeslot() != null ? lesson.getTimeslot().getStartTime().toString() : "");
+                    row.createCell(2).setCellValue(lesson.getTimeslot() != null ? lesson.getTimeslot().getEndTime().toString() : "");
+                    row.createCell(3).setCellValue(lesson.getSubject() != null ? lesson.getSubject().getName() : "");
+                    row.createCell(4).setCellValue(lesson.getTeacher() != null ? lesson.getTeacher().getFirstName() + " " + lesson.getTeacher().getLastName() : "");
+                    row.createCell(5).setCellValue(lesson.getClassGroup() != null ? lesson.getClassGroup().getName() : "");
+                    row.createCell(6).setCellValue(lesson.getRoom() != null ? lesson.getRoom().getName() : "");
+                }
+            } else {
+                for (LessonAssignment assignment : fallbackAssignments) {
+                    Row row = sheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(assignment.getTimeslot() != null ? assignment.getTimeslot().getDayOfWeek().name() : "");
+                    row.createCell(1).setCellValue(assignment.getTimeslot() != null ? assignment.getTimeslot().getStartTime().toString() : "");
+                    row.createCell(2).setCellValue(assignment.getTimeslot() != null ? assignment.getTimeslot().getEndTime().toString() : "");
+                    row.createCell(3).setCellValue(assignment.getSubject() != null ? assignment.getSubject().getName() : "");
+                    row.createCell(4).setCellValue(assignment.getTeacher() != null
+                            ? assignment.getTeacher().getFirstName() + " " + assignment.getTeacher().getLastName() : "");
+                    row.createCell(5).setCellValue(assignment.getClassGroup() != null ? assignment.getClassGroup().getName() : "");
+                    row.createCell(6).setCellValue(assignment.getRoom() != null ? assignment.getRoom().getName() : "");
+                }
             }
 
             for (int i = 0; i < columns.length; i++) {
