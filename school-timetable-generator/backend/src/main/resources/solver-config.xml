@@ -8,8 +8,8 @@
         <constraintStreamImplType>BAVET</constraintStreamImplType>
     </scoreDirectorFactory>
     <termination>
-        <minutesSpentLimit>8</minutesSpentLimit>
-        <unimprovedSecondsSpentLimit>90</unimprovedSecondsSpentLimit>
+        <minutesSpentLimit>12</minutesSpentLimit>
+        <unimprovedSecondsSpentLimit>180</unimprovedSecondsSpentLimit>
     </termination>
     <constructionHeuristic>
         <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>

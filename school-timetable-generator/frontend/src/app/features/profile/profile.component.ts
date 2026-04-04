@@ -157,11 +157,11 @@ export class ProfileComponent implements OnInit {
     this.savingProfile = true;
     this.authService.updateProfile(this.profileForm.value).subscribe({
       next: () => {
-        this.notify.success('Profile updated successfully');
+        this.notify.success('Profil mis à jour avec succès');
         this.profileForm.markAsPristine();
         this.savingProfile = false;
       },
-      error: () => { this.notify.error('Failed to update profile'); this.savingProfile = false; }
+      error: () => { this.notify.error('Échec de la mise à jour du profil'); this.savingProfile = false; }
     });
   }
 
@@ -171,11 +171,11 @@ export class ProfileComponent implements OnInit {
     const { currentPassword, newPassword } = this.passwordForm.value;
     this.authService.changePassword({ currentPassword, newPassword }).subscribe({
       next: () => {
-        this.notify.success('Password changed successfully');
+        this.notify.success('Mot de passe modifié avec succès');
         this.passwordForm.reset();
         this.savingPassword = false;
       },
-      error: () => { this.notify.error('Failed to change password'); this.savingPassword = false; }
+      error: () => { this.notify.error('Échec du changement de mot de passe'); this.savingPassword = false; }
     });
   }
 

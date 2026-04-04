@@ -40,7 +40,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
         @if (filtered.length === 0) {
           <c-card-body>
             <ui-empty-state
-              [title]="searchTerm ? 'No rooms found' : 'No rooms yet'"
+              [title]="searchTerm ? 'Aucune salle trouvée' : 'Aucune salle pour le moment'"
               [message]="searchTerm ? 'Try adjusting your search.' : 'Add your first room to get started.'"
               [actionLabel]="searchTerm ? '' : 'Add Room'"
               (action)="openModal()" />
@@ -128,7 +128,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       [visible]="showDelete"
       [title]="t('delete_room')"
       [message]="t('delete') + ' ' + (deleteTarget?.name || '') + '? ' + t('this_cannot_be_undone')"
-      confirmText="Delete"
+      confirmText="Supprimer"
       type="danger"
       (confirmed)="doDelete()"
       (cancelled)="showDelete = false" />
@@ -254,13 +254,13 @@ export class RoomsComponent implements OnInit {
     const data = { ...this.form.value, schoolId: this.schoolId };
     if (this.editing && this.editId) {
       this.svc.updateRoom(this.editId, data).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Room updated'); },
-        error: () => this.notify.error('Failed to update room')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Salle mise à jour'); },
+        error: () => this.notify.error('Échec de la mise à jour de la salle')
       });
     } else {
       this.svc.createRoom(data).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Room created'); },
-        error: () => this.notify.error('Failed to create room')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Salle créée'); },
+        error: () => this.notify.error('Échec de la création de la salle')
       });
     }
   }
@@ -270,8 +270,8 @@ export class RoomsComponent implements OnInit {
   doDelete(): void {
     if (!this.deleteTarget) return;
     this.svc.deleteRoom(this.deleteTarget.id).subscribe({
-      next: () => { this.load(); this.showDelete = false; this.notify.success('Room deleted'); },
-      error: () => this.notify.error('Failed to delete room')
+      next: () => { this.load(); this.showDelete = false; this.notify.success('Salle supprimée'); },
+      error: () => this.notify.error('Échec de la suppression de la salle')
     });
   }
 }

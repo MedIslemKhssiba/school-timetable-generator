@@ -163,6 +163,14 @@ export class AdminService {
     return this.http.get<Lesson[]>(`${this.apiUrl}/timetable/lessons/teacher/${teacherId}`);
   }
 
+  updateLesson(lessonId: number, payload: { teacherId: number; roomId: number; timeslotId: number }): Observable<Lesson> {
+    return this.http.put<Lesson>(`${this.apiUrl}/timetable/lessons/${lessonId}`, payload);
+  }
+
+  moveLesson(lessonId: number, payload: { targetTimeslotId: number; targetLessonId?: number }): Observable<Lesson[]> {
+    return this.http.put<Lesson[]>(`${this.apiUrl}/timetable/lessons/${lessonId}/move`, payload);
+  }
+
   exportTimetable(schoolId: number): Observable<HttpResponse<Blob>> {
     return this.http.get(`${this.apiUrl}/timetable/export/${schoolId}`, {
       responseType: 'blob',

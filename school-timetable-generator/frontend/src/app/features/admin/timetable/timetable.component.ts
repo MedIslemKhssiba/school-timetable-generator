@@ -7,12 +7,13 @@ import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { Lesson, Timeslot, ClassGroup, Subject, Teacher, Room, TimetableHistoryItem } from '../../../core/models';
+import { Lesson, Timeslot, ClassGroup, Subject, Teacher, Room } from '../../../core/models';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { forkJoin } from 'rxjs';
 import { Subscription } from 'rxjs';
 import { TimetableSolveStateService } from '../../../core/services/timetable-solve-state.service';
+import JSZip from 'jszip';
 
 @Component({
   selector: 'app-timetable',
@@ -32,13 +33,10 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
         <button cButton color="danger" variant="outline" (click)="stop()" [disabled]="!solving">
           {{ t('stop') }}
         </button>
-        <button cButton color="secondary" variant="outline" (click)="save()" [disabled]="solving || lessons.length === 0">
-          {{ t('save') }}
+        <button cButton class="send-btn" (click)="save()" [disabled]="solving || lessons.length === 0">
+          Envoyer
         </button>
-        <button cButton color="light" (click)="refresh()">
-          {{ t('refresh') }}
-        </button>
-        <button cButton color="danger" class="pdf-export-btn" (click)="exportExcel()" [disabled]="lessons.length === 0">
+        <button cButton color="danger" class="pdf-export-btn" (click)="openExportModal()" [disabled]="solving || lessons.length === 0">
           {{ t('export') }}
         </button>
       </div>
@@ -57,11 +55,11 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
             <div class="solver-dots mt-1"><span></span><span></span><span></span></div>
             <div class="solver-stage mt-2">{{ getSolveStageDescription() }}</div>
             @if (totalAssignments > 0) {
-              <div class="solver-assignment mt-1">Cours places: {{ assignedAssignments }} / {{ totalAssignments }}</div>
+              <div class="solver-assignment mt-1">Cours placés : {{ assignedAssignments }} / {{ totalAssignments }}</div>
             }
-            <div class="solver-assignment mt-1">Qualite actuelle: {{ qualityPercent }}% | Score: {{ scoreLabel || 'N/A' }}</div>
+            <div class="solver-assignment mt-1">Qualité actuelle : {{ qualityPercent }}% | Score : {{ scoreLabel || 'N/D' }}</div>
             @if (solverCompleted) {
-              <div class="solver-assignment mt-1 fw-semibold">Solveur termine. Faisabilite: {{ solverFeasible ? 'OK' : 'NON' }} | Optimal: {{ solverOptimal ? 'OUI' : 'EN COURS' }}</div>
+              <div class="solver-assignment mt-1 fw-semibold">Solveur terminé. Faisabilité : {{ solverFeasible ? 'OK' : 'NON' }} | Optimal : {{ solverOptimal ? 'OUI' : 'EN COURS' }}</div>
             }
           </div>
         </c-card-body>
@@ -69,50 +67,75 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     }
 
     @if (hasSolverSnapshot()) {
-      <c-card class="mb-4">
-        <c-card-body class="py-2">
-          <div class="filter-bar">
-            <c-badge [color]="solverCompleted ? 'success' : (solving ? 'warning' : 'secondary')">
-              {{ solverCompleted ? 'Termine' : (solving ? 'En cours' : 'En attente') }}
-            </c-badge>
-            <span class="filter-label">Progression: <strong>{{ solveProgress }}%</strong></span>
-            <span class="filter-label">Completion: <strong>{{ completionPercent }}%</strong></span>
-            <span class="filter-label">Qualite emploi: <strong>{{ qualityPercent }}%</strong></span>
-            <span class="filter-label">Hard: <strong>{{ hardScore }}</strong></span>
-            <span class="filter-label">Soft: <strong>{{ softScore }}</strong></span>
-            <span class="filter-label">Temps solveur: <strong>{{ formatSolvingTime(solvingTimeMs) }}</strong></span>
-            <span class="filter-label">Conflits: <strong>{{ conflictsSummary['total'] || 0 }}</strong></span>
-          </div>
-        </c-card-body>
-      </c-card>
-    }
-
-    @if (hasSolverSnapshot() && hasConflictDetails()) {
-      <c-card class="mb-4">
-        <c-card-body class="py-2">
-          <div class="filter-bar">
-            <span class="filter-label">Teacher: <strong>{{ conflictsSummary['teacher'] || 0 }}</strong></span>
-            <span class="filter-label">Room: <strong>{{ conflictsSummary['room'] || 0 }}</strong></span>
-            <span class="filter-label">Class: <strong>{{ conflictsSummary['class'] || 0 }}</strong></span>
-            <span class="filter-label">Duplicates: <strong>{{ conflictsSummary['duplicates'] || 0 }}</strong></span>
-            <span class="filter-label">Invalid: <strong>{{ conflictsSummary['invalidAssignments'] || 0 }}</strong></span>
-          </div>
-        </c-card-body>
-      </c-card>
+      <div class="premium-stats-grid mb-4">
+        <c-card class="premium-stat-card">
+          <c-card-body>
+            <div class="stat-title">Statut solveur</div>
+            <div class="stat-value">{{ solverCompleted ? 'Terminé' : (solving ? 'En cours' : 'En attente') }}</div>
+            <div class="stat-meta">Temps : {{ formatSolvingTime(solvingTimeMs) }}</div>
+          </c-card-body>
+        </c-card>
+        <c-card class="premium-stat-card">
+          <c-card-body>
+            <div class="stat-title">Progression</div>
+            <div class="stat-value">{{ solveProgress }}%</div>
+            <div class="stat-meta">Complétion : {{ completionPercent }}%</div>
+          </c-card-body>
+        </c-card>
+        <c-card class="premium-stat-card">
+          <c-card-body>
+            <div class="stat-title">Qualité globale</div>
+            <div class="stat-value">{{ qualityPercent }}%</div>
+            <div class="stat-meta">Indice global : {{ scoreLabel || 'N/D' }}</div>
+          </c-card-body>
+        </c-card>
+        <c-card class="premium-stat-card">
+          <c-card-body>
+            <div class="stat-title">Conflits</div>
+            <div class="stat-value">{{ conflictsSummary['total'] || 0 }}</div>
+            <div class="stat-meta">Enseignant {{ conflictsSummary['teacher'] || 0 }} | Salle {{ conflictsSummary['room'] || 0 }} | Classe {{ conflictsSummary['class'] || 0 }}</div>
+          </c-card-body>
+        </c-card>
+        <c-card class="premium-stat-card">
+          <c-card-body>
+            <div class="stat-title">Score dur</div>
+            <div class="stat-value">{{ hardScore }}</div>
+            <div class="stat-meta">Violation critique</div>
+          </c-card-body>
+        </c-card>
+        <c-card class="premium-stat-card">
+          <c-card-body>
+            <div class="stat-title">Score souple (confort)</div>
+            <div class="stat-value">{{ getNormalizedSoftScoreLabel() }}</div>
+            <div class="stat-meta">{{ getSoftScoreExplanation() }}</div>
+          </c-card-body>
+        </c-card>
+      </div>
     }
 
     @if (hasSolverSnapshot() && (teacherLoadTop.length > 0 || roomUsageTop.length > 0 || classLoadTop.length > 0)) {
       <c-card class="mb-4">
         <c-card-body>
-          <h6 class="mb-2">Charges et usage (Top 5)</h6>
-          <div class="filter-bar mb-2">
-            <span class="filter-label">Teachers: {{ teacherLoadTop.join(' | ') }}</span>
-          </div>
-          <div class="filter-bar mb-2">
-            <span class="filter-label">Rooms: {{ roomUsageTop.join(' | ') }}</span>
-          </div>
-          <div class="filter-bar">
-            <span class="filter-label">Classes: {{ classLoadTop.join(' | ') }}</span>
+          <h6 class="mb-2">Analyse de charge</h6>
+          <div class="analysis-grid">
+            <div class="analysis-col">
+              <div class="analysis-title">Enseignants les plus chargés</div>
+              @for (row of teacherLoadTop; track row) {
+                <div class="analysis-item">{{ row }}</div>
+              }
+            </div>
+            <div class="analysis-col">
+              <div class="analysis-title">Classes les plus chargées</div>
+              @for (row of classLoadTop; track row) {
+                <div class="analysis-item">{{ row }}</div>
+              }
+            </div>
+            <div class="analysis-col">
+              <div class="analysis-title">Salles les plus utilisées</div>
+              @for (row of roomUsageTop; track row) {
+                <div class="analysis-item">{{ row }}</div>
+              }
+            </div>
           </div>
         </c-card-body>
       </c-card>
@@ -121,7 +144,7 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     @if (dataReadinessIssues.length > 0 || dataReadinessSuggestions.length > 0) {
       <c-card class="mb-4">
         <c-card-body>
-          <h6 class="mb-2">Validation des donnees pour la generation</h6>
+          <h6 class="mb-2">Validation des données pour la génération</h6>
           @if (dataReadinessIssues.length > 0) {
             <div class="mb-2 fw-semibold text-danger">Points bloquants</div>
             <ul class="mb-3 ps-3">
@@ -131,7 +154,7 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
             </ul>
           }
           @if (dataReadinessSuggestions.length > 0) {
-            <div class="mb-2 fw-semibold">Actions recommandees</div>
+            <div class="mb-2 fw-semibold">Actions recommandées</div>
             <ul class="mb-0 ps-3">
               @for (tip of dataReadinessSuggestions; track tip) {
                 <li>{{ tip }}</li>
@@ -142,37 +165,13 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
       </c-card>
     }
 
-    @if (!historyLoading && generationHistory.length > 0) {
-      <c-card class="mb-4">
-        <c-card-body>
-          <h6 class="mb-2">Historique des emplois du temps generes</h6>
-          <div class="history-list">
-            @for (item of generationHistory; track item.id) {
-              <div class="history-item">
-                <div class="history-head">
-                  <span class="history-id">Generation #{{ item.id }}</span>
-                  <span class="history-date">{{ formatHistoryDate(item.generatedAt) }}</span>
-                </div>
-                <div class="history-meta">
-                  <span>Cours: <strong>{{ item.totalLessons }}</strong></span>
-                  <span>Hard: <strong>{{ item.hardScore ?? 'N/A' }}</strong></span>
-                  <span>Soft: <strong>{{ item.softScore ?? 'N/A' }}</strong></span>
-                  <span>Dispatch enseignants: <strong>{{ item.teacherDispatchCount }}</strong></span>
-                </div>
-              </div>
-            }
-          </div>
-        </c-card-body>
-      </c-card>
-    }
-
     @if (loading) {
       <ui-skeleton type="table" [count]="6" />
     } @else if (lessons.length > 0) {
       @if (integrityIssues.length > 0) {
         <c-card class="mb-4">
           <c-card-body>
-            <h6 class="mb-2">Incoherences detectees dans l'emploi du temps</h6>
+            <h6 class="mb-2">Incohérences détectées dans l'emploi du temps</h6>
             <ul class="mb-0 ps-3">
               @for (issue of integrityIssues; track issue) {
                 <li>{{ issue }}</li>
@@ -212,13 +211,14 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
               </select>
             </div>
             @if (lunchBreakLabels.length > 0) {
-              <div class="lunch-break-chip">Pause dejeuner: {{ lunchBreakLabels.join(' | ') }}</div>
+              <div class="lunch-break-chip">Pause déjeuner : {{ lunchBreakLabels.join(' | ') }}</div>
             }
             <c-badge color="primary" class="ms-auto">{{ filteredLessons.length }} {{ t('lessons') }}</c-badge>
           </div>
         </c-card-body>
       </c-card>
 
+      <div #exportSurface class="export-surface">
       @if (viewMode === 'grid') {
         <!-- Grid View -->
         <c-card>
@@ -227,20 +227,25 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
               <table class="timetable-grid">
                 <thead>
                   <tr>
-                    <th class="day-col">{{ t('day') }}</th>
-                    @for (slot of timeSlots; track slot) {
-                      <th class="time-col">{{ getTimeSlotLabel(slot) }}</th>
+                    <th class="time-col">Créneau</th>
+                    @for (day of days; track day) {
+                      <th class="day-col">{{ formatDay(day) }}</th>
                     }
                   </tr>
                 </thead>
                 <tbody>
-                  @for (day of days; track day) {
+                  @for (slot of timeSlots; track slot) {
                     <tr>
-                      <td class="day-cell">{{ formatDay(day) }}</td>
-                      @for (slot of timeSlots; track slot) {
-                        <td class="grid-cell">
+                      <td class="time-cell">{{ getTimeSlotLabel(slot) }}</td>
+                      @for (day of days; track day) {
+                        <td class="grid-cell" (dragover)="onCellDragOver($event)" (drop)="onCellDrop(day, slot, $event)">
                           @for (lesson of getLessonAt(day, slot); track lesson.id) {
-                            <div class="grid-lesson" [style.border-left-color]="getSubjectColor(lesson.subjectName)">
+                            <div class="grid-lesson"
+                              [style.border-left-color]="getSubjectColor(lesson.subjectName)"
+                              draggable="true"
+                              (dragstart)="onLessonDragStart(lesson, $event)"
+                              (dragend)="onLessonDragEnd()"
+                              (drop)="onLessonDrop(lesson, $event)">
                               <div class="grid-subject">{{ lesson.subjectName }}</div>
                               <div class="lesson-duration-chip">{{ formatLessonDuration(lesson) }}</div>
                               <div class="grid-meta">{{ lesson.classGroupName }}</div>
@@ -289,6 +294,7 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
           }
         </c-row>
       }
+      </div>
     } @else if (!solving) {
       <c-card>
         <c-card-body class="text-center py-5">
@@ -296,6 +302,63 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
           <p class="text-muted mb-0">{{ t('click_generate_msg') }}</p>
         </c-card-body>
       </c-card>
+    }
+
+    @if (exportModalVisible) {
+      <div class="modal-backdrop" (click)="closeExportModal()"></div>
+      <div class="modal-wrapper">
+        <div class="modal-box">
+          <div class="modal-header-custom">
+            <h3>Exporter en image</h3>
+            <button class="modal-close" (click)="closeExportModal()">&times;</button>
+          </div>
+          <div class="modal-body-custom">
+            <div class="form-field">
+              <label cLabel>Type d export</label>
+              <select cFormControl [(ngModel)]="exportScope" [ngModelOptions]="{standalone: true}">
+                <option value="all-classes">Toutes les classes (une image par classe)</option>
+                <option value="class">Une classe spécifique</option>
+                <option value="teacher">Un professeur spécifique</option>
+                <option value="combined-all">Export combiné (ZIP classes + professeurs)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label cLabel>Nom de l'école</label>
+              <input cFormControl [(ngModel)]="exportSchoolName" [ngModelOptions]="{standalone: true}" placeholder="Nom de l'école" />
+            </div>
+            <div class="form-field">
+              <label cLabel>Année scolaire</label>
+              <input cFormControl [(ngModel)]="exportAcademicYear" [ngModelOptions]="{standalone: true}" placeholder="2025-2026" />
+            </div>
+            @if (exportScope === 'class') {
+              <div class="form-field">
+                <label cLabel>Classe</label>
+                <select cFormControl [(ngModel)]="exportClass" [ngModelOptions]="{standalone: true}">
+                  <option value="">Choisir une classe</option>
+                  @for (c of classNames; track c) {
+                    <option [value]="c">{{ c }}</option>
+                  }
+                </select>
+              </div>
+            }
+            @if (exportScope === 'teacher') {
+              <div class="form-field">
+                <label cLabel>Professeur</label>
+                <select cFormControl [(ngModel)]="exportTeacher" [ngModelOptions]="{standalone: true}">
+                  <option value="">Choisir un professeur</option>
+                  @for (t of teacherNames; track t) {
+                    <option [value]="t">{{ t }}</option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+          <div class="modal-footer-custom">
+            <button cButton color="secondary" type="button" (click)="closeExportModal()">{{ t('cancel') }}</button>
+            <button cButton color="danger" type="button" (click)="confirmExportImage()">Exporter</button>
+          </div>
+        </div>
+      </div>
     }
 
     @if (timeslotModalVisible) {
@@ -402,6 +465,28 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     }
 
     .filter-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .send-btn {
+      background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%) !important;
+      border-color: #16A34A !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      box-shadow: 0 10px 20px rgba(22, 163, 74, 0.22) !important;
+    }
+    .send-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%) !important;
+      box-shadow: 0 12px 24px rgba(22, 163, 74, 0.28) !important;
+    }
+    .send-btn:focus,
+    .send-btn:focus-visible,
+    .send-btn:active {
+      box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.28) !important;
+      border-color: #16A34A !important;
+      background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%) !important;
+    }
+    .send-btn:disabled {
+      opacity: 0.7;
+      box-shadow: none !important;
+    }
     .pdf-export-btn {
       background-color: var(--cui-danger) !important;
       border-color: var(--cui-danger) !important;
@@ -473,6 +558,62 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     }
 
     .timetable-grid-wrapper { overflow-x: auto; }
+    .premium-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .premium-stat-card {
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    }
+    .stat-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0F172A;
+      line-height: 1.1;
+    }
+    .stat-meta {
+      margin-top: 6px;
+      font-size: 0.74rem;
+      color: #475569;
+    }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .analysis-col {
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      background: #F8FAFC;
+      padding: 10px;
+    }
+    .analysis-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+    .analysis-item {
+      font-size: 0.75rem;
+      color: #475569;
+      padding: 4px 0;
+      border-top: 1px dashed #CBD5E1;
+    }
+    .analysis-item:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
     .timetable-grid {
       width: 100%; border-collapse: collapse; min-width: 800px;
       th, td { padding: 8px 10px; border: 1px solid #DDE3EE; vertical-align: top; }
@@ -484,11 +625,15 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
       .time-col { min-width: 90px; }
       .day-col { min-width: 120px; }
       .day-cell { font-size: 0.75rem; font-weight: 700; color: #1E3A8A; white-space: nowrap; text-align: left; background: #F8FAFF; font-family: 'Montserrat', sans-serif; }
+      .time-cell { font-size: 0.75rem; font-weight: 700; color: #1E3A8A; white-space: nowrap; text-align: left; background: #F8FAFF; font-family: 'Montserrat', sans-serif; }
       .grid-cell { min-height: 60px; }
+      .grid-cell.drag-over { outline: 2px dashed #22C55E; background: #ECFDF5; }
     }
+    .export-surface { background: #ffffff; }
     .grid-lesson {
       padding: 6px 8px; margin-bottom: 4px; border-radius: 6px;
       border-left: 3px solid #2563EB; background: #F0F4FA;
+      position: relative;
       font-size: 0.75rem; transition: transform 150ms;
       &:hover { transform: scale(1.02); }
       &:last-child { margin-bottom: 0; }
@@ -517,6 +662,7 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     .lesson-slot {
       padding: 12px; margin: 6px; background: #F0F4FA;
       border-radius: 8px; border-left: 3px solid #2563EB;
+      position: relative;
       transition: transform 0.15s, box-shadow 0.15s;
       &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37, 99, 235,0.1); }
     }
@@ -528,17 +674,6 @@ import { TimetableSolveStateService } from '../../../core/services/timetable-sol
     .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .lesson-details { display: flex; flex-direction: column; gap: 2px; }
     .lesson-details span { font-size: 0.78rem; color: #8D99A8; font-family: 'Montserrat', sans-serif; }
-    .history-list { display: grid; gap: 10px; }
-    .history-item {
-      border: 1px solid #DDE3EE;
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: #F8FAFF;
-    }
-    .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .history-id { font-weight: 700; color: #1E3A8A; font-family: 'Montserrat', sans-serif; font-size: 0.82rem; }
-    .history-date { color: #64748B; font-size: 0.75rem; font-family: 'Montserrat', sans-serif; }
-    .history-meta { display: flex; gap: 14px; flex-wrap: wrap; color: #334155; font-size: 0.77rem; font-family: 'Montserrat', sans-serif; }
   `]
 })
 export class TimetableComponent implements OnInit, OnDestroy {
@@ -552,6 +687,12 @@ export class TimetableComponent implements OnInit, OnDestroy {
   assignedAssignments = 0;
   loading = true;
   viewMode: 'grid' | 'cards' = 'grid';
+  exportScope: 'all-classes' | 'class' | 'teacher' | 'combined-all' = 'all-classes';
+  exportClass = '';
+  exportTeacher = '';
+  exportModalVisible = false;
+  exportSchoolName = 'EcoCode School';
+  exportAcademicYear = this.getDefaultAcademicYear();
   filterClass = '';
   filterTeacher = '';
   days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -583,16 +724,17 @@ export class TimetableComponent implements OnInit, OnDestroy {
   classLoadTop: string[] = [];
   classLoadStats: Record<string, number> = {};
   expectedClassHoursStats: Record<string, number> = {};
-  generationHistory: TimetableHistoryItem[] = [];
-  historyLoading = false;
   private schoolId = 1;
   timeslotModalVisible = false;
   timeslotSaving = false;
+  draggedLesson: Lesson | null = null;
+  dropSaving = false;
   copyToAllDays = false;
   timeslotForm: FormGroup;
   scheduleDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
   csvImporting = false;
   @ViewChild('csvInput') csvInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('exportSurface') exportSurface?: ElementRef<HTMLElement>;
   private subjectColors: Record<string, string> = {};
   private colorPalette = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#0EA5E9', '#EC4899', '#06B6D4', '#F97316', '#6366F1'];
   private stateSubscription?: Subscription;
@@ -620,6 +762,14 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.refresh();
+    this.authService.getProfile().subscribe({
+      next: (profile) => {
+        const schoolName = profile?.schoolName || profile?.school?.name;
+        if (schoolName && String(schoolName).trim().length > 0) {
+          this.exportSchoolName = String(schoolName).trim();
+        }
+      }
+    });
     this.solveState.init(this.schoolId);
     this.stateSubscription = this.solveState.state$.subscribe(state => {
       this.solving = state.solving;
@@ -664,7 +814,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
   solve(): void {
     this.runDataReadinessChecks();
     if (this.dataReadinessIssues.length > 0) {
-      this.notify.error('Generation bloquee: corrigez les donnees signalees dans la validation');
+      this.notify.error('Génération bloquée : corrigez les données signalées dans la validation');
       return;
     }
 
@@ -676,7 +826,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
         this.dataReadinessSuggestions = [...new Set([...(this.dataReadinessSuggestions || []), ...warningTips, ...serverTips])];
 
         if (!diagnostics.ready) {
-          this.notify.error('Generation bloquee: le diagnostic backend a detecte des blocages');
+          this.notify.error('Génération bloquée : le diagnostic backend a détecté des blocages');
           return;
         }
 
@@ -684,21 +834,21 @@ export class TimetableComponent implements OnInit, OnDestroy {
           next: () => {
             this.solveState.startSolve(this.schoolId).subscribe({
               next: () => {
-                this.notify.info('Solving started! This may take a few minutes.');
+                this.notify.info('Génération lancée. Cela peut prendre quelques minutes.');
               },
               error: (err) => {
-                const msg = this.extractApiErrorMessage(err, 'Failed to start solving');
+                const msg = this.extractApiErrorMessage(err, 'Échec du lancement de la génération');
                 this.notify.error(msg);
               }
             });
           },
           error: () => {
-            this.notify.error('Impossible de synchroniser les disponibilites enseignants avant generation');
+            this.notify.error('Impossible de synchroniser les disponibilités des enseignants avant la génération');
           }
         });
       },
       error: () => {
-        this.notify.error('Diagnostic pre-solve indisponible. Reessayez.');
+        this.notify.error('Diagnostic pré-génération indisponible. Réessayez.');
       }
     });
   }
@@ -706,21 +856,27 @@ export class TimetableComponent implements OnInit, OnDestroy {
   stop(): void {
     this.solveState.stopSolve().subscribe({
       next: () => {
-        this.notify.info('Solving stopped');
+        this.notify.info('Génération arrêtée');
       },
-      error: () => this.notify.error('Failed to stop solving')
+      error: () => this.notify.error('Échec de l arrêt de la génération')
     });
   }
 
   save(): void {
     this.adminService.saveTimetable(this.schoolId).subscribe({
       next: () => {
-        this.notify.success('Timetable saved and teachers synchronized!');
+        const lessonsCount = this.lessons.length;
+        const teachersCount = new Set(this.lessons.map(l => l.teacherName).filter(name => !!name && name.trim().length > 0)).size;
+        if (lessonsCount > 0) {
+          this.notify.success(`Publication réussie : ${lessonsCount} cours envoyés à ${teachersCount} enseignant(s) concerné(s).`);
+        } else {
+          this.notify.success('Publication de l emploi du temps effectuée.');
+        }
         this.solveState.refreshFromServer();
         this.refresh();
       },
       error: (err) => {
-        const msg = this.extractApiErrorMessage(err, 'Failed to save timetable');
+        const msg = this.extractApiErrorMessage(err, 'Échec de l envoi de l emploi du temps');
         this.notify.error(msg);
       }
     });
@@ -728,66 +884,211 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.loading = true;
-    this.historyLoading = true;
     forkJoin({
       lessons: this.adminService.getLessons(this.schoolId),
       timeslots: this.adminService.getTimeslots(),
       classes: this.adminService.getClasses(this.schoolId),
       subjects: this.adminService.getSubjects(this.schoolId),
       rooms: this.adminService.getRooms(this.schoolId),
-      teachers: this.adminService.getTeachers(this.schoolId),
-      history: this.adminService.getTimetableHistory(this.schoolId)
+      teachers: this.adminService.getTeachers(this.schoolId)
     }).subscribe({
-      next: ({ lessons, timeslots, classes, subjects, rooms, teachers, history }) => {
+      next: ({ lessons, timeslots, classes, subjects, rooms, teachers }) => {
         this.lessons = lessons;
         this.timeslots = timeslots;
         this.classes = classes;
         this.subjects = subjects;
         this.rooms = rooms;
         this.teachers = teachers;
-        this.generationHistory = history || [];
         this.buildMeta();
         this.applyFilter();
         this.runDataReadinessChecks();
         this.runIntegrityChecks();
         this.loading = false;
-        this.historyLoading = false;
       },
       error: () => {
         this.loading = false;
-        this.historyLoading = false;
       }
     });
   }
 
-  exportExcel(): void {
-    this.adminService.exportTimetable(this.schoolId).subscribe({
-      next: (response) => {
-        const blob = response.body;
-        if (!blob || blob.size === 0) {
-          this.notify.error('Export vide. Generez puis sauvegardez un emploi du temps valide.');
-          return;
+  openExportModal(): void {
+    this.exportModalVisible = true;
+  }
+
+  closeExportModal(): void {
+    this.exportModalVisible = false;
+  }
+
+  async confirmExportImage(): Promise<void> {
+    await this.exportAsImage();
+    this.closeExportModal();
+  }
+
+  async exportAsImage(): Promise<void> {
+    if (this.lessons.length === 0) {
+      this.notify.error('Aucun emploi du temps à exporter');
+      return;
+    }
+
+    const previousClass = this.filterClass;
+    const previousTeacher = this.filterTeacher;
+    let exportedCount = 0;
+
+    try {
+      if (this.exportScope === 'combined-all') {
+        const zip = new JSZip();
+
+        for (const className of this.classNames) {
+          const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.classGroupName === className), `Classe : ${className}`);
+          zip.file(`classes/emploi-${this.slugify(className)}.png`, blob);
+          exportedCount += 1;
         }
 
-        const disposition = response.headers.get('content-disposition') || '';
-        const fileNameMatch = disposition.match(/filename="?([^\";]+)"?/i);
-        const fileName = fileNameMatch?.[1] || `timetable-school-${this.schoolId}.xlsx`;
+        for (const teacherName of this.teacherNames) {
+          const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.teacherName === teacherName), `Enseignant : ${teacherName}`);
+          zip.file(`professeurs/emploi-prof-${this.slugify(teacherName)}.png`, blob);
+          exportedCount += 1;
+        }
 
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        this.notify.success('Export Excel reussi');
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        this.downloadBlob(zipBlob, `emplois-combines-${this.schoolId}.zip`);
+      } else if (this.exportScope === 'all-classes') {
+        if (this.classNames.length === 0) {
+          const blob = await this.renderProfessionalTimetableImage(this.lessons, 'Vue globale');
+          this.downloadBlob(blob, 'emploi-du-temps.png');
+          exportedCount += 1;
+        } else {
+          for (const className of this.classNames) {
+            const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.classGroupName === className), `Classe : ${className}`);
+            this.downloadBlob(blob, `emploi-${this.slugify(className)}.png`);
+            exportedCount += 1;
+          }
+        }
+      } else if (this.exportScope === 'class') {
+        if (!this.exportClass) {
+          this.notify.error('Choisissez une classe pour l export');
+          return;
+        }
+        const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.classGroupName === this.exportClass), `Classe : ${this.exportClass}`);
+        this.downloadBlob(blob, `emploi-${this.slugify(this.exportClass)}.png`);
+        exportedCount += 1;
+      } else {
+        if (!this.exportTeacher) {
+          this.notify.error('Choisissez un enseignant pour l export');
+          return;
+        }
+        const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.teacherName === this.exportTeacher), `Enseignant : ${this.exportTeacher}`);
+        this.downloadBlob(blob, `emploi-prof-${this.slugify(this.exportTeacher)}.png`);
+        exportedCount += 1;
+      }
+
+      if (this.exportScope === 'combined-all') {
+        this.notify.success(`Export premium terminé : ${exportedCount} emploi(s) du temps généré(s) dans une archive ZIP.`);
+      } else {
+        this.notify.success(`Export premium terminé : ${exportedCount} image(s) générée(s).`);
+      }
+    } catch {
+      this.notify.error('Échec de l export image');
+    } finally {
+      this.filterClass = previousClass;
+      this.filterTeacher = previousTeacher;
+      this.applyFilter();
+    }
+  }
+
+  onLessonDragStart(lesson: Lesson, event: DragEvent): void {
+    if (this.dropSaving) {
+      event.preventDefault();
+      return;
+    }
+    this.draggedLesson = lesson;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(lesson.id));
+    }
+  }
+
+  onLessonDragEnd(): void {
+    this.draggedLesson = null;
+    document.querySelectorAll('.grid-cell.drag-over').forEach(cell => cell.classList.remove('drag-over'));
+  }
+
+  onCellDragOver(event: DragEvent): void {
+    if (!this.draggedLesson) {
+      return;
+    }
+    event.preventDefault();
+    const cell = event.currentTarget as HTMLElement | null;
+    cell?.classList.add('drag-over');
+  }
+
+  onCellDrop(day: string, slot: string, event: DragEvent): void {
+    event.preventDefault();
+    const cell = event.currentTarget as HTMLElement | null;
+    cell?.classList.remove('drag-over');
+
+    if (!this.draggedLesson || this.dropSaving) {
+      return;
+    }
+
+    const targetTimeslot = this.resolveTimeslot(day, slot);
+    if (!targetTimeslot) {
+      this.notify.error('Impossible de trouver le créneau cible');
+      return;
+    }
+
+    const occupant = this.getLessonAt(day, slot).find(lesson => lesson.id !== this.draggedLesson?.id);
+    this.applyDragDropMove(targetTimeslot.id, occupant?.id);
+  }
+
+  onLessonDrop(targetLesson: Lesson, event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.draggedLesson || this.dropSaving || this.draggedLesson.id === targetLesson.id) {
+      return;
+    }
+
+    const targetTimeslot = this.resolveTimeslot(targetLesson.dayOfWeek, this.normalizeTime(targetLesson.startTime));
+    if (!targetTimeslot) {
+      this.notify.error('Impossible de trouver le créneau cible');
+      return;
+    }
+
+    this.applyDragDropMove(targetTimeslot.id, targetLesson.id);
+  }
+
+  private applyDragDropMove(targetTimeslotId: number, targetLessonId?: number): void {
+    if (!this.draggedLesson) {
+      return;
+    }
+
+    const sourceLessonId = this.draggedLesson.id;
+    this.dropSaving = true;
+    this.adminService.moveLesson(sourceLessonId, { targetTimeslotId, targetLessonId }).subscribe({
+      next: updates => {
+        updates.forEach(updated => {
+          this.lessons = this.lessons.map(item => item.id === updated.id ? updated : item);
+        });
+        this.buildMeta();
+        this.applyFilter();
+        this.runIntegrityChecks();
+        this.solveState.refreshFromServer();
+        this.notify.success(targetLessonId ? 'Leçons permutées avec succès' : 'Leçon déplacée avec succès');
+        this.dropSaving = false;
+        this.draggedLesson = null;
       },
       error: (err) => {
-        const msg = this.extractApiErrorMessage(err, 'Echec export. Verifiez que le solveur a produit une solution.');
+        this.dropSaving = false;
+        const msg = this.extractApiErrorMessage(err, 'Déplacement impossible');
         this.notify.error(msg);
       }
     });
+  }
+
+  private resolveTimeslot(day: string, slotStart: string): Timeslot | undefined {
+    const normalized = this.normalizeTime(slotStart);
+    return this.timeslots.find(ts => ts.dayOfWeek === day && this.normalizeTime(ts.startTime) === normalized);
   }
 
   openCsvPicker(): void {
@@ -997,6 +1298,11 @@ export class TimetableComponent implements OnInit, OnDestroy {
   }
 
   private runIntegrityChecks(): void {
+    if (!this.lessons || this.lessons.length === 0) {
+      this.integrityIssues = [];
+      return;
+    }
+
     const issues: string[] = [];
     const expectedByClass = new Map<string, number>();
     const hasBackendExpected = Object.keys(this.expectedClassHoursStats || {}).length > 0;
@@ -1148,13 +1454,33 @@ export class TimetableComponent implements OnInit, OnDestroy {
     return Number.isNaN(parsed) ? null : parsed;
   }
 
-  private normalizeTime(time?: string): string {
+  normalizeTime(time?: string): string {
     if (!time) return '';
     const parts = time.trim().split(':');
     if (parts.length < 2) return time.trim();
     const hh = parts[0].padStart(2, '0');
     const mm = parts[1].padStart(2, '0');
     return `${hh}:${mm}`;
+  }
+
+  private downloadBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private slugify(value: string): string {
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
   }
 
   formatLessonDuration(lesson: Lesson): string {
@@ -1168,7 +1494,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
       return `${end - start} min`;
     }
 
-    return 'N/A';
+    return 'N/D';
   }
 
   private parseTimeToMinutes(value?: string): number | null {
@@ -1187,24 +1513,35 @@ export class TimetableComponent implements OnInit, OnDestroy {
     return h * 60 + m;
   }
 
-  formatHistoryDate(value?: string): string {
-    if (!value) {
-      return 'N/A';
+  private truncateCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+    if (!text) {
+      return '';
     }
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-      return value;
+    if (ctx.measureText(text).width <= maxWidth) {
+      return text;
     }
-    return parsed.toLocaleString();
+    const ellipsis = '...';
+    let low = 0;
+    let high = text.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      const candidate = `${text.slice(0, mid)}${ellipsis}`;
+      if (ctx.measureText(candidate).width <= maxWidth) {
+        low = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return `${text.slice(0, low)}${ellipsis}`;
   }
 
   getSolveStageDescription(): string {
-    if (this.solverCompleted) return 'Solveur termine: solution finale disponible';
+    if (this.solverCompleted) return 'Solveur terminé : solution finale disponible';
     if (!this.solving) return '';
-    if (this.solveProgress < 20) return 'Preparation des donnees (classes, enseignants, salles, creneaux)';
-    if (this.solveProgress < 50) return 'Affectation des cours aux creneaux compatibles';
+    if (this.solveProgress < 20) return 'Préparation des données (classes, enseignants, salles, créneaux)';
+    if (this.solveProgress < 50) return 'Affectation des cours aux créneaux compatibles';
     if (this.solveProgress < 80) return 'Optimisation des conflits (enseignants, salles, classes)';
-    if (this.solveProgress < 100) return 'Finalisation et verification de la solution';
+    if (this.solveProgress < 100) return 'Finalisation et vérification de la solution';
     return 'Solution en cours de stabilisation';
   }
 
@@ -1259,5 +1596,203 @@ export class TimetableComponent implements OnInit, OnDestroy {
     }
 
     return fallback;
+  }
+
+  private async renderProfessionalTimetableImage(lessons: Lesson[], scopeLabel: string): Promise<Blob> {
+    const days = this.days.length > 0 ? this.days : ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const slots = this.timeSlots.length > 0
+      ? this.timeSlots
+      : Array.from(new Set(lessons.map(l => this.normalizeTime(l.startTime)))).sort((a, b) => a.localeCompare(b));
+
+    const scale = 2;
+    const headerHeight = 180;
+    const footerHeight = 50;
+    const leftCol = 170;
+    const dayCol = 290;
+    const rowHeight = 128;
+    const width = leftCol + dayCol * days.length;
+    const height = headerHeight + footerHeight + Math.max(1, slots.length) * rowHeight;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas indisponible');
+    ctx.scale(scale, scale);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    const headerGradient = ctx.createLinearGradient(0, 0, width, 0);
+    headerGradient.addColorStop(0, '#0f4c81');
+    headerGradient.addColorStop(1, '#1e88e5');
+    ctx.fillStyle = headerGradient;
+    ctx.fillRect(0, 0, width, headerHeight);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 30px Montserrat, Arial, sans-serif';
+    ctx.fillText(this.exportSchoolName?.trim() || 'École', 36, 56);
+    const isClassScope = scopeLabel.startsWith('Classe :');
+    ctx.font = isClassScope ? '800 30px Montserrat, Arial, sans-serif' : '700 22px Montserrat, Arial, sans-serif';
+    const normalizedScope = this.truncateCanvasText(ctx, scopeLabel, width * 0.68);
+    ctx.fillText(normalizedScope, 36, 100);
+    ctx.font = '600 18px Montserrat, Arial, sans-serif';
+    ctx.fillText(`Année scolaire : ${this.exportAcademicYear || this.getDefaultAcademicYear()}`, 36, 132);
+
+    ctx.textAlign = 'right';
+    ctx.font = '500 16px Montserrat, Arial, sans-serif';
+    ctx.fillText(`Exporté le ${new Date().toLocaleDateString('fr-FR')}`, width - 24, 40);
+    ctx.textAlign = 'left';
+
+    const gridTop = headerHeight;
+    const gridHeight = Math.max(1, slots.length) * rowHeight;
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(0, gridTop, width, rowHeight);
+
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= days.length; i++) {
+      const x = leftCol + i * dayCol;
+      ctx.beginPath();
+      ctx.moveTo(x, gridTop);
+      ctx.lineTo(x, gridTop + gridHeight);
+      ctx.stroke();
+    }
+    for (let r = 0; r <= Math.max(1, slots.length); r++) {
+      const y = gridTop + r * rowHeight;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '700 15px Montserrat, Arial, sans-serif';
+    ctx.fillText('Créneau', 24, gridTop + 28);
+    days.forEach((day, index) => {
+      const x = leftCol + index * dayCol + (dayCol / 2);
+      ctx.textAlign = 'center';
+      ctx.fillText(this.formatDay(day), x, gridTop + 28);
+      ctx.textAlign = 'left';
+    });
+
+    const lessonMap = new Map<string, Lesson[]>();
+    lessons.forEach(l => {
+      const key = `${l.dayOfWeek}|${this.normalizeTime(l.startTime)}`;
+      const arr = lessonMap.get(key) || [];
+      arr.push(l);
+      lessonMap.set(key, arr);
+    });
+
+    slots.forEach((slot, row) => {
+      const y = gridTop + rowHeight * (row + 1);
+      ctx.fillStyle = '#1e3a8a';
+      ctx.font = '600 14px Montserrat, Arial, sans-serif';
+      ctx.fillText(this.getTimeSlotLabel(slot), 14, y + 30);
+
+      days.forEach((day, col) => {
+        const x = leftCol + col * dayCol;
+        const items = lessonMap.get(`${day}|${slot}`) || [];
+        const blockPadding = 8;
+        const blockY = y + 8;
+        const blockH = rowHeight - 16;
+        if (items.length === 0) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(x + blockPadding, blockY, dayCol - blockPadding * 2, blockH);
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.strokeRect(x + blockPadding, blockY, dayCol - blockPadding * 2, blockH);
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '500 11px Montserrat, Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Aucun cours', x + (dayCol / 2), blockY + (blockH / 2) + 4);
+          ctx.textAlign = 'left';
+          return;
+        }
+
+        const cardColor = this.getSubjectColor(items[0].subjectName);
+
+        ctx.fillStyle = this.hexToRgba(cardColor, 0.12);
+        ctx.fillRect(x + blockPadding, blockY, dayCol - blockPadding * 2, blockH);
+        ctx.fillStyle = cardColor;
+        ctx.fillRect(x + blockPadding, blockY, 4, blockH);
+
+        const first = items[0];
+        const contentWidth = dayCol - 34;
+        const badgeText = this.getTimeSlotLabel(slot);
+        const badgeX = x + dayCol - 18;
+        const badgeY = blockY + 18;
+        ctx.font = '700 10px Montserrat, Arial, sans-serif';
+        const badgeW = Math.min(120, Math.max(54, ctx.measureText(badgeText).width + 16));
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(badgeX - badgeW, badgeY - 10, badgeW, 18);
+        ctx.fillStyle = '#1e293b';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.truncateCanvasText(ctx, badgeText, badgeW - 10), badgeX - (badgeW / 2), badgeY + 3);
+        ctx.textAlign = 'left';
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '700 14px Montserrat, Arial, sans-serif';
+        ctx.fillText(this.truncateCanvasText(ctx, first.subjectName, contentWidth - badgeW - 8), x + 18, blockY + 24);
+        ctx.font = '500 12px Montserrat, Arial, sans-serif';
+        ctx.fillStyle = '#334155';
+        ctx.fillText(this.truncateCanvasText(ctx, `Enseignant : ${first.teacherName}`, contentWidth), x + 18, blockY + 54);
+        ctx.fillText(this.truncateCanvasText(ctx, `Salle : ${first.roomName}`, contentWidth), x + 18, blockY + 78);
+        if (items.length > 1) {
+          ctx.fillStyle = '#7c2d12';
+          ctx.font = '700 11px Montserrat, Arial, sans-serif';
+          ctx.fillText(`+${items.length - 1} autre(s) cours`, x + 18, blockY + 100);
+        }
+      });
+    });
+
+    ctx.fillStyle = '#334155';
+    ctx.font = '500 13px Montserrat, Arial, sans-serif';
+    ctx.fillText(`Éléments planifiés : ${lessons.length}`, 16, height - 18);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Impossible de générer l image'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/png');
+    });
+  }
+
+  private hexToRgba(hex: string, alpha: number): string {
+    const value = hex.replace('#', '').trim();
+    const normalized = value.length === 3
+      ? value.split('').map((c) => `${c}${c}`).join('')
+      : value.padEnd(6, '0').slice(0, 6);
+    const r = Number.parseInt(normalized.slice(0, 2), 16);
+    const g = Number.parseInt(normalized.slice(2, 4), 16);
+    const b = Number.parseInt(normalized.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  getSoftScoreExplanation(): string {
+    const total = Math.max(1, this.totalAssignments || this.assignedAssignments || 1);
+    const perCourse = Math.abs(this.softScore || 0) / total;
+    let level = 'Très bon';
+    if (perCourse > 6) {
+      level = 'À améliorer';
+    } else if (perCourse > 3) {
+      level = 'Correct';
+    }
+    return `Niveau ${level} (${perCourse.toFixed(1)} pts/cours)`;
+  }
+
+  getNormalizedSoftScoreLabel(): string {
+    const total = Math.max(1, this.totalAssignments || this.assignedAssignments || 1);
+    const perCourse = (this.softScore || 0) / total;
+    return `${perCourse.toFixed(1)} pts/cours`;
+  }
+
+  private getDefaultAcademicYear(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const start = now.getMonth() >= 7 ? year : year - 1;
+    return `${start}-${start + 1}`;
   }
 }

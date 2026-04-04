@@ -37,7 +37,7 @@ import { TranslationService } from '../../../core/services/translation.service';
           <ui-skeleton type="table" [count]="5" />
         } @else if (filtered.length === 0) {
           <ui-empty-state
-            [title]="search ? 'No results found' : 'No admins yet'"
+            [title]="search ? 'Aucun résultat trouvé' : 'Aucun administrateur pour le moment'"
             [message]="search ? 'Try a different search term.' : 'Create your first admin account.'"
             [actionLabel]="search ? '' : 'Add Admin'"
             (action)="openModal()" />
@@ -122,7 +122,7 @@ import { TranslationService } from '../../../core/services/translation.service';
               @if (!editingAdmin) {
                 <div class="form-field">
                   <label cLabel>{{ t('password') }} *</label>
-                  <input cFormControl formControlName="password" type="password" placeholder="Minimum 6 characters" />
+                  <input cFormControl formControlName="password" type="password" placeholder="Minimum 6 caractères" />
                 </div>
               }
               <div class="form-field">
@@ -147,9 +147,9 @@ import { TranslationService } from '../../../core/services/translation.service';
 
     <ui-confirm-modal
       [visible]="deleteModalVisible"
-      title="Remove Admin"
-      [message]="'Are you sure you want to remove ' + (adminToDelete?.firstName ?? '') + ' ' + (adminToDelete?.lastName ?? '') + '?'"
-      confirmText="Remove"
+      title="Supprimer l'administrateur"
+      [message]="'Voulez-vous vraiment supprimer ' + (adminToDelete?.firstName ?? '') + ' ' + (adminToDelete?.lastName ?? '') + ' ?'"
+      confirmText="Supprimer"
       type="danger"
       (confirmed)="onDeleteConfirmed()"
       (cancelled)="deleteModalVisible = false" />
@@ -167,11 +167,11 @@ import { TranslationService } from '../../../core/services/translation.service';
             <div class="modal-body-custom">
               <div class="form-field">
                 <label cLabel>{{ t('new_password') }} *</label>
-                <input cFormControl formControlName="newPassword" type="password" placeholder="Minimum 6 characters" />
+                <input cFormControl formControlName="newPassword" type="password" placeholder="Minimum 6 caractères" />
               </div>
               <div class="form-field">
                 <label cLabel>{{ t('confirm_password') }} *</label>
-                <input cFormControl formControlName="confirmPassword" type="password" placeholder="Re-enter password" />
+                <input cFormControl formControlName="confirmPassword" type="password" placeholder="Ressaisir le mot de passe" />
               </div>
               @if (passwordChangeForm.hasError('mismatch')) {
                 <p class="text-danger small">{{ t('passwords_no_match') }}</p>
@@ -374,9 +374,9 @@ export class AdminsComponent implements OnInit {
           this.loadAdmins();
           this.closeModal();
           this.saving = false;
-          this.notif.success('Admin updated successfully');
+          this.notif.success('Administrateur mis à jour avec succès');
         },
-        error: () => { this.saving = false; this.notif.error('Failed to update admin'); }
+        error: () => { this.saving = false; this.notif.error('Échec de la mise à jour de l administrateur'); }
       });
     } else {
       this.superAdminService.createAdmin(this.adminForm.value).subscribe({
@@ -384,9 +384,9 @@ export class AdminsComponent implements OnInit {
           this.loadAdmins();
           this.closeModal();
           this.saving = false;
-          this.notif.success('Admin created successfully');
+          this.notif.success('Administrateur créé avec succès');
         },
-        error: () => { this.saving = false; this.notif.error('Failed to create admin'); }
+        error: () => { this.saving = false; this.notif.error('Échec de la création de l administrateur'); }
       });
     }
   }
@@ -403,9 +403,9 @@ export class AdminsComponent implements OnInit {
         this.loadAdmins();
         this.deleteModalVisible = false;
         this.adminToDelete = null;
-        this.notif.success('Admin removed successfully');
+        this.notif.success('Administrateur supprimé avec succès');
       },
-      error: () => { this.deleteModalVisible = false; this.notif.error('Failed to remove admin'); }
+      error: () => { this.deleteModalVisible = false; this.notif.error('Échec de la suppression de l administrateur'); }
     });
   }
 
@@ -424,9 +424,9 @@ export class AdminsComponent implements OnInit {
       next: () => {
         this.passwordModalVisible = false;
         this.savingPassword = false;
-        this.notif.success('Password changed successfully');
+        this.notif.success('Mot de passe modifié avec succès');
       },
-      error: () => { this.savingPassword = false; this.notif.error('Failed to change password'); }
+      error: () => { this.savingPassword = false; this.notif.error('Échec du changement de mot de passe'); }
     });
   }
 

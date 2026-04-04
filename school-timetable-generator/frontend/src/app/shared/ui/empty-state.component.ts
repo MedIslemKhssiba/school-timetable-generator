@@ -37,7 +37,7 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class EmptyStateComponent {
-  @Input() title = 'No data yet';
+  @Input() title = 'Aucune donnée pour le moment';
   @Input() message = 'Get started by creating your first item.';
   @Input() actionLabel = '';
   @Output() action = new EventEmitter<void>();

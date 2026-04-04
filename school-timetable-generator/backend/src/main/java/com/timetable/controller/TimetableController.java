@@ -1,16 +1,20 @@
 package com.timetable.controller;
 
 import com.timetable.dto.LessonDTO;
+import com.timetable.dto.LessonDragDropDTO;
+import com.timetable.dto.LessonUpdateDTO;
 import com.timetable.dto.TimeslotDayGenerationDTO;
 import com.timetable.dto.TimeslotDTO;
 import com.timetable.exception.ResourceNotFoundException;
 import com.timetable.model.DayOfWeek;
 import com.timetable.model.Lesson;
+import com.timetable.model.Room;
 import com.timetable.model.Subject;
 import com.timetable.model.Teacher;
 import com.timetable.model.TeacherAvailability;
 import com.timetable.model.Timeslot;
 import com.timetable.repository.LessonRepository;
+import com.timetable.repository.RoomRepository;
 import com.timetable.repository.SubjectRepository;
 import com.timetable.repository.TeacherAvailabilityRepository;
 import com.timetable.repository.TeacherRepository;
@@ -34,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,6 +59,7 @@ public class TimetableController {
     private final LessonRepository lessonRepository;
     private final TimeslotRepository timeslotRepository;
     private final SubjectRepository subjectRepository;
+    private final RoomRepository roomRepository;
     private final TeacherRepository teacherRepository;
     private final TeacherAvailabilityRepository teacherAvailabilityRepository;
     private final TimetableStatisticsService timetableStatisticsService;
@@ -377,6 +383,163 @@ public class TimetableController {
         List<Lesson> lessons = lessonRepository.findByTeacherIdWithDetails(teacherId);
         List<LessonDTO> dtos = lessons.stream().map(this::toLessonDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    @PutMapping("/lessons/{lessonId}")
+    @Transactional
+    public ResponseEntity<LessonDTO> updateLesson(@PathVariable Long lessonId, @Valid @RequestBody LessonUpdateDTO dto) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found with id: " + lessonId));
+
+        Teacher teacher = teacherRepository.findById(dto.getTeacherId())
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with id: " + dto.getTeacherId()));
+        Room room = roomRepository.findById(dto.getRoomId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: " + dto.getRoomId()));
+        Timeslot timeslot = timeslotRepository.findById(dto.getTimeslotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Timeslot not found with id: " + dto.getTimeslotId()));
+
+        Subject subject = lesson.getSubject();
+        if (subject == null) {
+            throw new IllegalStateException("Lesson has no subject assigned");
+        }
+
+        Long schoolId = lesson.getSchool() != null ? lesson.getSchool().getId() : null;
+        if (schoolId == null) {
+            throw new IllegalStateException("Lesson school reference is missing");
+        }
+
+        List<Lesson> schoolLessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
+        validateLessonPlacement(lesson, teacher, room, timeslot, schoolLessons, java.util.Set.of(lesson.getId()));
+
+        lesson.setTeacher(teacher);
+        lesson.setRoom(room);
+        lesson.setTimeslot(timeslot);
+        Lesson saved = lessonRepository.save(lesson);
+        return ResponseEntity.ok(toLessonDTO(saved));
+    }
+
+    @PutMapping("/lessons/{lessonId}/move")
+    @Transactional
+    public ResponseEntity<List<LessonDTO>> moveOrSwapLesson(@PathVariable Long lessonId,
+                                                             @Valid @RequestBody LessonDragDropDTO dto) {
+        Lesson source = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found with id: " + lessonId));
+        Timeslot targetTimeslot = timeslotRepository.findById(dto.getTargetTimeslotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Timeslot not found with id: " + dto.getTargetTimeslotId()));
+
+        Long schoolId = source.getSchool() != null ? source.getSchool().getId() : null;
+        if (schoolId == null) {
+            throw new IllegalStateException("Lesson school reference is missing");
+        }
+
+        Lesson targetLesson = null;
+        if (dto.getTargetLessonId() != null) {
+            targetLesson = lessonRepository.findById(dto.getTargetLessonId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Target lesson not found with id: " + dto.getTargetLessonId()));
+            Long targetSchoolId = targetLesson.getSchool() != null ? targetLesson.getSchool().getId() : null;
+            if (!schoolId.equals(targetSchoolId)) {
+                throw new IllegalStateException("Target lesson belongs to a different school");
+            }
+        }
+
+        List<Lesson> schoolLessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
+
+        Timeslot originalSourceTimeslot = source.getTimeslot();
+        Room originalSourceRoom = source.getRoom();
+
+        if (targetLesson != null) {
+            Timeslot originalTargetTimeslot = targetLesson.getTimeslot();
+            Room originalTargetRoom = targetLesson.getRoom();
+
+            source.setTimeslot(originalTargetTimeslot != null ? originalTargetTimeslot : targetTimeslot);
+            source.setRoom(originalTargetRoom);
+            targetLesson.setTimeslot(originalSourceTimeslot);
+            targetLesson.setRoom(originalSourceRoom);
+
+            validateLessonPlacement(source, source.getTeacher(), source.getRoom(), source.getTimeslot(), schoolLessons,
+                    java.util.Set.of(source.getId(), targetLesson.getId()));
+            validateLessonPlacement(targetLesson, targetLesson.getTeacher(), targetLesson.getRoom(), targetLesson.getTimeslot(), schoolLessons,
+                    java.util.Set.of(source.getId(), targetLesson.getId()));
+
+            Lesson savedSource = lessonRepository.save(source);
+            Lesson savedTarget = lessonRepository.save(targetLesson);
+            return ResponseEntity.ok(List.of(toLessonDTO(savedSource), toLessonDTO(savedTarget)));
+        }
+
+        source.setTimeslot(targetTimeslot);
+        validateLessonPlacement(source, source.getTeacher(), source.getRoom(), source.getTimeslot(), schoolLessons,
+                java.util.Set.of(source.getId()));
+        Lesson savedSource = lessonRepository.save(source);
+        return ResponseEntity.ok(List.of(toLessonDTO(savedSource)));
+    }
+
+    private void validateLessonPlacement(Lesson lesson,
+                                         Teacher teacher,
+                                         Room room,
+                                         Timeslot timeslot,
+                                         List<Lesson> schoolLessons,
+                                         java.util.Set<Long> ignoreLessonIds) {
+        if (lesson.getSubject() == null) {
+            throw new IllegalStateException("Lesson has no subject assigned");
+        }
+        if (teacher == null) {
+            throw new IllegalStateException("Enseignant manquant sur le cours");
+        }
+        if (room == null) {
+            throw new IllegalStateException("Salle manquante sur le cours");
+        }
+        if (timeslot == null) {
+            throw new IllegalStateException("Creneau manquant sur le cours");
+        }
+
+        Subject subject = lesson.getSubject();
+        if (teacher.getSubjects() == null || teacher.getSubjects().stream().noneMatch(s -> s.getId().equals(subject.getId()))) {
+            throw new IllegalStateException("Enseignant non qualifie pour la matiere " + subject.getName());
+        }
+
+        int slotMinutes = (int) Duration.between(timeslot.getStartTime(), timeslot.getEndTime()).toMinutes();
+        int sessionMinutes = Math.max(1, subject.getSessionDuration());
+        if (slotMinutes < sessionMinutes) {
+            throw new IllegalStateException("Creneau incompatible: " + slotMinutes + " min < session " + sessionMinutes + " min");
+        }
+
+        if (lesson.getClassGroup() != null && room.getCapacity() < lesson.getClassGroup().getStudentCount()) {
+            throw new IllegalStateException("Salle " + room.getName() + " trop petite pour la classe " + lesson.getClassGroup().getName());
+        }
+
+        String requiredRoomType = subject.getRequiredRoomType();
+        if (requiredRoomType != null && !requiredRoomType.isBlank()) {
+            String required = requiredRoomType.trim().toUpperCase();
+            String provided = room.getType() == null ? "" : room.getType().trim().toUpperCase();
+            if (!required.equals(provided)) {
+                throw new IllegalStateException("Salle incompatible: type requis " + requiredRoomType + ", type salle " + room.getType());
+            }
+        }
+
+        List<TeacherAvailability> availabilityEntries = teacherAvailabilityRepository.findByTeacherIdAndTimeslotId(teacher.getId(), timeslot.getId());
+        if (availabilityEntries.isEmpty() || availabilityEntries.stream().noneMatch(TeacherAvailability::isAvailable)) {
+            throw new IllegalStateException("Enseignant indisponible sur ce creneau");
+        }
+
+        for (Lesson other : schoolLessons) {
+            if (other.getId() == null || ignoreLessonIds.contains(other.getId()) || other.getTimeslot() == null) {
+                continue;
+            }
+            if (!other.getTimeslot().getId().equals(timeslot.getId())) {
+                continue;
+            }
+
+            if (other.getTeacher() != null && other.getTeacher().getId().equals(teacher.getId())) {
+                throw new IllegalStateException("Conflit enseignant: deja occupe sur ce creneau");
+            }
+            if (other.getRoom() != null && other.getRoom().getId().equals(room.getId())) {
+                throw new IllegalStateException("Conflit salle: deja occupee sur ce creneau");
+            }
+            if (other.getClassGroup() != null && lesson.getClassGroup() != null
+                    && other.getClassGroup().getId().equals(lesson.getClassGroup().getId())) {
+                throw new IllegalStateException("Conflit classe: deja occupee sur ce creneau");
+            }
+        }
     }
 
     @GetMapping("/export/{schoolId}")

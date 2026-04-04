@@ -36,6 +36,7 @@ public class TimetableService {
     private final TimetableStatisticsService timetableStatisticsService;
     private final TimetableDiagnosticsService timetableDiagnosticsService;
     private final TimetableHistoryService timetableHistoryService;
+    private final SchoolRepository schoolRepository;
 
     private final Map<Long, TimetableSolution> solutionMap = new ConcurrentHashMap<>();
 
@@ -252,6 +253,10 @@ public class TimetableService {
             List<Lesson> existingLessons = lessonRepository.findBySchoolIdWithDetails(schoolId);
             if (!existingLessons.isEmpty()) {
                 log.info("No in-memory solution for school {}, returning existing persisted lessons", schoolId);
+                Map<String, Object> historyResult = timetableHistoryService.archiveAndDispatchToTeachers(schoolId, existingLessons, null);
+                markTimetableAsSent(schoolId);
+                log.info("Existing timetable dispatched for school {} with history id {} and {} teacher dispatch(es)",
+                        schoolId, historyResult.get("historyId"), historyResult.get("teacherDispatchCount"));
                 return existingLessons;
             }
             throw new ResourceNotFoundException("No solution found for school " + schoolId
@@ -288,12 +293,21 @@ public class TimetableService {
         }
         int syncedAvailabilities = syncTeachersWithAllTimeslots(schoolId);
         Map<String, Object> historyResult = timetableHistoryService.archiveAndDispatchToTeachers(schoolId, saved, solution);
+        markTimetableAsSent(schoolId);
         log.info("Saved {} lessons for school {}", saved.size(), schoolId);
         log.info("Teacher availability synchronization after save for school {}: {} availability entries created",
                 schoolId, syncedAvailabilities);
         log.info("Timetable history saved for school {} with history id {} and {} teacher dispatch(es)",
             schoolId, historyResult.get("historyId"), historyResult.get("teacherDispatchCount"));
         return saved;
+    }
+
+    private void markTimetableAsSent(Long schoolId) {
+        School school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResourceNotFoundException("School not found with id: " + schoolId));
+        school.setTimetableSent(true);
+        school.setTimetableSentAt(java.time.LocalDateTime.now());
+        schoolRepository.save(school);
     }
 
     private void validateExactHoursPerClassAndSubject(Long schoolId, List<LessonAssignment> assignments) {
@@ -398,9 +412,10 @@ public class TimetableService {
             return 0;
         }
         if (weeklyMinutes % sessionMinutes != 0) {
-            throw new IllegalStateException("Matiere '" + subject.getName() + "': " + weeklyMinutes
-                    + " min/semaine ne sont pas divisibles par une seance de " + sessionMinutes
-                    + " min. Ajustez hoursPerWeek ou sessionDuration.");
+            int roundedSessions = (int) Math.ceil(weeklyMinutes / (double) sessionMinutes);
+            log.warn("Subject '{}' has non-divisible weekly minutes ({} min) by session duration ({} min); rounding sessions to {}",
+                    subject.getName(), weeklyMinutes, sessionMinutes, roundedSessions);
+            return roundedSessions;
         }
         return weeklyMinutes / sessionMinutes;
     }

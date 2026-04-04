@@ -20,7 +20,7 @@ import { CommonModule } from '@angular/common';
           <h3 class="modal-title">{{ title }}</h3>
           <p class="modal-message">{{ message }}</p>
           <div class="modal-actions">
-            <button class="btn-cancel" (click)="onCancel()">Cancel</button>
+            <button class="btn-cancel" (click)="onCancel()">Annuler</button>
             <button class="btn-confirm" [class]="'btn-' + type" (click)="onConfirm()">{{ confirmText }}</button>
           </div>
         </div>
@@ -77,9 +77,9 @@ import { CommonModule } from '@angular/common';
 })
 export class ConfirmModalComponent {
   @Input() visible = false;
-  @Input() title = 'Are you sure?';
-  @Input() message = 'This action cannot be undone.';
-  @Input() confirmText = 'Confirm';
+  @Input() title = 'Êtes-vous sûr ?';
+  @Input() message = 'Cette action est irréversible.';
+  @Input() confirmText = 'Confirmer';
   @Input() type: 'danger' | 'warning' | 'success' | 'info' = 'danger';
   @Output() confirmed = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();

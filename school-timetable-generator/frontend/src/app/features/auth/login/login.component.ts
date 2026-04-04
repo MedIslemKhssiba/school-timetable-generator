@@ -41,9 +41,9 @@ import {
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
             <div class="mb-3">
               <label cLabel for="email">{{ t('email') }}</label>
-              <input cFormControl id="email" formControlName="email" type="email" placeholder="you@school.edu" autocomplete="email" />
+              <input cFormControl id="email" formControlName="email" type="email" placeholder="vous@ecole.edu" autocomplete="email" />
               @if (loginForm.get('email')?.hasError('email') && loginForm.get('email')?.touched) {
-                <div class="text-danger small mt-1">Please enter a valid email</div>
+                <div class="text-danger small mt-1">Veuillez saisir une adresse e-mail valide</div>
               }
             </div>
 
@@ -51,7 +51,7 @@ import {
               <label cLabel for="password">{{ t('password') }}</label>
               <div class="password-wrapper">
                 <input cFormControl id="password" formControlName="password"
-                  [type]="hidePassword ? 'password' : 'text'" placeholder="Enter your password" autocomplete="current-password" />
+                  [type]="hidePassword ? 'password' : 'text'" placeholder="Saisissez votre mot de passe" autocomplete="current-password" />
                 <button type="button" class="password-toggle" (click)="hidePassword = !hidePassword">
                   @if (hidePassword) {
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -298,11 +298,11 @@ export class LoginComponent {
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         if (err.status === 401) {
-          this.errorMessage = err.error?.message || 'Invalid email or password';
+          this.errorMessage = err.error?.message || 'E-mail ou mot de passe invalide';
         } else if (err.status === 0) {
-          this.errorMessage = 'Unable to connect to server. Please try again later.';
+          this.errorMessage = 'Impossible de se connecter au serveur. Réessayez plus tard.';
         } else {
-          this.errorMessage = 'An unexpected error occurred. Please try again.';
+          this.errorMessage = 'Une erreur inattendue est survenue. Veuillez réessayer.';
         }
       }
     });

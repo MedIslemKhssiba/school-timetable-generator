@@ -41,7 +41,7 @@ import { forkJoin } from 'rxjs';
         @if (filtered.length === 0) {
           <c-card-body>
             <ui-empty-state
-              [title]="searchTerm ? 'No teachers found' : 'No teachers yet'"
+              [title]="searchTerm ? 'Aucun enseignant trouvé' : 'Aucun enseignant pour le moment'"
               [message]="searchTerm ? 'Try adjusting your search.' : 'Add your first teacher to get started.'"
               [actionLabel]="searchTerm ? '' : 'Add Teacher'"
               (action)="openModal()" />
@@ -165,9 +165,9 @@ import { forkJoin } from 'rxjs';
 
     <ui-confirm-modal
       [visible]="showDelete"
-      title="Delete Teacher"
-      [message]="'Delete ' + (deleteTarget?.firstName || '') + ' ' + (deleteTarget?.lastName || '') + '? This cannot be undone.'"
-      confirmText="Delete"
+      title="Supprimer l'enseignant"
+      [message]="'Supprimer ' + (deleteTarget?.firstName || '') + ' ' + (deleteTarget?.lastName || '') + ' ? Cette action est irréversible.'"
+      confirmText="Supprimer"
       type="danger"
       (confirmed)="doDelete()"
       (cancelled)="showDelete = false" />
@@ -524,13 +524,13 @@ export class TeachersComponent implements OnInit {
     if (this.form.invalid) return;
     if (this.editing && this.editId) {
       this.adminService.updateTeacher(this.editId, this.form.value).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Teacher updated'); },
-        error: () => this.notify.error('Failed to update teacher')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Enseignant mis à jour'); },
+        error: () => this.notify.error('Échec de la mise à jour de l enseignant')
       });
     } else {
       this.adminService.createTeacher(this.form.value).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Teacher created'); },
-        error: () => this.notify.error('Failed to create teacher')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Enseignant créé'); },
+        error: () => this.notify.error('Échec de la création de l enseignant')
       });
     }
   }
@@ -540,8 +540,8 @@ export class TeachersComponent implements OnInit {
   doDelete(): void {
     if (!this.deleteTarget) return;
     this.adminService.deleteTeacher(this.deleteTarget.id).subscribe({
-      next: () => { this.load(); this.showDelete = false; this.notify.success('Teacher deleted'); },
-      error: () => this.notify.error('Failed to delete teacher')
+      next: () => { this.load(); this.showDelete = false; this.notify.success('Enseignant supprimé'); },
+      error: () => this.notify.error('Échec de la suppression de l enseignant')
     });
   }
 

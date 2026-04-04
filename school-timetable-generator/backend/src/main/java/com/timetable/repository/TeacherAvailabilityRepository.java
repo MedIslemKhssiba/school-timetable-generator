@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface TeacherAvailabilityRepository extends JpaRepository<TeacherAvailability, Long> {
     List<TeacherAvailability> findByTeacherId(Long teacherId);
+    List<TeacherAvailability> findByTeacherIdAndTimeslotId(Long teacherId, Long timeslotId);
     List<TeacherAvailability> findByTimeslotIdIn(List<Long> timeslotIds);
     boolean existsByTeacherIdAndTimeslotId(Long teacherId, Long timeslotId);
     void deleteByTeacherId(Long teacherId);

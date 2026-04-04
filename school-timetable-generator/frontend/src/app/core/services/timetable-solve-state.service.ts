@@ -101,7 +101,7 @@ export class TimetableSolveStateService {
 
   stopSolve(): Observable<string> {
     if (this.schoolId == null) {
-      return of('No active solver');
+      return of('Aucun solveur actif');
     }
 
     return this.adminService.stopSolving(this.schoolId).pipe(

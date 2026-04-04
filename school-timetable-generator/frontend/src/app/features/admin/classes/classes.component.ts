@@ -40,7 +40,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
         @if (filtered.length === 0) {
           <c-card-body>
             <ui-empty-state
-              [title]="searchTerm ? 'No classes found' : 'No classes yet'"
+              [title]="searchTerm ? 'Aucune classe trouvée' : 'Aucune classe pour le moment'"
               [message]="searchTerm ? 'Try adjusting your search.' : 'Add your first class to get started.'"
               [actionLabel]="searchTerm ? '' : 'Add Class'"
               (action)="openModal()" />
@@ -131,7 +131,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       [visible]="showDelete"
       [title]="t('delete_class')"
       [message]="t('delete') + ' ' + (deleteTarget?.name || '') + '? ' + t('this_cannot_be_undone')"
-      confirmText="Delete"
+      confirmText="Supprimer"
       type="danger"
       (confirmed)="doDelete()"
       (cancelled)="showDelete = false" />
@@ -249,13 +249,13 @@ export class ClassesComponent implements OnInit {
     const data = { ...this.form.value, schoolId: this.schoolId };
     if (this.editing && this.editId) {
       this.svc.updateClass(this.editId, data).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Class updated'); },
-        error: () => this.notify.error('Failed to update class')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Classe mise à jour'); },
+        error: () => this.notify.error('Échec de la mise à jour de la classe')
       });
     } else {
       this.svc.createClass(data).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Class created'); },
-        error: () => this.notify.error('Failed to create class')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Classe créée'); },
+        error: () => this.notify.error('Échec de la création de la classe')
       });
     }
   }
@@ -265,8 +265,8 @@ export class ClassesComponent implements OnInit {
   doDelete(): void {
     if (!this.deleteTarget) return;
     this.svc.deleteClass(this.deleteTarget.id).subscribe({
-      next: () => { this.load(); this.showDelete = false; this.notify.success('Class deleted'); },
-      error: () => this.notify.error('Failed to delete class')
+      next: () => { this.load(); this.showDelete = false; this.notify.success('Classe supprimée'); },
+      error: () => this.notify.error('Échec de la suppression de la classe')
     });
   }
 }

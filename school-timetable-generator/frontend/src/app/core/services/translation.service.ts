@@ -442,6 +442,7 @@ const translations: Record<Language, Record<string, string>> = {
     'end_time': 'Heure de fin',
     'order': 'Ordre',
     'order_in_day': 'Ordre dans la journée',
+    'break': 'Pause',
     'select_day': 'Sélectionner un jour',
     'all_days': 'Tous les jours',
     'no_timeslots_yet': 'Pas encore de créneaux',

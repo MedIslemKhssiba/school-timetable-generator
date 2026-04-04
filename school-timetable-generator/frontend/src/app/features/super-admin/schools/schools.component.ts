@@ -42,7 +42,7 @@ import { TranslationService } from '../../../core/services/translation.service';
           <ui-skeleton type="table" [count]="5" />
         } @else if (filtered.length === 0) {
           <ui-empty-state
-            [title]="search || statusFilter !== 'all' ? 'No results found' : 'No schools yet'"
+            [title]="search || statusFilter !== 'all' ? 'Aucun résultat trouvé' : 'Aucune école pour le moment'"
             [message]="search || statusFilter !== 'all' ? 'Try a different search or filter.' : 'Get started by creating your first school.'"
             [actionLabel]="search || statusFilter !== 'all' ? '' : 'Add School'"
             (action)="openModal()" />
@@ -141,9 +141,9 @@ import { TranslationService } from '../../../core/services/translation.service';
 
     <ui-confirm-modal
       [visible]="deleteModalVisible"
-      title="Delete School"
-      [message]="'Are you sure you want to delete ' + (schoolToDelete?.name ?? '') + '? This action cannot be undone.'"
-      confirmText="Delete"
+      title="Supprimer l'école"
+      [message]="'Voulez-vous vraiment supprimer ' + (schoolToDelete?.name ?? '') + ' ? Cette action est irréversible.'"
+      confirmText="Supprimer"
       type="danger"
       (confirmed)="onDeleteConfirmed()"
       (cancelled)="deleteModalVisible = false" />
@@ -159,7 +159,7 @@ import { TranslationService } from '../../../core/services/translation.service';
           </div>
           <div class="modal-body-custom">
             @if (statsLoading) {
-              <div class="text-center py-4">Loading statistics...</div>
+              <div class="text-center py-4">Chargement des statistiques...</div>
             } @else {
               <div class="stats-mini-grid">
                 @for (item of statsItems; track item.key) {
@@ -459,9 +459,9 @@ export class SchoolsComponent implements OnInit {
           this.loadSchools();
           this.closeModal();
           this.saving = false;
-          this.notif.success('School updated successfully');
+          this.notif.success('École mise à jour avec succès');
         },
-        error: () => { this.saving = false; this.notif.error('Failed to update school'); }
+        error: () => { this.saving = false; this.notif.error('Échec de la mise à jour de l école'); }
       });
     } else {
       this.superAdminService.createSchool(data).subscribe({
@@ -469,9 +469,9 @@ export class SchoolsComponent implements OnInit {
           this.loadSchools();
           this.closeModal();
           this.saving = false;
-          this.notif.success('School created successfully');
+          this.notif.success('École créée avec succès');
         },
-        error: () => { this.saving = false; this.notif.error('Failed to create school'); }
+        error: () => { this.saving = false; this.notif.error('Échec de la création de l école'); }
       });
     }
   }
@@ -488,9 +488,9 @@ export class SchoolsComponent implements OnInit {
         this.loadSchools();
         this.deleteModalVisible = false;
         this.schoolToDelete = null;
-        this.notif.success('School deleted successfully');
+        this.notif.success('École supprimée avec succès');
       },
-      error: () => { this.deleteModalVisible = false; this.notif.error('Failed to delete school'); }
+      error: () => { this.deleteModalVisible = false; this.notif.error('Échec de la suppression de l école'); }
     });
   }
 
@@ -517,7 +517,7 @@ export class SchoolsComponent implements OnInit {
       error: () => {
         this.statsDetailRows = [];
         this.statsDetailLoading = false;
-        this.notif.error('Failed to load statistics details');
+        this.notif.error('Échec du chargement des détails statistiques');
       }
     });
   }
@@ -530,7 +530,7 @@ export class SchoolsComponent implements OnInit {
         this.applyFilter();
         this.notif.success(`School ${updated.active ? 'activated' : 'deactivated'}`);
       },
-      error: () => this.notif.error('Failed to toggle school status')
+      error: () => this.notif.error('Échec du changement de statut de l école')
     });
   }
 }

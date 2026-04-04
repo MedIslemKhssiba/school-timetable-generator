@@ -346,7 +346,7 @@ export class AvailabilityComponent implements OnInit {
     }));
     this.http.put<TeacherAvailability[]>(`${environment.apiUrl}/teacher/availabilities`, data).subscribe({
       next: () => { this.notify.success('Availability saved!'); this.hasChanges = false; },
-      error: () => this.notify.error('Failed to save availability')
+      error: () => this.notify.error('Échec de l enregistrement des disponibilités')
     });
   }
 }

@@ -40,7 +40,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
         @if (filtered.length === 0) {
           <c-card-body>
             <ui-empty-state
-              [title]="searchTerm ? 'No subjects found' : 'No subjects yet'"
+              [title]="searchTerm ? 'Aucune matière trouvée' : 'Aucune matière pour le moment'"
               [message]="searchTerm ? 'Try adjusting your search.' : 'Add your first subject to get started.'"
               [actionLabel]="searchTerm ? '' : 'Add Subject'"
               (action)="openModal()" />
@@ -151,7 +151,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
       [visible]="showDelete"
       [title]="t('delete_subject')"
       [message]="t('delete') + ' ' + (deleteTarget?.name || '') + '? ' + t('this_cannot_be_undone')"
-      confirmText="Delete"
+      confirmText="Supprimer"
       type="danger"
       (confirmed)="doDelete()"
       (cancelled)="showDelete = false" />
@@ -286,13 +286,13 @@ export class SubjectsComponent implements OnInit {
     }
     if (this.editing && this.editId) {
       this.svc.updateSubject(this.editId, data).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Subject updated'); },
-        error: () => this.notify.error('Failed to update subject')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Matière mise à jour'); },
+        error: () => this.notify.error('Échec de la mise à jour de la matière')
       });
     } else {
       this.svc.createSubject(data).subscribe({
-        next: () => { this.load(); this.closeModal(); this.notify.success('Subject created'); },
-        error: () => this.notify.error('Failed to create subject')
+        next: () => { this.load(); this.closeModal(); this.notify.success('Matière créée'); },
+        error: () => this.notify.error('Échec de la création de la matière')
       });
     }
   }
@@ -309,8 +309,8 @@ export class SubjectsComponent implements OnInit {
   doDelete(): void {
     if (!this.deleteTarget) return;
     this.svc.deleteSubject(this.deleteTarget.id).subscribe({
-      next: () => { this.load(); this.showDelete = false; this.notify.success('Subject deleted'); },
-      error: () => this.notify.error('Failed to delete subject')
+      next: () => { this.load(); this.showDelete = false; this.notify.success('Matière supprimée'); },
+      error: () => this.notify.error('Échec de la suppression de la matière')
     });
   }
 }
