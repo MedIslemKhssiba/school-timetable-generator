@@ -44,7 +44,7 @@ import { TranslationService } from '../../../core/services/translation.service';
             <section class="week-stage">
               <div class="week-stage-header">
                 <h3>{{ selectedDay ? formatDay(selectedDay) : 'Vue hebdomadaire des cours' }}</h3>
-                <p>{{ selectedDay ? dailyTeachingHours(selectedDay) : weeklyTeachingHours() }}h d'enseignement planifiées</p>
+                <p><span class="teaching-hours-value">{{ selectedDay ? dailyTeachingHours(selectedDay) : weeklyTeachingHours() }}h</span> d'enseignement planifiées</p>
               </div>
 
               <div class="timeline-grid" [class.single-day]="!!selectedDay">
@@ -137,20 +137,26 @@ import { TranslationService } from '../../../core/services/translation.service';
       background: linear-gradient(135deg, #2563EB, #0EA5E9);
       border-color: transparent;
     }
-    .day-pill.active .day-pill-label,
-    .day-pill.active .day-pill-count { color: #FFFFFF; }
+    .day-pill.active .day-pill-label { color: #FFFFFF; }
     .day-pill-label { font-size: 0.8rem; font-weight: 700; color: #25354D; }
     .day-pill-count {
       min-width: 26px;
       height: 26px;
       border-radius: 999px;
-      background: #EAF0FB;
-      color: #344861;
+      background: #DBEAFE;
+      color: #2563EB;
+      border: 1px solid #BFDBFE;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-size: 0.75rem;
       font-weight: 700;
+    }
+    .day-pill:hover .day-pill-count,
+    .day-pill:focus .day-pill-count,
+    .day-pill:focus-visible .day-pill-count,
+    .day-pill.active .day-pill-count {
+      color: #2563EB;
     }
 
     .week-stage {
@@ -167,6 +173,9 @@ import { TranslationService } from '../../../core/services/translation.service';
     }
     .week-stage-header h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #1A2332; font-family: 'Montserrat', sans-serif; }
     .week-stage-header p { margin: 4px 0 0; font-size: 0.78rem; color: #6C7D94; font-family: 'Montserrat', sans-serif; }
+    .teaching-hours-value { color: #2563EB; font-weight: 800; }
+    .week-stage-header:hover .teaching-hours-value,
+    .week-stage:hover .teaching-hours-value { color: #2563EB; }
 
     .timeline-grid {
       display: grid;

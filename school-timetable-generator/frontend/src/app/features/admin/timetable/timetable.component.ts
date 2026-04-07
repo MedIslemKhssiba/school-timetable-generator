@@ -1600,9 +1600,35 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
   private async renderProfessionalTimetableImage(lessons: Lesson[], scopeLabel: string): Promise<Blob> {
     const days = this.days.length > 0 ? this.days : ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-    const slots = this.timeSlots.length > 0
-      ? this.timeSlots
-      : Array.from(new Set(lessons.map(l => this.normalizeTime(l.startTime)))).sort((a, b) => a.localeCompare(b));
+    const configuredStarts = new Set<string>();
+    const localEndByStart: Record<string, string> = {};
+    this.timeslots.forEach(ts => {
+      const start = this.normalizeTime(ts.startTime);
+      if (!start) {
+        return;
+      }
+      configuredStarts.add(start);
+      if (ts.endTime) {
+        localEndByStart[start] = this.normalizeTime(ts.endTime);
+      }
+    });
+
+    lessons.forEach(l => {
+      const start = this.normalizeTime(l.startTime);
+      if (!start) {
+        return;
+      }
+      configuredStarts.add(start);
+      if (l.endTime && !localEndByStart[start]) {
+        localEndByStart[start] = this.normalizeTime(l.endTime);
+      }
+    });
+
+    const slots = configuredStarts.size > 0
+      ? Array.from(configuredStarts).sort((a, b) => a.localeCompare(b))
+      : (this.timeSlots.length > 0
+        ? this.timeSlots
+        : Array.from(new Set(lessons.map(l => this.normalizeTime(l.startTime)))).sort((a, b) => a.localeCompare(b)));
 
     const scale = 2;
     const headerHeight = 180;
@@ -1611,7 +1637,10 @@ export class TimetableComponent implements OnInit, OnDestroy {
     const dayCol = 290;
     const rowHeight = 128;
     const width = leftCol + dayCol * days.length;
-    const height = headerHeight + footerHeight + Math.max(1, slots.length) * rowHeight;
+    const slotRowCount = Math.max(1, slots.length);
+    const tableRowCount = slotRowCount + 1; // +1 for the header row (Créneau + jours)
+    const gridHeight = tableRowCount * rowHeight;
+    const height = headerHeight + footerHeight + gridHeight;
 
     const canvas = document.createElement('canvas');
     canvas.width = width * scale;
@@ -1645,7 +1674,6 @@ export class TimetableComponent implements OnInit, OnDestroy {
     ctx.textAlign = 'left';
 
     const gridTop = headerHeight;
-    const gridHeight = Math.max(1, slots.length) * rowHeight;
     ctx.fillStyle = '#f1f5f9';
     ctx.fillRect(0, gridTop, width, rowHeight);
 
@@ -1658,7 +1686,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
       ctx.lineTo(x, gridTop + gridHeight);
       ctx.stroke();
     }
-    for (let r = 0; r <= Math.max(1, slots.length); r++) {
+    for (let r = 0; r <= tableRowCount; r++) {
       const y = gridTop + r * rowHeight;
       ctx.beginPath();
       ctx.moveTo(0, y);
@@ -1688,7 +1716,8 @@ export class TimetableComponent implements OnInit, OnDestroy {
       const y = gridTop + rowHeight * (row + 1);
       ctx.fillStyle = '#1e3a8a';
       ctx.font = '600 14px Montserrat, Arial, sans-serif';
-      ctx.fillText(this.getTimeSlotLabel(slot), 14, y + 30);
+      const slotLabel = localEndByStart[slot] ? `${slot}-${localEndByStart[slot]}` : this.getTimeSlotLabel(slot);
+      ctx.fillText(slotLabel, 14, y + 30);
 
       days.forEach((day, col) => {
         const x = leftCol + col * dayCol;
@@ -1718,7 +1747,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
         const first = items[0];
         const contentWidth = dayCol - 34;
-        const badgeText = this.getTimeSlotLabel(slot);
+        const badgeText = slotLabel;
         const badgeX = x + dayCol - 18;
         const badgeY = blockY + 18;
         ctx.font = '700 10px Montserrat, Arial, sans-serif';
