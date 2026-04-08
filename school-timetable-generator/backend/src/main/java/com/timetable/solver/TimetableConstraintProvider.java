@@ -9,7 +9,10 @@ import org.optaplanner.core.api.score.stream.Joiners;
 import org.optaplanner.core.api.score.stream.ConstraintCollectors;
 
 import java.text.Normalizer;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class TimetableConstraintProvider implements ConstraintProvider {
 
@@ -20,6 +23,15 @@ public class TimetableConstraintProvider implements ConstraintProvider {
         private static final int SOFT_STRONG = 2;
         private static final int SOFT_MEDIUM = 1;
         private static final int SOFT_LOW = 1;
+
+        // Premium quality-oriented soft scoring profile
+        private static final int SOFT_PRIORITY = 4;
+        private static final int SOFT_GAP = 3;
+        private static final int SOFT_BALANCE = 2;
+        private static final int SOFT_CONSECUTIVE = 3;
+        private static final int SOFT_CONTINUITY = 1;
+        private static final int SOFT_COMFORT = 2;
+        private static final int SOFT_SUPPORT = 1;
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
@@ -49,6 +61,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 avoidHeavyConsecutiveLessons(constraintFactory),
                 avoidTeacherHeavyConsecutiveLessons(constraintFactory),
                 prioritySubjectsMorningSoft(constraintFactory),
+                prioritySubjectsEarlyReward(constraintFactory),
                 sportArtAfternoonPreference(constraintFactory),
                 subjectCoherentTimeWindows(constraintFactory),
                 practicalSubjectGrouping(constraintFactory),
@@ -56,6 +69,8 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 timeslotDurationWasteMinimization(constraintFactory),
                 subjectVarietyPerDay(constraintFactory),
                 classGroupDayBalance(constraintFactory),
+                                classWeeklyDistributionBalance(constraintFactory),
+                                teacherWeeklyDistributionBalance(constraintFactory),
                 roomDailyUsageBalance(constraintFactory)
         };
     }
@@ -143,7 +158,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .ifNotExists(TeacherAvailability.class,
                         Joiners.equal(la -> la.getTeacher().getId(), ta -> ta.getTeacher().getId()),
                         Joiners.equal(la -> la.getTimeslot().getId(), ta -> ta.getTimeslot().getId()))
-                .penalize(HardSoftScore.ofSoft(SOFT_VERY_STRONG))
+                .penalize(HardSoftScore.ofSoft(SOFT_SUPPORT))
                 .asConstraint("Teacher availability missing");
     }
 
@@ -156,7 +171,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         ConstraintCollectors.sum(LessonAssignment::getSubjectSessionDuration),
                         ConstraintCollectors.max(LessonAssignment::getTeacherMaxHours))
                 .filter((teacherId, assignedMinutes, maxHours) -> assignedMinutes > (maxHours != null ? maxHours : 0) * 60)
-                .penalize(HardSoftScore.ofSoft(SOFT_STRONG),
+                .penalize(HardSoftScore.ofSoft(SOFT_COMFORT),
                         (teacherId, assignedMinutes, maxHours) -> {
                             int limitMinutes = (maxHours != null ? maxHours : 0) * 60;
                             int overflowMinutes = assignedMinutes - limitMinutes;
@@ -174,7 +189,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         ConstraintCollectors.sum(la -> la.getTimeslot() != null && la.getRoom() != null ? la.getSubjectSessionDuration() : 0),
                         ConstraintCollectors.max(LessonAssignment::getRequiredWeeklyMinutes))
                 .filter((classId, subjectId, assignedMinutes, expectedMinutes) -> assignedMinutes != (expectedMinutes != null ? expectedMinutes : 0))
-                .penalize(HardSoftScore.ofSoft(SOFT_STRONG),
+                .penalize(HardSoftScore.ofSoft(SOFT_BALANCE),
                         (classId, subjectId, assignedMinutes, expectedMinutes) -> {
                             int delta = Math.abs(assignedMinutes - (expectedMinutes != null ? expectedMinutes : 0));
                             return (delta + 29) / 30;
@@ -237,7 +252,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                     int maxOrder = assignments.stream().mapToInt(a -> a.getTimeslot().getOrderInDay()).max().orElse(0);
                     return (maxOrder - minOrder + 1) > assignments.size();
                 })
-                                                                .penalize(HardSoftScore.ofSoft(SOFT_STRONG),
+                                                                .penalize(HardSoftScore.ofSoft(SOFT_GAP),
                         (classId, day, assignments) -> {
                             int minOrder = assignments.stream().mapToInt(a -> a.getTimeslot().getOrderInDay()).min().orElse(0);
                             int maxOrder = assignments.stream().mapToInt(a -> a.getTimeslot().getOrderInDay()).max().orElse(0);
@@ -259,7 +274,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                     int maxOrder = assignments.stream().mapToInt(a -> a.getTimeslot().getOrderInDay()).max().orElse(0);
                     return (maxOrder - minOrder + 1) > assignments.size();
                 })
-                                                                .penalize(HardSoftScore.ofSoft(SOFT_STRONG),
+                                                                .penalize(HardSoftScore.ofSoft(SOFT_GAP),
                         (teacherId, day, assignments) -> {
                             int minOrder = assignments.stream().mapToInt(a -> a.getTimeslot().getOrderInDay()).min().orElse(0);
                             int maxOrder = assignments.stream().mapToInt(a -> a.getTimeslot().getOrderInDay()).max().orElse(0);
@@ -277,7 +292,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         la -> la.getTimeslot().getDayOfWeek(),
                         ConstraintCollectors.count())
                 .filter((teacherId, day, count) -> count > 5)
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM), (teacherId, day, count) -> count - 5)
+                .penalize(HardSoftScore.ofSoft(SOFT_COMFORT), (teacherId, day, count) -> count - 5)
                 .asConstraint("Teacher daily overload");
     }
 
@@ -290,7 +305,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         la -> la.getTimeslot().getDayOfWeek(),
                         ConstraintCollectors.count())
                 .filter((classId, day, count) -> count > 5)
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM), (classId, day, count) -> count - 5)
+                .penalize(HardSoftScore.ofSoft(SOFT_BALANCE), (classId, day, count) -> count - 5)
                 .asConstraint("Class daily overload");
     }
 
@@ -302,8 +317,8 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .groupBy(LessonAssignment::getClassGroupId,
                         la -> la.getTimeslot().getDayOfWeek(),
                         ConstraintCollectors.toList())
-                .filter((classId, day, assignments) -> longestConsecutiveStreak(assignments) > 4)
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM), (classId, day, assignments) -> longestConsecutiveStreak(assignments) - 4)
+                .filter((classId, day, assignments) -> longestConsecutiveStreak(assignments) > 3)
+                .penalize(HardSoftScore.ofSoft(SOFT_CONSECUTIVE), (classId, day, assignments) -> longestConsecutiveStreak(assignments) - 3)
                 .asConstraint("Class consecutive overload");
     }
 
@@ -315,8 +330,8 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .groupBy(LessonAssignment::getTeacherId,
                         la -> la.getTimeslot().getDayOfWeek(),
                         ConstraintCollectors.toList())
-                .filter((teacherId, day, assignments) -> longestConsecutiveStreak(assignments) > 4)
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM), (teacherId, day, assignments) -> longestConsecutiveStreak(assignments) - 4)
+                .filter((teacherId, day, assignments) -> longestConsecutiveStreak(assignments) > 3)
+                .penalize(HardSoftScore.ofSoft(SOFT_CONSECUTIVE), (teacherId, day, assignments) -> longestConsecutiveStreak(assignments) - 3)
                 .asConstraint("Teacher consecutive overload");
     }
 
@@ -330,7 +345,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         la -> la.getTimeslot().getDayOfWeek(),
                         ConstraintCollectors.count())
                 .filter((classId, subjectId, day, count) -> count > 1)
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM), (classId, subjectId, day, count) -> count - 1)
+                .penalize(HardSoftScore.ofSoft(SOFT_BALANCE), (classId, subjectId, day, count) -> count - 1)
                 .asConstraint("Heavy subject distribution");
     }
 
@@ -344,7 +359,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
                         && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) == 1
                         && isHeavySubject(l1) && isHeavySubject(l2))
-                .penalize(HardSoftScore.ofSoft(SOFT_STRONG))
+                .penalize(HardSoftScore.ofSoft(SOFT_CONSECUTIVE))
                 .asConstraint("Heavy consecutive lessons");
     }
 
@@ -358,7 +373,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
                         && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) == 1
                         && isHeavySubject(l1) && isHeavySubject(l2))
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM))
+                .penalize(HardSoftScore.ofSoft(SOFT_CONSECUTIVE))
                 .asConstraint("Teacher heavy consecutive lessons");
     }
 
@@ -368,10 +383,21 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .forEach(LessonAssignment.class)
                 .filter(la -> la.getTimeslot() != null && la.getTimeslot().getOrderInDay() != null)
                 .filter(this::isPriorityMorningSubject)
-                .filter(la -> la.getTimeslot().getOrderInDay() > 3)
-                .penalize(HardSoftScore.ofSoft(SOFT_LOW), la -> la.getTimeslot().getOrderInDay() - 3)
+                                .filter(la -> la.getTimeslot().getOrderInDay() > 2)
+                                .penalize(HardSoftScore.ofSoft(SOFT_PRIORITY), la -> la.getTimeslot().getOrderInDay() - 2)
                 .asConstraint("Priority subjects morning (soft)");
     }
+
+        // Strongly reward placing priority subjects in early slots (pedagogical freshness)
+        Constraint prioritySubjectsEarlyReward(ConstraintFactory constraintFactory) {
+                return constraintFactory
+                                .forEach(LessonAssignment.class)
+                                .filter(la -> la.getTimeslot() != null && la.getTimeslot().getOrderInDay() != null)
+                                .filter(this::isPriorityMorningSubject)
+                                .filter(la -> la.getTimeslot().getOrderInDay() <= 2)
+                                .reward(HardSoftScore.ofSoft(SOFT_PRIORITY), la -> 3 - la.getTimeslot().getOrderInDay())
+                                .asConstraint("Priority subjects early reward");
+        }
 
     // Prefer sports and arts in later slots (typically afternoon)
     Constraint sportArtAfternoonPreference(ConstraintFactory constraintFactory) {
@@ -380,21 +406,21 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .filter(la -> la.getTimeslot() != null && la.getTimeslot().getOrderInDay() != null)
                 .filter(this::isSportOrArtSubject)
                 .filter(la -> la.getTimeslot().getOrderInDay() <= 3)
-                .penalize(HardSoftScore.ofSoft(SOFT_LOW), la -> 4 - la.getTimeslot().getOrderInDay())
+                .penalize(HardSoftScore.ofSoft(SOFT_SUPPORT), la -> 4 - la.getTimeslot().getOrderInDay())
                 .asConstraint("Sport/Art afternoon preference");
     }
 
     // Keep the same subject in coherent daily time windows across the week
     Constraint subjectCoherentTimeWindows(ConstraintFactory constraintFactory) {
         return constraintFactory
-                .forEachUniquePair(LessonAssignment.class,
-                        Joiners.equal(LessonAssignment::getClassGroupId),
-                        Joiners.equal(LessonAssignment::getSubjectId))
-                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
-                        && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
-                        && l1.getTimeslot().getDayOfWeek() != l2.getTimeslot().getDayOfWeek())
-                .penalize(HardSoftScore.ofSoft(SOFT_LOW),
-                        (l1, l2) -> Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()))
+                .forEach(LessonAssignment.class)
+                .filter(la -> la.getTimeslot() != null && la.getTimeslot().getOrderInDay() != null)
+                .groupBy(LessonAssignment::getClassGroupId,
+                        LessonAssignment::getSubjectId,
+                        ConstraintCollectors.toList())
+                .filter((classId, subjectId, assignments) -> timeWindowSpread(assignments) > 2)
+                .penalize(HardSoftScore.ofSoft(SOFT_CONTINUITY),
+                        (classId, subjectId, assignments) -> timeWindowSpread(assignments) - 2)
                 .asConstraint("Subject coherent time windows");
     }
 
@@ -409,20 +435,21 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         && l1.getTimeslot().getOrderInDay() != null && l2.getTimeslot().getOrderInDay() != null
                         && Math.abs(l1.getTimeslot().getOrderInDay() - l2.getTimeslot().getOrderInDay()) == 1
                         && isPracticalSubject(l1))
-                .reward(HardSoftScore.ofSoft(SOFT_LOW))
+                .reward(HardSoftScore.ofSoft(SOFT_CONTINUITY))
                 .asConstraint("Practical subject grouping");
     }
 
     // Prefer assigning a teacher to the same room throughout the day
     Constraint teacherRoomStability(ConstraintFactory constraintFactory) {
         return constraintFactory
-                .forEachUniquePair(LessonAssignment.class,
-                        Joiners.equal(LessonAssignment::getTeacherId))
-                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
-                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek()
-                        && l1.getRoom() != null && l2.getRoom() != null
-                        && !l1.getRoom().getId().equals(l2.getRoom().getId()))
-                .penalize(HardSoftScore.ofSoft(SOFT_LOW))
+                .forEach(LessonAssignment.class)
+                .filter(la -> la.getTimeslot() != null && la.getTeacherId() != null && la.getRoomId() != null)
+                .groupBy(LessonAssignment::getTeacherId,
+                        la -> la.getTimeslot().getDayOfWeek(),
+                        ConstraintCollectors.countDistinct(LessonAssignment::getRoomId))
+                .filter((teacherId, day, roomCount) -> roomCount > 2)
+                .penalize(HardSoftScore.ofSoft(SOFT_SUPPORT),
+                        (teacherId, day, roomCount) -> roomCount - 2)
                 .asConstraint("Teacher room stability");
     }
 
@@ -431,7 +458,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .forEach(LessonAssignment.class)
                 .filter(la -> la.getTimeslot() != null)
                 .filter(la -> la.getTimeslotDurationMinutes() > la.getSubjectSessionDuration())
-                .penalize(HardSoftScore.ofSoft(3),
+                .penalize(HardSoftScore.ofSoft(SOFT_SUPPORT),
                         la -> {
                             int wasteMinutes = la.getTimeslotDurationMinutes() - la.getSubjectSessionDuration();
                             return (wasteMinutes + 14) / 15;
@@ -442,12 +469,15 @@ public class TimetableConstraintProvider implements ConstraintProvider {
     // Penalize having the same subject multiple times on the same day for the same class
     Constraint subjectVarietyPerDay(ConstraintFactory constraintFactory) {
         return constraintFactory
-                .forEachUniquePair(LessonAssignment.class,
-                        Joiners.equal(LessonAssignment::getClassGroupId),
-                        Joiners.equal(LessonAssignment::getSubjectId))
-                .filter((l1, l2) -> l1.getTimeslot() != null && l2.getTimeslot() != null
-                        && l1.getTimeslot().getDayOfWeek() == l2.getTimeslot().getDayOfWeek())
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM))
+                .forEach(LessonAssignment.class)
+                .filter(la -> la.getTimeslot() != null)
+                .groupBy(LessonAssignment::getClassGroupId,
+                        LessonAssignment::getSubjectId,
+                        la -> la.getTimeslot().getDayOfWeek(),
+                        ConstraintCollectors.count())
+                .filter((classId, subjectId, day, count) -> count > 2)
+                .penalize(HardSoftScore.ofSoft(SOFT_CONTINUITY),
+                        (classId, subjectId, day, count) -> count - 2)
                 .asConstraint("Subject variety per day");
     }
 
@@ -459,10 +489,32 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                 .groupBy(LessonAssignment::getClassGroupId,
                         la -> la.getTimeslot().getDayOfWeek(),
                         ConstraintCollectors.count())
-                .filter((classId, day, count) -> count > 4)
-                .penalize(HardSoftScore.ofSoft(SOFT_MEDIUM), (classId, day, count) -> count - 4)
+                                .filter((classId, day, count) -> count > 6)
+                                .penalize(HardSoftScore.ofSoft(SOFT_BALANCE), (classId, day, count) -> count - 6)
                 .asConstraint("Class group day balance");
     }
+
+        // Penalize weekly front-loading or over-concentration for classes
+        Constraint classWeeklyDistributionBalance(ConstraintFactory constraintFactory) {
+                return constraintFactory
+                                .forEach(LessonAssignment.class)
+                                .filter(la -> la.getTimeslot() != null && la.getClassGroupId() != null)
+                                .groupBy(LessonAssignment::getClassGroupId, ConstraintCollectors.toList())
+                                .filter((classId, assignments) -> dailySpread(assignments) > 2)
+                                .penalize(HardSoftScore.ofSoft(SOFT_BALANCE), (classId, assignments) -> dailySpread(assignments) - 2)
+                                .asConstraint("Class weekly distribution balance");
+        }
+
+        // Improve teacher comfort by smoothing daily teaching load over the week
+        Constraint teacherWeeklyDistributionBalance(ConstraintFactory constraintFactory) {
+                return constraintFactory
+                                .forEach(LessonAssignment.class)
+                                .filter(la -> la.getTimeslot() != null && la.getTeacherId() != null)
+                                .groupBy(LessonAssignment::getTeacherId, ConstraintCollectors.toList())
+                                .filter((teacherId, assignments) -> dailySpread(assignments) > 2)
+                                .penalize(HardSoftScore.ofSoft(SOFT_COMFORT), (teacherId, assignments) -> dailySpread(assignments) - 2)
+                                .asConstraint("Teacher weekly distribution balance");
+        }
 
     // Avoid overusing the same room in one day
     Constraint roomDailyUsageBalance(ConstraintFactory constraintFactory) {
@@ -473,7 +525,7 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         la -> la.getTimeslot().getDayOfWeek(),
                         ConstraintCollectors.count())
                 .filter((roomId, day, count) -> count > 6)
-                .penalize(HardSoftScore.ofSoft(3), (roomId, day, count) -> count - 6)
+                .penalize(HardSoftScore.ofSoft(SOFT_SUPPORT), (roomId, day, count) -> count - 6)
                 .asConstraint("Room daily usage balance");
     }
 
@@ -483,7 +535,8 @@ public class TimetableConstraintProvider implements ConstraintProvider {
 
     private boolean isHeavySubject(LessonAssignment lessonAssignment) {
         String name = normalize(lessonAssignment.getSubject() != null ? lessonAssignment.getSubject().getName() : null);
-        return name.contains("MATHEMAT") || name.contains("PHYSIQUE") || name.contains("CHIMIE");
+                return name.contains("MATHEMAT") || name.contains("PHYSIQUE") || name.contains("CHIMIE")
+                                || name.contains("SCIENC") || name.contains("INFORMAT");
     }
 
     private boolean isSportOrArtSubject(LessonAssignment lessonAssignment) {
@@ -532,6 +585,53 @@ public class TimetableConstraintProvider implements ConstraintProvider {
                         }
                 }
                 return best;
+        }
+
+        private int dailySpread(List<LessonAssignment> assignments) {
+                if (assignments == null || assignments.isEmpty()) {
+                        return 0;
+                }
+
+                Map<com.timetable.model.DayOfWeek, Integer> byDay = new EnumMap<>(com.timetable.model.DayOfWeek.class);
+                for (LessonAssignment assignment : assignments) {
+                        if (assignment.getTimeslot() == null || assignment.getTimeslot().getDayOfWeek() == null) {
+                                continue;
+                        }
+                        byDay.merge(assignment.getTimeslot().getDayOfWeek(), 1, Integer::sum);
+                }
+                if (byDay.size() <= 1) {
+                        return 0;
+                }
+
+                int min = Integer.MAX_VALUE;
+                int max = Integer.MIN_VALUE;
+                for (int count : byDay.values()) {
+                        min = Math.min(min, count);
+                        max = Math.max(max, count);
+                }
+                return Math.max(0, max - min);
+        }
+
+        private int timeWindowSpread(List<LessonAssignment> assignments) {
+                if (assignments == null || assignments.size() < 2) {
+                        return 0;
+                }
+
+                int min = Integer.MAX_VALUE;
+                int max = Integer.MIN_VALUE;
+                for (LessonAssignment assignment : assignments) {
+                        if (assignment.getTimeslot() == null || assignment.getTimeslot().getOrderInDay() == null) {
+                                continue;
+                        }
+                        int order = assignment.getTimeslot().getOrderInDay();
+                        min = Math.min(min, order);
+                        max = Math.max(max, order);
+                }
+
+                if (min == Integer.MAX_VALUE) {
+                        return 0;
+                }
+                return Math.max(0, max - min);
         }
 
     private String normalize(String value) {

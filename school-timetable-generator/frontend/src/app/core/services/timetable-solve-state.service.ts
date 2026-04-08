@@ -129,7 +129,10 @@ export class TimetableSolveStateService {
       })
     ).subscribe({
       next: ({ status, solution, lessons: persistedLessons }) => {
-        const lessons = this.mapSolutionToLessons(solution, persistedLessons as Lesson[]);
+        const persisted = persistedLessons as Lesson[];
+        const lessons = status?.solving
+          ? this.mapSolutionToLessons(solution, persisted)
+          : persisted;
         this.updateFromStatus(status, lessons);
       },
       error: () => {
@@ -194,10 +197,24 @@ export class TimetableSolveStateService {
       return persistedLessons;
     }
 
+    const persistedByKey = new Map<string, Lesson[]>();
+    for (const lesson of persistedLessons) {
+      const key = this.buildLessonMatchKey(
+        lesson.subjectId,
+        lesson.teacherId,
+        lesson.classGroupId,
+        lesson.roomId,
+        lesson.timeslotId
+      );
+      const bucket = persistedByKey.get(key) ?? [];
+      bucket.push(lesson);
+      persistedByKey.set(key, bucket);
+    }
+
     return solution.lessonAssignments
       .filter((la: any) => la.timeslot && la.room)
       .map((la: any, index: number) => ({
-        id: la.id || index,
+        id: this.resolvePersistedLessonId(la, persistedByKey, index),
         subjectId: la.subject?.id || 0,
         subjectName: la.subject?.name || '',
         teacherId: la.teacher?.id || 0,
@@ -215,6 +232,41 @@ export class TimetableSolveStateService {
           ? this.computeDurationMinutes(la.timeslot.startTime, la.timeslot.endTime)
           : undefined
       }));
+  }
+
+  private resolvePersistedLessonId(
+    assignment: any,
+    persistedByKey: Map<string, Lesson[]>,
+    index: number
+  ): number {
+    const key = this.buildLessonMatchKey(
+      assignment.subject?.id,
+      assignment.teacher?.id,
+      assignment.classGroup?.id,
+      assignment.room?.id,
+      assignment.timeslot?.id
+    );
+
+    const bucket = persistedByKey.get(key);
+    if (bucket && bucket.length > 0) {
+      const matched = bucket.shift();
+      if (matched) {
+        return matched.id;
+      }
+    }
+
+    // Negative IDs mark temporary (non-persisted) lessons from in-memory solver snapshots.
+    return -100000 - index;
+  }
+
+  private buildLessonMatchKey(
+    subjectId: number | undefined,
+    teacherId: number | undefined,
+    classGroupId: number | undefined,
+    roomId: number | undefined,
+    timeslotId: number | undefined
+  ): string {
+    return `${subjectId ?? 0}|${teacherId ?? 0}|${classGroupId ?? 0}|${roomId ?? 0}|${timeslotId ?? 0}`;
   }
 
   private computeDurationMinutes(startTime: string, endTime: string): number | undefined {

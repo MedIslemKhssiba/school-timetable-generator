@@ -1,6 +1,7 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,6 +11,7 @@ import { Subject } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-subjects',
@@ -205,7 +207,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     }
   `]
 })
-export class SubjectsComponent implements OnInit {
+export class SubjectsComponent implements OnInit, OnDestroy {
   items: Subject[] = [];
   filtered: Subject[] = [];
   paged: Subject[] = [];
@@ -220,6 +222,7 @@ export class SubjectsComponent implements OnInit {
   page = 1;
   pageSize = 10;
   private schoolId = 1;
+  private queryParamsSub?: Subscription;
 
   colorPresets = ['#2563EB', '#0EA5E9', '#22C55E', '#F59E0B', '#EF4444', '#7C3AED', '#EC4899', '#06B6D4', '#6366F1', '#F97316'];
 
@@ -229,6 +232,7 @@ export class SubjectsComponent implements OnInit {
   constructor(
     private svc: AdminService,
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private authService: AuthService,
     private notify: NotificationService,
     private ts: TranslationService
@@ -246,7 +250,21 @@ export class SubjectsComponent implements OnInit {
 
   t(key: string): string { return this.ts.t(key); }
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.queryParamsSub = this.route.queryParamMap.subscribe(params => {
+      const nextTerm = params.get('q')?.trim() || '';
+      if (nextTerm !== this.searchTerm) {
+        this.searchTerm = nextTerm;
+        this.page = 1;
+        this.applyFilter();
+      }
+    });
+    this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSub?.unsubscribe();
+  }
 
   load() {
     this.svc.getSubjects(this.schoolId).subscribe({

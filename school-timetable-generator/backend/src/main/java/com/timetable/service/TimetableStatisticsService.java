@@ -124,7 +124,10 @@ public class TimetableStatisticsService {
         if (hardScore < 0) {
             qualityPercent = 0;
         } else {
-            int softLoss = softScore < 0 ? (int) Math.round((Math.abs(softScore) * 100.0) / (Math.abs(softScore) + 200.0)) : 0;
+            double perCoursePenalty = assignedAssignments > 0
+                    ? Math.abs(softScore) / (double) assignedAssignments
+                    : 0.0;
+            int softLoss = softScore < 0 ? (int) Math.round(perCoursePenalty * 12.0) : 0;
             qualityPercent = Math.max(0, Math.min(100, completionPercent - softLoss));
         }
 

@@ -1,6 +1,7 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { School } from '../../../core/models';
@@ -9,6 +10,7 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-schools',
@@ -151,13 +153,13 @@ import { TranslationService } from '../../../core/services/translation.service';
     <!-- Stats Modal -->
     @if (statsModalVisible) {
       <div class="modal-backdrop" (click)="statsModalVisible = false"></div>
-      <div class="modal-wrapper">
-        <div class="modal-box" style="max-width: 560px">
+      <div class="modal-wrapper stats-modal-wrapper">
+        <div class="modal-box stats-modal-box">
           <div class="modal-header-custom">
             <h3>{{ t('statistics') }} — {{ statsSchoolName }}</h3>
             <button class="modal-close" (click)="statsModalVisible = false">&times;</button>
           </div>
-          <div class="modal-body-custom">
+          <div class="modal-body-custom stats-modal-body">
             @if (statsLoading) {
               <div class="text-center py-4">Chargement des statistiques...</div>
             } @else {
@@ -177,13 +179,13 @@ import { TranslationService } from '../../../core/services/translation.service';
 
     @if (statsDetailVisible) {
       <div class="modal-backdrop" (click)="statsDetailVisible = false"></div>
-      <div class="modal-wrapper">
-        <div class="modal-box" style="max-width: 640px">
+      <div class="modal-wrapper stats-modal-wrapper">
+        <div class="modal-box stats-detail-box">
           <div class="modal-header-custom">
             <h3>{{ statsDetailTitle }} — {{ statsSchoolName }}</h3>
             <button class="modal-close" (click)="statsDetailVisible = false">&times;</button>
           </div>
-          <div class="modal-body-custom">
+          <div class="modal-body-custom stats-detail-body">
             @if (statsDetailLoading) {
               <div class="text-center py-4">Chargement...</div>
             } @else if (statsDetailRows.length === 0) {
@@ -272,6 +274,12 @@ import { TranslationService } from '../../../core/services/translation.service';
     .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); z-index: 1050; backdrop-filter: blur(4px); }
     .modal-wrapper {
       position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 24px;
+      overflow-y: auto;
+    }
+    .stats-modal-wrapper {
+      align-items: flex-start;
+      padding-top: 16px;
+      justify-content: center;
     }
     .modal-box {
       background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 500px;
@@ -291,6 +299,46 @@ import { TranslationService } from '../../../core/services/translation.service';
       &:hover { background: #EAEEF6; color: #1A2332; }
     }
     .modal-body-custom { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .stats-modal-box {
+      position: fixed;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      top: calc(env(safe-area-inset-top, 0px) + 84px);
+      width: calc(100vw - 24px);
+      max-width: 560px;
+      max-height: calc(100vh - 100px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1052;
+    }
+    .stats-detail-box {
+      position: fixed;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      top: calc(env(safe-area-inset-top, 0px) + 84px);
+      width: calc(100vw - 24px);
+      max-width: 640px;
+      max-height: calc(100vh - 100px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1052;
+    }
+    .stats-modal-body,
+    .stats-detail-body {
+      overflow-y: auto;
+      min-height: 120px;
+    }
+    .stats-modal-box .modal-header-custom,
+    .stats-detail-box .modal-header-custom {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #F8FAFF;
+    }
     .form-field { display: flex; flex-direction: column; }
     .modal-footer-custom {
       padding: 16px 24px; border-top: 1px solid #DDE3EE;
@@ -344,7 +392,7 @@ import { TranslationService } from '../../../core/services/translation.service';
     .sdi-subtitle { margin-top: 4px; font-size: 0.78rem; color: #6C7D94; font-family: 'Montserrat', sans-serif; }
   `]
 })
-export class SchoolsComponent implements OnInit {
+export class SchoolsComponent implements OnInit, OnDestroy {
   schools: School[] = [];
   filtered: School[] = [];
   schoolForm: FormGroup;
@@ -360,6 +408,7 @@ export class SchoolsComponent implements OnInit {
   page = 1;
   pageSize = 10;
   Math = Math;
+  private queryParamsSub?: Subscription;
 
   // Stats modal
   statsModalVisible = false;
@@ -382,6 +431,7 @@ export class SchoolsComponent implements OnInit {
   constructor(
     private superAdminService: SuperAdminService,
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private notif: NotificationService,
     private ts: TranslationService
   ) {
@@ -393,7 +443,19 @@ export class SchoolsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.queryParamsSub = this.route.queryParamMap.subscribe(params => {
+      const nextTerm = params.get('q')?.trim() || '';
+      if (nextTerm !== this.search) {
+        this.search = nextTerm;
+        this.page = 1;
+        this.applyFilter();
+      }
+    });
     this.loadSchools();
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSub?.unsubscribe();
   }
 
   t(key: string): string { return this.ts.t(key); }

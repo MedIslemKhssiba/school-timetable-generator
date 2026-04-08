@@ -27,6 +27,10 @@ export class AdminService {
     return this.http.put<Teacher>(`${environment.apiUrl}/admin/teachers/${id}`, teacher);
   }
 
+  changeTeacherPassword(id: number, newPassword: string): Observable<void> {
+    return this.http.put<void>(`${environment.apiUrl}/admin/teachers/${id}/password`, { newPassword });
+  }
+
   deleteTeacher(id: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiUrl}/admin/teachers/${id}`);
   }

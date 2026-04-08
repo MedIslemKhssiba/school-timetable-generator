@@ -1,6 +1,7 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { User, School } from '../../../core/models';
@@ -9,6 +10,7 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-admins',
@@ -251,7 +253,7 @@ import { TranslationService } from '../../../core/services/translation.service';
     @media (max-width: 576px) { .form-row { flex-direction: column; } }
   `]
 })
-export class AdminsComponent implements OnInit {
+export class AdminsComponent implements OnInit, OnDestroy {
   admins: User[] = [];
   filtered: User[] = [];
   schools: School[] = [];
@@ -266,6 +268,7 @@ export class AdminsComponent implements OnInit {
   page = 1;
   pageSize = 10;
   Math = Math;
+  private queryParamsSub?: Subscription;
 
   // Password change
   passwordModalVisible = false;
@@ -277,6 +280,7 @@ export class AdminsComponent implements OnInit {
   constructor(
     private superAdminService: SuperAdminService,
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private notif: NotificationService,
     private ts: TranslationService
   ) {
@@ -295,8 +299,20 @@ export class AdminsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.queryParamsSub = this.route.queryParamMap.subscribe(params => {
+      const nextTerm = params.get('q')?.trim() || '';
+      if (nextTerm !== this.search) {
+        this.search = nextTerm;
+        this.page = 1;
+        this.applyFilter();
+      }
+    });
     this.loadAdmins();
     this.superAdminService.getSchools().subscribe(s => this.schools = s);
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSub?.unsubscribe();
   }
 
   t(key: string): string { return this.ts.t(key); }

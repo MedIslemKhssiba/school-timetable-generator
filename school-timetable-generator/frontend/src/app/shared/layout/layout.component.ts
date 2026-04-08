@@ -89,8 +89,8 @@ import { environment } from '@env/environment';
           @if (showSearchResults && globalSearch.trim()) {
             <div class="search-panel">
               @if (searchResults.length > 0) {
-                @for (item of searchResults; track item.path) {
-                  <button class="search-item" (click)="goToSearch(item.path)">
+                @for (item of searchResults; track item.path + item.label) {
+                  <button class="search-item" (click)="goToSearch(item)">
                     <span class="search-item-icon" [innerHTML]="item.icon"></span>
                     <span class="search-item-label">{{ item.label }}</span>
                   </button>
@@ -594,12 +594,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
   showProfilePanel = false;
   showNotifPanel = false;
   globalSearch = '';
-  searchResults: { path: string; label: string; icon: SafeHtml }[] = [];
+  searchResults: { path: string; label: string; icon: SafeHtml; queryTerm?: string }[] = [];
   showSearchResults = false;
   roleBasePath = '/teacher';
   currentRole = '';
   headerNotifications: Array<{ id: number; title: string; message: string; read: boolean; type: Toast['type'] }> = [];
-  searchCatalog: Array<{ path: string; label: string; icon: SafeHtml }> = [];
+  searchCatalog: Array<{ path: string; label: string; icon: SafeHtml; queryTerm?: string }> = [];
   private toastSub?: Subscription;
 
   constructor(
@@ -673,7 +673,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     }));
 
     const merged = [...navItems];
-    const addUnique = (item: { path: string; label: string; icon: SafeHtml }) => {
+    const addUnique = (item: { path: string; label: string; icon: SafeHtml; queryTerm?: string }) => {
       if (!merged.some(x => x.path === item.path && x.label === item.label)) {
         merged.push(item);
       }
@@ -685,8 +685,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
         admins: this.superAdminService.getAdmins()
       }).subscribe({
         next: ({ schools, admins }) => {
-          schools.forEach(s => addUnique({ path: '/super-admin/schools', label: `Ecole: ${s.name}`, icon: this.svg('<path d="M12 3.172 3 10v10a1 1 0 0 0 1 1h5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6h5a1 1 0 0 0 1-1V10l-9-6.828Z"/>') }));
-          admins.forEach(a => addUnique({ path: '/super-admin/admins', label: `Admin: ${a.firstName} ${a.lastName}`, icon: this.svg('<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20a6 6 0 0 1 12 0v1H2v-1Zm13 1v-1a5 5 0 0 1 7 0v1h-7Z"/>') }));
+          schools.forEach(s => addUnique({ path: '/super-admin/schools', label: `Ecole: ${s.name}`, queryTerm: s.name, icon: this.svg('<path d="M12 3.172 3 10v10a1 1 0 0 0 1 1h5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6h5a1 1 0 0 0 1-1V10l-9-6.828Z"/>') }));
+          admins.forEach(a => addUnique({ path: '/super-admin/admins', label: `Admin: ${a.firstName} ${a.lastName}`, queryTerm: `${a.firstName} ${a.lastName}`, icon: this.svg('<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20a6 6 0 0 1 12 0v1H2v-1Zm13 1v-1a5 5 0 0 1 7 0v1h-7Z"/>') }));
           this.searchCatalog = merged;
           this.updateSearchResults();
         },
@@ -704,10 +704,10 @@ export class LayoutComponent implements OnInit, OnDestroy {
         rooms: this.adminService.getRooms(schoolId)
       }).subscribe({
         next: ({ teachers, classes, subjects, rooms }) => {
-          teachers.forEach(t => addUnique({ path: '/admin/teachers', label: `Prof: ${t.firstName} ${t.lastName}`, icon: this.svg('<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20a6 6 0 0 1 12 0v1H2v-1Zm13 1v-1a5 5 0 0 1 7 0v1h-7Z"/>') }));
-          classes.forEach(c => addUnique({ path: '/admin/classes', label: `Classe: ${c.name}`, icon: this.svg('<path d="M6 4a3 3 0 0 0-3 3v11a2 2 0 0 0 2 2h14v-2H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h13V4H6Z"/><path d="M19 8H8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h11V8Z"/>') }));
-          subjects.forEach(s => addUnique({ path: '/admin/subjects', label: `Matiere: ${s.name}`, icon: this.svg('<path d="M9 2a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2H9Z"/>') }));
-          rooms.forEach(r => addUnique({ path: '/admin/rooms', label: `Salle: ${r.name}`, icon: this.svg('<path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6v-4h-4v4H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/>') }));
+          teachers.forEach(t => addUnique({ path: '/admin/teachers', label: `Prof: ${t.firstName} ${t.lastName}`, queryTerm: `${t.firstName} ${t.lastName}`, icon: this.svg('<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20a6 6 0 0 1 12 0v1H2v-1Zm13 1v-1a5 5 0 0 1 7 0v1h-7Z"/>') }));
+          classes.forEach(c => addUnique({ path: '/admin/classes', label: `Classe: ${c.name}`, queryTerm: c.name, icon: this.svg('<path d="M6 4a3 3 0 0 0-3 3v11a2 2 0 0 0 2 2h14v-2H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h13V4H6Z"/><path d="M19 8H8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h11V8Z"/>') }));
+          subjects.forEach(s => addUnique({ path: '/admin/subjects', label: `Matiere: ${s.name}`, queryTerm: s.name, icon: this.svg('<path d="M9 2a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2H9Z"/>') }));
+          rooms.forEach(r => addUnique({ path: '/admin/rooms', label: `Salle: ${r.name}`, queryTerm: r.name, icon: this.svg('<path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6v-4h-4v4H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/>') }));
           this.searchCatalog = merged;
           this.updateSearchResults();
         },
@@ -718,7 +718,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
     this.http.get<Lesson[]>(`${environment.apiUrl}/teacher/schedule`).subscribe({
       next: lessons => {
-        lessons.forEach(l => addUnique({ path: '/teacher/schedule', label: `Cours: ${l.subjectName} - ${l.classGroupName}`, icon: this.svg('<path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Z"/>') }));
+        lessons.forEach(l => addUnique({ path: '/teacher/schedule', label: `Cours: ${l.subjectName} - ${l.classGroupName}`, queryTerm: `${l.subjectName} ${l.classGroupName}`, icon: this.svg('<path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Z"/>') }));
         this.searchCatalog = merged;
         this.updateSearchResults();
       },
@@ -728,12 +728,16 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   openFirstSearchResult(): void {
     if (this.searchResults.length > 0) {
-      this.goToSearch(this.searchResults[0].path);
+      this.goToSearch(this.searchResults[0]);
     }
   }
 
-  goToSearch(path: string): void {
-    this.router.navigate([path]);
+  goToSearch(item: { path: string; label: string; icon: SafeHtml; queryTerm?: string }): void {
+    if (item.queryTerm && item.queryTerm.trim()) {
+      this.router.navigate([item.path], { queryParams: { q: item.queryTerm.trim() } });
+    } else {
+      this.router.navigate([item.path]);
+    }
     this.showSearchResults = false;
     this.globalSearch = '';
     this.searchResults = [];

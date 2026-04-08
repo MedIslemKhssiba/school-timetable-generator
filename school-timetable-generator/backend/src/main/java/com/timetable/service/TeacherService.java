@@ -101,12 +101,36 @@ public class TeacherService {
         teacher.setEmail(dto.getEmail());
         teacher.setMaxHoursPerWeek(dto.getMaxHoursPerWeek());
 
+        if (teacher.getUser() != null) {
+            teacher.getUser().setFirstName(dto.getFirstName());
+            teacher.getUser().setLastName(dto.getLastName());
+            teacher.getUser().setEmail(dto.getEmail());
+            if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+                teacher.getUser().setPassword(passwordEncoder.encode(dto.getPassword()));
+            }
+        }
+
         if (dto.getSubjectIds() != null) {
             List<Subject> subjects = subjectRepository.findAllById(dto.getSubjectIds());
             teacher.setSubjects(subjects);
         }
 
         return toDTO(teacherRepository.save(teacher));
+    }
+
+    @Transactional
+    public void updateTeacherPassword(Long teacherId, String newPassword) {
+        if (newPassword == null || newPassword.isBlank() || newPassword.length() < 6) {
+            throw new IllegalArgumentException("Password must contain at least 6 characters");
+        }
+
+        Teacher teacher = getTeacherById(teacherId);
+        if (teacher.getUser() == null) {
+            throw new ResourceNotFoundException("No user account linked to this teacher");
+        }
+
+        teacher.getUser().setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(teacher.getUser());
     }
 
     @Transactional

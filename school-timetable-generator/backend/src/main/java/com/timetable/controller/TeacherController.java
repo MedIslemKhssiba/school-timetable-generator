@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/teachers")
@@ -41,6 +42,12 @@ public class TeacherController {
     @PutMapping("/{id}")
     public ResponseEntity<TeacherDTO> updateTeacher(@PathVariable Long id, @RequestBody TeacherDTO dto) {
         return ResponseEntity.ok(teacherService.updateTeacher(id, dto));
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void> updateTeacherPassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        teacherService.updateTeacherPassword(id, payload.get("newPassword"));
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

@@ -213,6 +213,9 @@ import JSZip from 'jszip';
             @if (lunchBreakLabels.length > 0) {
               <div class="lunch-break-chip">Pause déjeuner : {{ lunchBreakLabels.join(' | ') }}</div>
             }
+            @if (draggedLesson) {
+              <div class="move-help-chip">Déplacement en cours: {{ getPossibleMoveCount() }} case(s) possible(s)</div>
+            }
             <c-badge color="primary" class="ms-auto">{{ filteredLessons.length }} {{ t('lessons') }}</c-badge>
           </div>
         </c-card-body>
@@ -238,7 +241,16 @@ import JSZip from 'jszip';
                     <tr>
                       <td class="time-cell">{{ getTimeSlotLabel(slot) }}</td>
                       @for (day of days; track day) {
-                        <td class="grid-cell" (dragover)="onCellDragOver($event)" (drop)="onCellDrop(day, slot, $event)">
+                        <td
+                          class="grid-cell"
+                          [class.drop-possible]="isDropTarget(day, slot)"
+                          [class.drop-source]="isSourceCell(day, slot)"
+                          [class.drop-occupied]="isDropTarget(day, slot) && hasSwappableTarget(day, slot)"
+                          (dragover)="onCellDragOver($event)"
+                          (drop)="onCellDrop(day, slot, $event)">
+                          @if (draggedLesson && isDropTarget(day, slot)) {
+                            <div class="drop-hint">{{ hasSwappableTarget(day, slot) ? 'Permutation' : 'Déplacer ici' }}</div>
+                          }
                           @for (lesson of getLessonAt(day, slot); track lesson.id) {
                             <div class="grid-lesson"
                               [style.border-left-color]="getSubjectColor(lesson.subjectName)"
@@ -550,6 +562,17 @@ import JSZip from 'jszip';
       white-space: nowrap;
       font-family: 'Montserrat', sans-serif;
     }
+    .move-help-chip {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #065F46;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      border-radius: 999px;
+      padding: 4px 10px;
+      white-space: nowrap;
+      font-family: 'Montserrat', sans-serif;
+    }
     .filter-label { font-size: 0.8rem; font-weight: 600; color: #8D99A8; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
     .filter-select {
       font-size: 0.85rem; padding: 4px 10px; border: 1px solid #DDE3EE;
@@ -625,14 +648,42 @@ import JSZip from 'jszip';
       .time-col { min-width: 90px; }
       .day-col { min-width: 120px; }
       .day-cell { font-size: 0.75rem; font-weight: 700; color: #1E3A8A; white-space: nowrap; text-align: left; background: #F8FAFF; font-family: 'Montserrat', sans-serif; }
-      .time-cell { font-size: 0.75rem; font-weight: 700; color: #1E3A8A; white-space: nowrap; text-align: left; background: #F8FAFF; font-family: 'Montserrat', sans-serif; }
-      .grid-cell { min-height: 60px; }
+      .time-cell {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1E3A8A;
+        white-space: nowrap;
+        text-align: center;
+        vertical-align: middle;
+        background: #F8FAFF;
+        font-family: 'Montserrat', sans-serif;
+      }
+      .grid-cell { min-height: 60px; position: relative; }
       .grid-cell.drag-over { outline: 2px dashed #22C55E; background: #ECFDF5; }
+      .grid-cell.drop-possible { background: #F8FFFC; }
+      .grid-cell.drop-source { background: #EFF6FF; }
+      .grid-cell.drop-occupied { background: #FFF7ED; }
     }
-    .export-surface { background: #ffffff; }
+    .export-surface { background: transparent; }
+    .drop-hint {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 1;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #0F766E;
+      background: #CCFBF1;
+      border: 1px solid #99F6E4;
+      border-radius: 999px;
+      padding: 2px 6px;
+      font-family: 'Montserrat', sans-serif;
+      pointer-events: none;
+    }
     .grid-lesson {
       padding: 6px 8px; margin-bottom: 4px; border-radius: 6px;
-      border-left: 3px solid #2563EB; background: #F0F4FA;
+      border-left: 3px solid #2563EB; background: #FFFFFF;
+      border: 1px solid #E2E8F0;
       position: relative;
       font-size: 0.75rem; transition: transform 150ms;
       &:hover { transform: scale(1.02); }
@@ -660,15 +711,22 @@ import JSZip from 'jszip';
       color: #F8FAFF; font-weight: 600; font-family: 'Montserrat', sans-serif;
     }
     .lesson-slot {
-      padding: 12px; margin: 6px; background: #F0F4FA;
+      padding: 12px; margin: 6px; background: #FFFFFF;
       border-radius: 8px; border-left: 3px solid #2563EB;
+      border: 1px solid #E2E8F0;
       position: relative;
       transition: transform 0.15s, box-shadow 0.15s;
       &:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(37, 99, 235,0.1); }
     }
     .lesson-time {
       display: flex; align-items: center; gap: 6px;
-      font-size: 0.8rem; font-weight: 600; color: #2563EB; margin-bottom: 4px;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: #EFF6FF;
+      font-size: 0.8rem; font-weight: 700; color: #2563EB; margin-bottom: 6px;
       font-family: 'Montserrat', sans-serif;
     }
     .lesson-subject { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: #1A2332; font-family: 'Montserrat', sans-serif; }
@@ -1001,6 +1059,11 @@ export class TimetableComponent implements OnInit, OnDestroy {
       event.preventDefault();
       return;
     }
+    if (!lesson.id || lesson.id <= 0) {
+      event.preventDefault();
+      this.notify.info('Publiez d abord l emploi du temps pour déplacer les cours.');
+      return;
+    }
     this.draggedLesson = lesson;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
@@ -1011,6 +1074,50 @@ export class TimetableComponent implements OnInit, OnDestroy {
   onLessonDragEnd(): void {
     this.draggedLesson = null;
     document.querySelectorAll('.grid-cell.drag-over').forEach(cell => cell.classList.remove('drag-over'));
+  }
+
+  isSourceCell(day: string, slot: string): boolean {
+    if (!this.draggedLesson) {
+      return false;
+    }
+    return this.draggedLesson.dayOfWeek === day && this.normalizeTime(this.draggedLesson.startTime) === slot;
+  }
+
+  isDropTarget(day: string, slot: string): boolean {
+    if (!this.draggedLesson) {
+      return false;
+    }
+    if (this.isSourceCell(day, slot)) {
+      return false;
+    }
+    const targetTimeslot = this.resolveTimeslot(day, slot);
+    if (!targetTimeslot) {
+      return false;
+    }
+    const occupant = this.getAllLessonsAt(day, slot).find(lesson => lesson.id !== this.draggedLesson?.id);
+    return this.canApplyMove(targetTimeslot.id, occupant).ok;
+  }
+
+  hasSwappableTarget(day: string, slot: string): boolean {
+    if (!this.draggedLesson) {
+      return false;
+    }
+    return this.getAllLessonsAt(day, slot).some(lesson => lesson.id !== this.draggedLesson?.id);
+  }
+
+  getPossibleMoveCount(): number {
+    if (!this.draggedLesson) {
+      return 0;
+    }
+    let total = 0;
+    for (const day of this.days) {
+      for (const slot of this.timeSlots) {
+        if (this.isDropTarget(day, slot)) {
+          total += 1;
+        }
+      }
+    }
+    return total;
   }
 
   onCellDragOver(event: DragEvent): void {
@@ -1037,7 +1144,12 @@ export class TimetableComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const occupant = this.getLessonAt(day, slot).find(lesson => lesson.id !== this.draggedLesson?.id);
+    const occupant = this.getAllLessonsAt(day, slot).find(lesson => lesson.id !== this.draggedLesson?.id);
+    const validation = this.canApplyMove(targetTimeslot.id, occupant);
+    if (!validation.ok) {
+      this.notify.error(validation.reason || 'Déplacement impossible (conflit détecté)');
+      return;
+    }
     this.applyDragDropMove(targetTimeslot.id, occupant?.id);
   }
 
@@ -1055,6 +1167,12 @@ export class TimetableComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const validation = this.canApplyMove(targetTimeslot.id, targetLesson);
+    if (!validation.ok) {
+      this.notify.error(validation.reason || 'Permutation impossible (conflit détecté)');
+      return;
+    }
+
     this.applyDragDropMove(targetTimeslot.id, targetLesson.id);
   }
 
@@ -1064,17 +1182,39 @@ export class TimetableComponent implements OnInit, OnDestroy {
     }
 
     const sourceLessonId = this.draggedLesson.id;
+    if (!sourceLessonId || sourceLessonId <= 0) {
+      this.notify.info('Publiez d abord l emploi du temps pour déplacer les cours.');
+      this.draggedLesson = null;
+      return;
+    }
+
+    const effectiveTargetLessonId = targetLessonId && targetLessonId > 0 ? targetLessonId : undefined;
+    const beforeById = new Map<number, Lesson>(this.lessons.map(l => [l.id, l]));
     this.dropSaving = true;
-    this.adminService.moveLesson(sourceLessonId, { targetTimeslotId, targetLessonId }).subscribe({
+    this.adminService.moveLesson(sourceLessonId, { targetTimeslotId, targetLessonId: effectiveTargetLessonId }).subscribe({
       next: updates => {
+        let changed = false;
         updates.forEach(updated => {
+          const before = beforeById.get(updated.id);
+          if (!before
+              || before.timeslotId !== updated.timeslotId
+              || before.roomId !== updated.roomId
+              || before.teacherId !== updated.teacherId
+              || before.classGroupId !== updated.classGroupId) {
+            changed = true;
+          }
           this.lessons = this.lessons.map(item => item.id === updated.id ? updated : item);
         });
         this.buildMeta();
         this.applyFilter();
         this.runIntegrityChecks();
         this.solveState.refreshFromServer();
-        this.notify.success(targetLessonId ? 'Leçons permutées avec succès' : 'Leçon déplacée avec succès');
+        this.refresh();
+        if (!changed) {
+          this.notify.info('Aucune permutation appliquée. Vérifiez les contraintes et les filtres actifs.');
+        } else {
+          this.notify.success(effectiveTargetLessonId ? 'Leçons permutées avec succès' : 'Leçon déplacée avec succès');
+        }
         this.dropSaving = false;
         this.draggedLesson = null;
       },
@@ -1231,6 +1371,59 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
   getLessonAt(day: string, slot: string): Lesson[] {
     return this.filteredLessons.filter(l => l.dayOfWeek === day && this.normalizeTime(l.startTime) === slot);
+  }
+
+  private getAllLessonsAt(day: string, slot: string): Lesson[] {
+    return this.lessons.filter(l => l.dayOfWeek === day && this.normalizeTime(l.startTime) === slot);
+  }
+
+  private canApplyMove(targetTimeslotId: number, targetLesson?: Lesson): { ok: boolean; reason?: string } {
+    if (!this.draggedLesson) {
+      return { ok: false, reason: 'Aucune leçon en cours de déplacement' };
+    }
+
+    const source = this.draggedLesson;
+    const ignoredIds = new Set<number>([source.id]);
+
+    if (!targetLesson) {
+      return this.validatePlacement(source, targetTimeslotId, source.roomId, ignoredIds);
+    }
+
+    ignoredIds.add(targetLesson.id);
+    const sourceToTarget = this.validatePlacement(source, targetTimeslotId, targetLesson.roomId, ignoredIds);
+    if (!sourceToTarget.ok) {
+      return sourceToTarget;
+    }
+
+    return this.validatePlacement(targetLesson, source.timeslotId, source.roomId, ignoredIds);
+  }
+
+  private validatePlacement(
+    lesson: Lesson,
+    timeslotId: number,
+    roomId: number,
+    ignoreIds: Set<number>
+  ): { ok: boolean; reason?: string } {
+    for (const other of this.lessons) {
+      if (ignoreIds.has(other.id)) {
+        continue;
+      }
+      if (other.timeslotId !== timeslotId) {
+        continue;
+      }
+
+      if (other.teacherId === lesson.teacherId) {
+        return { ok: false, reason: `Conflit enseignant: ${lesson.teacherName} est déjà occupé(e) sur ce créneau` };
+      }
+      if (other.roomId === roomId) {
+        return { ok: false, reason: `Conflit salle: ${other.roomName} est déjà occupée sur ce créneau` };
+      }
+      if (other.classGroupId === lesson.classGroupId) {
+        return { ok: false, reason: `Conflit classe: ${lesson.classGroupName} a déjà un cours sur ce créneau` };
+      }
+    }
+
+    return { ok: true };
   }
 
   getTimeSlotLabel(startTime: string): string {
@@ -1630,14 +1823,38 @@ export class TimetableComponent implements OnInit, OnDestroy {
         ? this.timeSlots
         : Array.from(new Set(lessons.map(l => this.normalizeTime(l.startTime)))).sort((a, b) => a.localeCompare(b)));
 
+    const breakRows = this.lunchBreakLabels
+      .map(label => {
+        const [rawStart, rawEnd] = label.split('-');
+        const start = this.normalizeTime(rawStart || '');
+        const end = this.normalizeTime(rawEnd || '');
+        return { kind: 'break' as const, start, end, label: start && end ? `${start}-${end}` : label };
+      })
+      .filter(row => !!row.start)
+      .sort((a, b) => a.start.localeCompare(b.start));
+
+    const timeRows: Array<{ kind: 'lesson' | 'break'; start: string; label: string }> = [
+      ...slots.map(slot => ({
+        kind: 'lesson' as const,
+        start: slot,
+        label: localEndByStart[slot] ? `${slot}-${localEndByStart[slot]}` : this.getTimeSlotLabel(slot)
+      })),
+      ...breakRows.map(row => ({ kind: 'break' as const, start: row.start, label: row.label }))
+    ].sort((a, b) => {
+      const byStart = a.start.localeCompare(b.start);
+      if (byStart !== 0) return byStart;
+      if (a.kind === b.kind) return 0;
+      return a.kind === 'break' ? -1 : 1;
+    });
+
     const scale = 2;
     const headerHeight = 180;
-    const footerHeight = 50;
+    const footerHeight = 0;
     const leftCol = 170;
     const dayCol = 290;
     const rowHeight = 128;
     const width = leftCol + dayCol * days.length;
-    const slotRowCount = Math.max(1, slots.length);
+    const slotRowCount = Math.max(1, timeRows.length);
     const tableRowCount = slotRowCount + 1; // +1 for the header row (Créneau + jours)
     const gridHeight = tableRowCount * rowHeight;
     const height = headerHeight + footerHeight + gridHeight;
@@ -1670,7 +1887,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
     ctx.textAlign = 'right';
     ctx.font = '500 16px Montserrat, Arial, sans-serif';
-    ctx.fillText(`Exporté le ${new Date().toLocaleDateString('fr-FR')}`, width - 24, 40);
+    ctx.fillText(`Emploi valable à partir du ${new Date().toLocaleDateString('fr-FR')}`, width - 24, 40);
     ctx.textAlign = 'left';
 
     const gridTop = headerHeight;
@@ -1696,13 +1913,15 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
     ctx.fillStyle = '#0f172a';
     ctx.font = '700 15px Montserrat, Arial, sans-serif';
-    ctx.fillText('Créneau', 24, gridTop + 28);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Créneau', leftCol / 2, gridTop + (rowHeight / 2));
     days.forEach((day, index) => {
       const x = leftCol + index * dayCol + (dayCol / 2);
-      ctx.textAlign = 'center';
-      ctx.fillText(this.formatDay(day), x, gridTop + 28);
-      ctx.textAlign = 'left';
+      ctx.fillText(this.formatDay(day), x, gridTop + (rowHeight / 2));
     });
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
 
     const lessonMap = new Map<string, Lesson[]>();
     lessons.forEach(l => {
@@ -1712,16 +1931,46 @@ export class TimetableComponent implements OnInit, OnDestroy {
       lessonMap.set(key, arr);
     });
 
-    slots.forEach((slot, row) => {
+    timeRows.forEach((rowInfo, row) => {
       const y = gridTop + rowHeight * (row + 1);
       ctx.fillStyle = '#1e3a8a';
       ctx.font = '600 14px Montserrat, Arial, sans-serif';
-      const slotLabel = localEndByStart[slot] ? `${slot}-${localEndByStart[slot]}` : this.getTimeSlotLabel(slot);
-      ctx.fillText(slotLabel, 14, y + 30);
+      const slotLabel = rowInfo.label;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(slotLabel, leftCol / 2, y + (rowHeight / 2));
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+
+      if (rowInfo.kind === 'break') {
+        days.forEach((day, col) => {
+          const x = leftCol + col * dayCol;
+          const blockPadding = 8;
+          const blockY = y + 8;
+          const blockH = rowHeight - 16;
+          const dayHasBreak = this.timeslots.some(ts =>
+            ts.dayOfWeek === day
+            && ts.breakStartTime
+            && ts.breakEndTime
+            && this.normalizeTime(ts.breakStartTime) === rowInfo.start
+          );
+
+          ctx.fillStyle = dayHasBreak ? '#fff7ed' : '#f8fafc';
+          ctx.fillRect(x + blockPadding, blockY, dayCol - blockPadding * 2, blockH);
+          ctx.strokeStyle = dayHasBreak ? '#fdba74' : '#e2e8f0';
+          ctx.strokeRect(x + blockPadding, blockY, dayCol - blockPadding * 2, blockH);
+          ctx.fillStyle = dayHasBreak ? '#9a3412' : '#94a3b8';
+          ctx.font = '700 12px Montserrat, Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(dayHasBreak ? 'Pause déjeuner' : '-', x + (dayCol / 2), blockY + (blockH / 2) + 4);
+          ctx.textAlign = 'left';
+        });
+        return;
+      }
 
       days.forEach((day, col) => {
         const x = leftCol + col * dayCol;
-        const items = lessonMap.get(`${day}|${slot}`) || [];
+        const items = lessonMap.get(`${day}|${rowInfo.start}`) || [];
         const blockPadding = 8;
         const blockY = y + 8;
         const blockH = rowHeight - 16;
@@ -1773,10 +2022,6 @@ export class TimetableComponent implements OnInit, OnDestroy {
         }
       });
     });
-
-    ctx.fillStyle = '#334155';
-    ctx.font = '500 13px Montserrat, Arial, sans-serif';
-    ctx.fillText(`Éléments planifiés : ${lessons.length}`, 16, height - 18);
 
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {

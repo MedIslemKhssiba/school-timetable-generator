@@ -1,6 +1,7 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +11,7 @@ import { Teacher, Subject, TeacherAvailability, Timeslot } from '../../../core/m
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.component';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-teachers',
@@ -103,7 +104,7 @@ import { forkJoin } from 'rxjs';
     <!-- Modal -->
     @if (showModal) {
       <div class="modal-backdrop" (click)="closeModal()"></div>
-      <div class="modal-container">
+      <div class="modal-container teacher-modal-container">
         <div class="modal-panel teacher-form-panel">
           <div class="modal-header">
             <h5 class="modal-title">{{ editing ? 'Edit Teacher' : 'Add Teacher' }}</h5>
@@ -124,12 +125,14 @@ import { forkJoin } from 'rxjs';
                 <label class="form-label">{{ t('email') }} *</label>
                   <input class="form-control" formControlName="email" type="email" />
                 </div>
-                @if (!editing) {
-                  <div class="col-md-6">
-                    <label class="form-label">{{ t('password') }} *</label>
-                    <input class="form-control" formControlName="password" type="password" placeholder="Min 6 characters" />
-                  </div>
-                }
+                <div class="col-md-6">
+                  <label class="form-label">{{ t('password') }} {{ editing ? '(optionnel)' : '*' }}</label>
+                  <input class="form-control" formControlName="password" type="password" [placeholder]="editing ? 'Laisser vide pour conserver' : 'Min 6 characters'" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Confirmer le mot de passe {{ editing ? '(optionnel)' : '*' }}</label>
+                  <input class="form-control" formControlName="confirmPassword" type="password" />
+                </div>
                 <div class="col-md-6">
                   <label class="form-label">{{ t('max_hours') }}</label>
                   <input class="form-control" formControlName="maxHoursPerWeek" type="number" />
@@ -253,9 +256,13 @@ import { forkJoin } from 'rxjs';
     }
     .modal-backdrop { position: fixed; inset: 0; background: rgba(13, 20, 40,0.4); backdrop-filter: blur(4px); z-index: 1050; }
     .modal-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1051; padding: 20px; }
+    .teacher-modal-container {
+      align-items: flex-start;
+      padding-top: 88px;
+    }
     .modal-panel { background: #F8FAFF; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(13, 27, 62,0.15); animation: scaleIn 200ms ease-out; }
     .teacher-form-panel {
-      max-height: 88vh;
+      max-height: calc(100vh - 108px);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -408,7 +415,7 @@ import { forkJoin } from 'rxjs';
     }
   `]
 })
-export class TeachersComponent implements OnInit {
+export class TeachersComponent implements OnInit, OnDestroy {
   teachers: Teacher[] = [];
   filtered: Teacher[] = [];
   paged: Teacher[] = [];
@@ -434,6 +441,7 @@ export class TeachersComponent implements OnInit {
   dayTimeSlotMap: Record<string, number> = {};
   timeHeaders: { key: string; startTime: string; endTime: string }[] = [];
   days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  private queryParamsSub?: Subscription;
 
   get totalPages(): number { return Math.ceil(this.filtered.length / this.pageSize); }
   get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
@@ -441,6 +449,7 @@ export class TeachersComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private authService: AuthService,
     private notify: NotificationService,
     private ts: TranslationService
@@ -451,6 +460,7 @@ export class TeachersComponent implements OnInit {
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required],
       maxHoursPerWeek: [20],
       subjectIds: [[] as number[]],
       schoolId: [this.schoolId]
@@ -458,8 +468,20 @@ export class TeachersComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.queryParamsSub = this.route.queryParamMap.subscribe(params => {
+      const nextTerm = params.get('q')?.trim() || '';
+      if (nextTerm !== this.searchTerm) {
+        this.searchTerm = nextTerm;
+        this.page = 1;
+        this.applyFilter();
+      }
+    });
     this.load();
     this.adminService.getSubjects(this.schoolId).subscribe(s => this.subjects = s);
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSub?.unsubscribe();
   }
 
   t(key: string): string { return this.ts.t(key); }
@@ -484,9 +506,11 @@ export class TeachersComponent implements OnInit {
     this.editing = false;
     this.editId = null;
     this.subjectSearchTerm = '';
-    this.form.reset({ schoolId: this.schoolId, maxHoursPerWeek: 20, subjectIds: [] });
+    this.form.reset({ schoolId: this.schoolId, maxHoursPerWeek: 20, subjectIds: [], confirmPassword: '' });
     this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
     this.form.get('password')?.updateValueAndValidity();
+    this.form.get('confirmPassword')?.setValidators([Validators.required]);
+    this.form.get('confirmPassword')?.updateValueAndValidity();
     this.showModal = true;
   }
 
@@ -497,9 +521,11 @@ export class TeachersComponent implements OnInit {
     this.editId = t.id;
     this.subjectSearchTerm = '';
     const ids = t.subjectIds?.length ? t.subjectIds : (t.subjects?.map(s => s.id) || []);
-    this.form.patchValue({ ...t, subjectIds: ids });
-    this.form.get('password')?.clearValidators();
+    this.form.patchValue({ ...t, subjectIds: ids, password: '', confirmPassword: '' });
+    this.form.get('password')?.setValidators([Validators.minLength(6)]);
     this.form.get('password')?.updateValueAndValidity();
+    this.form.get('confirmPassword')?.clearValidators();
+    this.form.get('confirmPassword')?.updateValueAndValidity();
     this.showModal = true;
   }
 
@@ -522,13 +548,36 @@ export class TeachersComponent implements OnInit {
 
   onSubmit(): void {
     if (this.form.invalid) return;
+    const password = (this.form.value.password || '').trim();
+    const confirmPassword = (this.form.value.confirmPassword || '').trim();
+
+    if (this.editing) {
+      if ((password && !confirmPassword) || (!password && confirmPassword)) {
+        this.notify.error('Renseignez et confirmez le nouveau mot de passe');
+        return;
+      }
+      if (password && confirmPassword && password !== confirmPassword) {
+        this.notify.error('Les mots de passe ne correspondent pas');
+        return;
+      }
+    } else if (password !== confirmPassword) {
+      this.notify.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    const payload = { ...this.form.value } as Record<string, any>;
+    delete payload['confirmPassword'];
+    if (this.editing && !password) {
+      delete payload['password'];
+    }
+
     if (this.editing && this.editId) {
-      this.adminService.updateTeacher(this.editId, this.form.value).subscribe({
+      this.adminService.updateTeacher(this.editId, payload).subscribe({
         next: () => { this.load(); this.closeModal(); this.notify.success('Enseignant mis à jour'); },
         error: () => this.notify.error('Échec de la mise à jour de l enseignant')
       });
     } else {
-      this.adminService.createTeacher(this.form.value).subscribe({
+      this.adminService.createTeacher(payload).subscribe({
         next: () => { this.load(); this.closeModal(); this.notify.success('Enseignant créé'); },
         error: () => this.notify.error('Échec de la création de l enseignant')
       });

@@ -1,6 +1,7 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CardModule, TableModule, ButtonDirective, FormModule, GridModule, BadgeModule } from '@coreui/angular';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,6 +11,7 @@ import { ClassGroup } from '../../../core/models';
 import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-classes',
@@ -178,7 +180,7 @@ import { ConfirmModalComponent } from '../../../shared/ui/confirm-modal.componen
     }
   `]
 })
-export class ClassesComponent implements OnInit {
+export class ClassesComponent implements OnInit, OnDestroy {
   items: ClassGroup[] = [];
   filtered: ClassGroup[] = [];
   paged: ClassGroup[] = [];
@@ -193,6 +195,7 @@ export class ClassesComponent implements OnInit {
   page = 1;
   pageSize = 10;
   private schoolId = 1;
+  private queryParamsSub?: Subscription;
 
   get totalPages(): number { return Math.ceil(this.filtered.length / this.pageSize); }
   get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
@@ -200,6 +203,7 @@ export class ClassesComponent implements OnInit {
   constructor(
     private svc: AdminService,
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private authService: AuthService,
     private notify: NotificationService,
     private ts: TranslationService
@@ -210,7 +214,21 @@ export class ClassesComponent implements OnInit {
 
   t(key: string): string { return this.ts.t(key); }
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.queryParamsSub = this.route.queryParamMap.subscribe(params => {
+      const nextTerm = params.get('q')?.trim() || '';
+      if (nextTerm !== this.searchTerm) {
+        this.searchTerm = nextTerm;
+        this.page = 1;
+        this.applyFilter();
+      }
+    });
+    this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSub?.unsubscribe();
+  }
 
   load() {
     this.svc.getClasses(this.schoolId).subscribe({
