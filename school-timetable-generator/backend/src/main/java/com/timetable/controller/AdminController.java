@@ -36,18 +36,12 @@ public class AdminController {
 
     @GetMapping("/dashboard/{schoolId}")
     public ResponseEntity<Map<String, Object>> getDashboard(@PathVariable Long schoolId) {
-        School school = schoolRepository.findById(schoolId)
-                .orElseThrow(() -> new ResourceNotFoundException("School not found with id: " + schoolId));
-
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalTeachers", teacherRepository.countBySchoolId(schoolId));
         stats.put("totalClasses", classGroupRepository.countBySchoolId(schoolId));
         stats.put("totalSubjects", subjectRepository.countBySchoolId(schoolId));
         stats.put("totalRooms", roomRepository.countBySchoolId(schoolId));
         stats.put("totalLessons", lessonRepository.countBySchoolId(schoolId));
-        stats.put("timetableSavedAt", school.getTimetableSavedAt());
-        stats.put("timetableSent", Boolean.TRUE.equals(school.getTimetableSent()));
-        stats.put("timetableSentAt", school.getTimetableSentAt());
         return ResponseEntity.ok(stats);
     }
 
