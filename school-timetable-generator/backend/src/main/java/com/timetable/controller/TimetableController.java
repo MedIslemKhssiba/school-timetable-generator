@@ -39,7 +39,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -336,8 +338,11 @@ public class TimetableController {
         Map<String, Object> statistics = timetableStatisticsService.buildStatistics(schoolId, status, solution);
         String csv = timetableStatisticsService.buildStatisticsCsv(statistics);
 
+        String dateToken = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String fileName = "rapport-ecole-statistiques-solveur-school-" + schoolId + "-" + dateToken + ".csv";
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable-statistics.csv")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
                 .contentType(MediaType.TEXT_PLAIN)
                 .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
@@ -555,8 +560,10 @@ public class TimetableController {
             : List.of();
 
         byte[] excelData = importExportService.exportTimetableExcel(schoolId, fallbackAssignments);
+        String dateToken = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String fileName = "emploi-du-temps-ecole-export-school-" + schoolId + "-" + dateToken + ".xlsx";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=timetable.xlsx")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(excelData);
     }

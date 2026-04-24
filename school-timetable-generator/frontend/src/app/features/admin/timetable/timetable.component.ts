@@ -998,27 +998,27 @@ export class TimetableComponent implements OnInit, OnDestroy {
 
         for (const className of this.classNames) {
           const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.classGroupName === className), `Classe : ${className}`);
-          zip.file(`classes/emploi-${this.slugify(className)}.png`, blob);
+          zip.file(`classes/${this.buildProfessionalFileName('emploi-du-temps', 'classe', className, 'png')}`, blob);
           exportedCount += 1;
         }
 
         for (const teacherName of this.teacherNames) {
           const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.teacherName === teacherName), `Enseignant : ${teacherName}`);
-          zip.file(`professeurs/emploi-prof-${this.slugify(teacherName)}.png`, blob);
+          zip.file(`professeurs/${this.buildProfessionalFileName('emploi-du-temps', 'enseignant', teacherName, 'png')}`, blob);
           exportedCount += 1;
         }
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
-        this.downloadBlob(zipBlob, `emplois-combines-${this.schoolId}.zip`);
+        this.downloadBlob(zipBlob, this.buildProfessionalFileName('emploi-du-temps', 'ecole', 'exports-combines', 'zip'));
       } else if (this.exportScope === 'all-classes') {
         if (this.classNames.length === 0) {
           const blob = await this.renderProfessionalTimetableImage(this.lessons, 'Vue globale');
-          this.downloadBlob(blob, 'emploi-du-temps.png');
+          this.downloadBlob(blob, this.buildProfessionalFileName('emploi-du-temps', 'ecole', 'vue-globale', 'png'));
           exportedCount += 1;
         } else {
           for (const className of this.classNames) {
             const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.classGroupName === className), `Classe : ${className}`);
-            this.downloadBlob(blob, `emploi-${this.slugify(className)}.png`);
+            this.downloadBlob(blob, this.buildProfessionalFileName('emploi-du-temps', 'classe', className, 'png'));
             exportedCount += 1;
           }
         }
@@ -1028,7 +1028,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
           return;
         }
         const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.classGroupName === this.exportClass), `Classe : ${this.exportClass}`);
-        this.downloadBlob(blob, `emploi-${this.slugify(this.exportClass)}.png`);
+        this.downloadBlob(blob, this.buildProfessionalFileName('emploi-du-temps', 'classe', this.exportClass, 'png'));
         exportedCount += 1;
       } else {
         if (!this.exportTeacher) {
@@ -1036,7 +1036,7 @@ export class TimetableComponent implements OnInit, OnDestroy {
           return;
         }
         const blob = await this.renderProfessionalTimetableImage(this.lessons.filter(l => l.teacherName === this.exportTeacher), `Enseignant : ${this.exportTeacher}`);
-        this.downloadBlob(blob, `emploi-prof-${this.slugify(this.exportTeacher)}.png`);
+        this.downloadBlob(blob, this.buildProfessionalFileName('emploi-du-temps', 'enseignant', this.exportTeacher, 'png'));
         exportedCount += 1;
       }
 
@@ -1674,6 +1674,19 @@ export class TimetableComponent implements OnInit, OnDestroy {
       .replace(/\p{Diacritic}/gu, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+  }
+
+  private dateToken(): string {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  private buildProfessionalFileName(type: string, entity: string, name: string, ext: string): string {
+    const safeName = this.slugify(name || 'export');
+    return `${type}-${entity}-${safeName}-${this.dateToken()}.${ext}`;
   }
 
   formatLessonDuration(lesson: Lesson): string {

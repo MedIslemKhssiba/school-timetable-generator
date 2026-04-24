@@ -770,20 +770,27 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   downloadImportCsvTemplate(): void {
     const rows = [
-      'Day,Start Time,End Time,Subject,Teacher,Class,Room',
-      'MONDAY,08:00,09:00,Math,John Doe,Class A,Room 101',
-      'MONDAY,09:00,10:00,Physics,Jane Smith,Class A,Lab 1',
-      'TUESDAY,08:00,09:00,English,John Doe,Class B,Room 102'
+      'Day,Start Time,End Time,Subject,Teacher,Class,Room'
     ];
     const csv = '\uFEFF' + rows.join('\n');
+    this.downloadCsvBlob(csv, this.buildProfessionalTemplateFileName());
+    this.notif.success('Modèle CSV standard téléchargé');
+  }
+
+  private downloadCsvBlob(csv: string, fileName: string): void {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'modele_import_timetable.csv';
+    link.download = fileName;
     link.click();
     window.URL.revokeObjectURL(url);
-    this.notif.success('Modèle CSV téléchargé');
+  }
+
+  private buildProfessionalTemplateFileName(): string {
+    const now = new Date();
+    const dateToken = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return `template-ecole-import-emploi-du-temps-${dateToken}.csv`;
   }
 
   openDashboardCsvPicker(): void {
